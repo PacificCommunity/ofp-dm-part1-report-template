@@ -1,4 +1,4 @@
-# ofp-dm-part1-report-template
+# Part1 report template
 In this report we maintain the pipeline to create Part 1 reports.
 
 If it is your first time cloning a repository refer to [How to Clone a GitHub Repository](https://github.com/PacificCommunity/ofp-dm-useful-scripts/blob/main/README.md#how-to-clone-a-github-repository)
