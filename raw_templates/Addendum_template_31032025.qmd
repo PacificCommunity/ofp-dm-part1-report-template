@@ -1,0 +1,585 @@
+---
+title: "Addendum to Annual Part 1 Report"
+author: "ENTER AUTHOR"
+date: today
+date-format: "DD MMMM YYYY"
+execute:
+  echo: false
+  warning: false
+  message: false 
+format: 
+  docx: 
+     number-sections: false
+     highlight-style: github
+     mainfont: Calibri
+     headerfont: Calibri
+     fontsize: 11pt
+page-layout: full
+edit: visual
+params:
+  country_code: "VU" # Default value, will be overridden when rendering
+  country_folder: "./data/report_2024_vu/" # Defaul value, will be overriden when rendering - this_yr_folder
+  max_year: 2024
+---
+
+<!-- urlcolor: blue -->
+<!-- toccolor: blue -->
+
+```{r setup, include=FALSE, eval=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(flextable)
+library(knitr)
+
+# Reporting years
+yy = params$max_year
+min.yy = yy-4
+member = tolower(params$country_code)  # Use the parameter value
+this_yr_folder = params$folder_member
+
+options(scipen=0, knitr.kable.NA = '')
+
+# Custom functions
+# -- lazy for as.numeric()
+an = function(x) as.numeric(x)
+# -- "not in" function
+'%nin%' <- function(x, y) !(x %in% y)
+
+# Function to safely read a CSV file, returning empty data if file doesn't exist
+read_csv <- function(path) {
+  if (file.exists(path)) {
+    read.csv(path)
+  } else {
+    message(paste("File not found:", path))
+    # Return an empty data frame
+    data.frame()
+  }
+}
+
+read_and_clean <- function(this_yr_folder, country_code, r_code){
+  data <- read_csv(str_c(this_yr_folder, country_code, "_", r_code, ".csv"))
+
+  if (nrow(data) > 0) {
+    
+    data <- data |>
+      data_wrangling(report_id = r_code) |>
+      rename(year = yr)
+  }
+  
+  return(data)
+  
+}
+
+```
+
+
+### Section A
+
+
+#### CMM 2009-03 [Swordfish], Para 8
+
+CCMs shall report to the Commission the total number of vessels that fished for swordfish and the total catch of swordfish for the following:
+
+a. vessels flying their flag anywhere in the Convention Area south of 20$^\circ$S other than vessels operating under charter, lease or other similar mechanism as part of the domestic fishery of another CCM;
+b. vessels operating under charter, lease or other similar mechanism as part of their domestic fishery south of 20$^\circ$S; and
+c. any other vessels fishing within their waters south of 20$^\circ$S.
+
+This information shall be provided in Part 1of each CCM's annual report. Initially, this information will be provided in the template provided at Annex 2 for the period 2000-2009 and then updated annually.
+
+\* *Note: WCPFC11 confirmed a common understanding that "total catch" in this reporting requirement refers to both targeted and bycatch catches of swordfish*
+
+
+```{r}
+#| label: tbl-2009-03
+#| tbl-cap: "Total number of vessels fishing for swordfish and the catch (mt) of swordfish south of 20S."
+
+# Use the exact file path from your directory structure
+a1 <- read_and_clean(this_yr_folder, member, r_code=2918)
+
+if (nrow(a1) > 0) {
+  
+  msg = ' '
+  flextable(a1) |> 
+  colformat_num(j = "year", big.mark='') |> 
+  fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("No fishing for swordfish was reported in ",params$max_year,", nor was any catch reported.")
+}
+```
+`r msg`
+
+\newpage
+#### Observer coverage (WCPFC11 decision - para 484(b))
+
+CCMs are to compile and include in Annual Report Part 1 to be submitted from 2015 onwards, observer coverage for their longline fleet activity in the previous calendar year, noting that revisions can be provided at the annual TCC meeting.
+
+A sample report format is provided as guidance to assist CCMs with reporting (WCPFC11 Summary Report Attachment L Table 4).
+
+```{r}
+#| label: tbl-obs_cov
+#| tbl-cap: 'Observer coverage of longline fleet activity where hooks are in hundred hooks from logbook data and fishing days, sea days, and trips are all calculated from VMS data. Coverage percentages are rounded to the nearest whole number.'
+
+# Use the exact file path from your directory structure
+a2 <- read_and_clean(this_yr_folder, member, r_code=2986)
+
+if (nrow(a2) > 0) {
+  
+  msg = ' '
+  flextable(a2) |>
+   set_header_labels(
+      hhooks = "hooks",
+      hhooks_obsv = "obs",
+      hks_cov = "cov %",
+      days_fishing = 'fish days',
+      obs_fish_days = 'obs',
+      fishday_cov = 'cov %',
+      days_at_sea = 'sea days',
+      obs_sea_days = 'obs',
+      sea_cov = 'cov %',
+      vms_trips = 'trips',
+      obs_trips = 'obs',
+      trip_cov = 'cov %') |>
+     add_header_row(top = TRUE, values = c("", "Hooks", "Fishing days", "Sea days", "Trips"),
+                    colwidths = c(3,3,3,3,3)) |>
+    vline(j=c(3,6,9,12)) |>
+    colformat_num(j = "year", big.mark='') |>
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(8)
+
+} else {
+  msg = "No observer coverage data available."
+}
+```
+`r msg`
+
+\newpage
+#### CMM 2009-06 [Transshipment], Para 11 (Annex II)
+
+CCMs shall report on all transhipment activities covered by this Measure (including transhipment activities that occur in ports or EEZs) as part of their Annual Report in accordance with the guidelines at Annex II. In doing so, CCMs shall take all reasonable steps to validate and where possible, correct information received from vessels undertaking transhipment using all available information such as catch and effort data, position data, observer reports and port monitoring data.
+
+WCPFC15 Outcome document para 48:  The Commission agreed to the TCC14 recommendation that the template provided in TCC14-2018-RP03 Annex 3 be used by all applicable CCMs for their future reporting in Annual Report Part 1, as per CMM 2009-06 paragraph 11 (Attachment O of WCPFC15). **Annex 3 of RP03:  Transhipment information to be provided annually by CCMs as required by CMM 2009-06 paragraph 11 in accordance with the guidelines in Annex II of the measure.**
+
+Each CCM shall include in Part 1 of its Annual Report to the Commission:
+
+(1) the total quantities, by weight, of highly migratory fish stocks covered by this measure that were transhipped by fishing vessels the CCM is responsible for reporting against, with those quantities broken down by:
+
+a. offloaded and received;
+b. transhipped in port, transhipped at sea in areas of national jurisdiction, and transhipped beyond areas of national jurisdiction;
+c. transhipped inside the Convention Area and transshipped outside the Convention Area;
+d. caught inside the Convention Area and caught outside the Convention Area;
+e. species;
+f. product form; and
+g. fishing gear used
+
+```{r}
+#| label: tbl-cmm2009-06.1
+
+
+# Check if you have trans1.csv files in your directory structure
+# Based on your directory listing, this file might not exist
+trans1_file <- str_c('./data/', member, '/trans1.csv')
+if (file.exists(trans1_file)) {
+  a3 <- read.csv(trans1_file)
+  msg = '';
+  flextable(a3)
+} else {
+  msg = "No transshipment quantity data available."
+}
+```
+`r msg`
+
+(2) the number of transhipments involving highly migratory fish stocks covered by this measure by fishing vessels that is responsible for reporting against, broken down by:
+
+a. offloaded and received;
+b. transhipped in port, transhipped at sea in areas of national jurisdiction, and transhipped beyond areas of national jurisdiction;
+c. transhipped inside the Convention Area and transhipped outside the Convention Area;
+d. caught inside the Convention Area and caught outside the Convention Area; and
+e. fishing gear
+
+```{r}
+#| label: tbl-cmm2009-06.2
+
+# Check if you have trans2.csv files in your directory structure
+# Based on your directory listing, this file might not exist
+trans2_file <- str_c('./data/', member, '/trans2.csv')
+if (file.exists(trans2_file)) {
+  a4 <- read.csv(trans2_file)
+  msg = '';
+  flextable(a4)
+} else {
+  msg = "No transshipment count data available."
+}
+```
+`r msg`
+
+
+#### CMM 2011-03 [Impact of PS fishing on cetaceans], Para 5
+
+CCMs shall include in their Part 1 Annual Report any instances in which cetaceans have been encircled by the purse seine nets of their flagged vessels, reported under paragraph 2(b).
+
+```{r}
+#| label: tbl-cmm2011-03
+#| tbl-cap: 'Summary of the number of cetacean encirclements by purse seine nets in reporting year'
+
+a5 <- read_and_clean(this_yr_folder, member, r_code=3222)
+
+if (nrow(a5) > 0) {
+  msg = ' '
+  flextable(a5)  |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("No cetacean encirclements by purse seine nets were reported in ",params$max_year,".")
+}
+```
+`r msg`
+
+\newpage
+#### CMM 2018-3 [Seabirds], Para 13
+
+CCMs shall annually provide to the Commission, in Part 1 of their annual reports, all available information on interactions with seabirds reported or collected by observers to enable the estimation of seabird mortality in all fisheries to which the Convention applies (see below for Part 1 reporting template guideline).These reports shall include information on:
+
+1. the proportion of observed effort with specific mitigation measures used; and
+2. observed and reported species specific seabird bycatch rates and numbers or statistically rigorous estimates of species-specific seabird interaction rates (for longline, interactions per 1,000 hooks) and total numbers
+
+**Table(s) x (by area)**
+
+```{r}
+#| label: tbl-cmm2018-03x
+#| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area.'
+
+# Check... which report?
+a6 <- read.csv(str_c('./data/', member, '/CMM2018_03_x.csv'))
+
+if (nrow(a6)>0) {
+
+  # Split by area
+  a6.south <-
+    a6 %>%
+    select(year, flag_id, nb_vessel, hks_south_of_30s, hks_obs_south_of_30s, south_of_30s) %>%
+    mutate(capture_rate = round(south_of_30s/hks_obs_south_of_30s*100,1)) |>
+    rename(hhooks = hks_south_of_30s, hhooks_obs = hks_obs_south_of_30s, n_birds = south_of_30s)
+
+  a6.mids <-
+    a6 %>%
+    select(year, flag_id, nb_vessel, hks_between_25s_30s, hks_obs_between_25s_30s, between_25s_30s) %>%
+    mutate(capture_rate = round(between_25s_30s/hks_obs_between_25s_30s*100,1)) |>
+    rename(hhooks = hks_between_25s_30s, hhooks_obs = hks_obs_between_25s_30s, n_birds = between_25s_30s)
+
+  a6.midn <-
+    a6 %>%
+    select(year, flag_id, nb_vessel, hks_between_25s_23n, hks_obs_between_25s_23n, between_25s_23n) %>%
+    mutate(capture_rate = round(between_25s_23n/hks_obs_between_25s_23n*100,1)) |>
+    rename(hhooks = hks_between_25s_23n, hhooks_obs = hks_obs_between_25s_23n, n_birds = between_25s_23n)
+
+  a6.north <-
+    a6 %>%
+    select(year, flag_id, nb_vessel, hks_north_of_23n, hks_obs_north_of_23n, north_of_23n) %>%
+    mutate(capture_rate = round(north_of_23n/hks_obs_north_of_23n*100,1)) |>
+    rename(hhooks = hks_north_of_23n, hhooks_obs = hks_obs_north_of_23n, n_birds = north_of_23n)
+
+} else {
+  # Create empty dataframes to avoid errors
+  a6.south <- a6.mids <- a6.midn <- a6.north <- data.frame(
+    year = numeric(0), flag_id = character(0), nb_vessel=numeric(0),
+    hhooks = numeric(0), hooks_obs = numeric(0), n_birds = numeric(0), capture_rate = numeric(0)
+  )
+}
+```
+
+```{r}
+#| label: tbl-sb_s30s
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area south of 30S.'
+
+if (nrow(a6.south) > 0) {
+  msg='  ';
+  flextable(a6.south) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = 7, width = 1.2) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area south of 30S.")
+}
+```
+`r msg`
+
+
+
+```{r}
+#| label: tbl-sb_25s_30s
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 30S and 25S.'
+
+if (nrow(a6.mids) > 0) {
+  msg='  ';
+  flextable(a6.mids) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = 7, width = 1.2) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 30S and 25S.")
+}
+```
+`r msg`
+
+
+
+```{r}
+#| label: tbl-sb_25s_23n
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N.'
+
+if (nrow(a6.midn) > 0) {
+  msg='  ';
+  flextable(a6.midn) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = 7, width = 1.2) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 25S and 23N.")
+}
+```
+`r msg`
+
+
+
+```{r}
+#| label: tbl-sb_23n
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area north of 23N.'
+
+if (nrow(a6.north) > 0) {
+  msg='  ';
+  flextable(a6.north) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = 7, width = 1.2) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area north of 23N.")
+}
+```
+`r msg`
+
+\clearpage
+**Table(s) y (by area)**
+
+```{r}
+#| label: tbl-cmm2018-03y
+
+
+a7_file <- str_c('./data/', member, '/CMM2018_03_y.csv')
+# a7_file <- read_and_clean(this_yr_folder, member, r_code=3602)
+
+if (file.exists(a7_file)) {
+  a7 <- read.csv(a7_file)
+
+  # Change NA to 0 for sets and %
+  a7 <- a7 %>% mutate(across(6:13, ~ ifelse(is.na(.), 0, .)))
+
+  # Split by area
+  a7.south <- a7 %>% select(year, fleet, reqs, mitigation, s30s, s30s_pct) %>%
+    rename(sets = s30s, percent = s30s_pct)
+  a7.mids <- a7 %>% select(year, fleet, reqs, mitigation, b25s_30s, b25s_30s_pct) %>%
+    rename(sets = b25s_30s, percent = b25s_30s_pct)
+  a7.midn <- a7 %>% select(year, fleet, reqs, mitigation, b25s_23n, b25s_23n_pct) %>%
+    rename(sets = b25s_23n, percent = b25s_23n_pct)
+  a7.north <- a7 %>% select(year, fleet, reqs, mitigation, n23n, n23n_pct) %>%
+    rename(sets = n23n, percent = n23n_pct)
+} else {
+  # Create empty dataframes to avoid errors
+  a7.south <- a7.mids <- a7.midn <- a7.north <- data.frame(
+    year = numeric(0), fleet = character(0), reqs = character(0),
+    mitigation = character(0), sets = numeric(0), percent = numeric(0)
+  )
+}
+```
+
+
+```{r}
+#| label: tbl-s30s
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area south of 30S.'
+
+if (nrow(a7.south) > 0) {
+  msg='  ';
+  flextable(a7.south) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = c(3,4), width = c(1.2, 1.2)) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("No data were reported in ",params$max_year," for area south of 30S.")
+}
+```
+`r msg`
+
+
+```{r}
+#| label: tbl-30s_25s
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area between 30S and 25S.'
+
+
+if (nrow(a7.mids) > 0) {
+  msg='  ';
+  flextable(a7.mids) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = c(3,4), width = c(1.2, 1.2)) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg= paste0("No data were reported in ",params$max_year," for area between 30S and 25S.")
+}
+```
+`r msg`
+
+
+```{r}
+#| label: tbl-25s_23n
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area between 25S and south of 23N.'
+
+
+if (nrow(a7.midn) > 0) {
+    msg='  ';
+    flextable(a7.midn) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = c(3,4), width = c(1.2, 1.2)) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg=paste0("No data were reported in ",params$max_year," for the area between 25S and south of 23N.")
+}
+```
+`r msg`
+
+
+```{r , echo=FALSE}
+#| label: tbl-n23n
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area north of 23N.'
+
+
+if (nrow(a7.north) > 0) {
+  msg = ' '
+  flextable(a7.north) |>
+    colformat_num(j = "year", big.mark='') |>
+    width(j = c(3,4), width = c(1.2, 1.2)) |>
+    fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("No data were reported in ",params$max_year," for area north of 23N.")
+}
+```
+`r msg`
+
+
+
+**Table z**
+
+```{r}
+#| label: tbl-cmm2018-03z
+#| tbl-cap: 'Number of observed seabird captures in longline fisheries in the reporting year, by species and area.'
+
+
+a8 <- read_csv(str_c('./data/', member, '/CMM2018_03_z.csv'))
+
+if (nrow(a8) > 0) {
+  msg=' '
+  flextable(a8)|>
+    colformat_num(j = "year", big.mark='') |>
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(8)
+} else {
+  msg = "No seabird interaction data (Table z) available."
+}
+```
+`r msg`
+
+\newpage
+### Section B
+
+#### CMM 2006-04 [Southwest Pacific striped marlin], Para 4
+
+In accordance with paragraph 1, CCMs shall provide information to the Commission, by 1 July 2007, on the number of their vessels that have fished for striped marlin in the Convention area south of 15$^\circ$S, during the period 2000–2004, and in doing so, nominate the maximum number of vessels that shall continue to be permitted to fish for striped marlin in the area south of 15$^\circ$S. CCMs shall report annually to the Commission the catch levels of their fishing vessels that have taken striped marlin as a bycatch as well as the number and catch levels of vessels fishing for striped marlin in the Convention Area south of 15$^\circ$S.
+
+```{r}
+#| label: tbl-cmm2006-04
+#| tbl-cap: 'There is currently no agreed definition of "fishing for" stripe marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin.'
+
+a9 <- read_and_clean(this_yr_folder, member, r_code=2917)
+
+# a9 <- read_csv(str_c('./data/', member, '/CMM2006_04.csv'))
+
+if (nrow(a9) > 0) {
+  msg = '  '
+  flextable(a9) |>
+  fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("No vessels fished for striped marlin in ",params$max_year,".")
+}
+```
+`r msg`
+
+
+\newpage
+#### CMM 2015-02 [South Pacific Albacore], Para 4
+
+CCMs shall report annually to the Commission the annual catch levels taken by each of their fishing vessels that has taken South Pacific albacore, as well as the number of vessels actively fishing for South Pacific albacore, in the Convention area south of 20$^\circ$S. Catch by vessel shall be reported according to the following species groups: albacore tuna, bigeye tuna, yellowfin tuna, swordfish, other billfish, and sharks. Initially this information will be provided for the period 2006-2014 and then updated annually. CCMs are encouraged to provide data from periods prior to these dates.
+
+WCPFC20 Outcome: The Commission agreed that the term "actively fishing for" used in CMM 2015-02 is applied to: 'Vessels fishing south of 20 degrees South with an annual catch of albacore in that area with South Pacific albacore greater than 50% of the catch of potential target tuna (albacore, yellowfin and bigeye, southern bluefin, skipjack) and swordfish.'
+
+```{r}
+#| label: tbl-cmm2015-02
+#| tbl-cap: 'Summary of the number of vessels fishing for (as defined above) South Pacific albacore as well as the number and mt of albacore harvested from the past 5 years. It should be noted that southern bluefin tuna is not a key species in the SciData, and therefore, catches are not currently required to be reported to the WCPFC. This lack of reporting could result in more vessels determined to be fishing for albacore, if in fact southern bluefin were targeted.'
+
+
+a10 <- read_csv(str_c('./data/', member, '/CMM2015_02.csv'))
+
+if (nrow(a10) > 0) {
+  msg = ' '
+  flextable(a10) |>
+  fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("No vessels were actively fishing for, nor was any catch of South Pacific albacore reported in ",params$max_year,".")
+}
+```
+`r msg`
+
+\newpage
+#### CMM 2019-03 [North Pacific Albacore], Para 3
+
+All CCMs shall report annually to the WCPFC Commission all catches of albacore north of the equator and all fishing effort north of the equator in fisheries directed at albacore. The reports for both catch and fishing effort shall be made by gear type. Catches shall be reported in terms of weight. Fishing effort shall be reported in terms of the most relevant measures for a given gear type, including at a minimum for all gear types, the number of vessel-days fished using the template provided in Annex 1.
+
+```{r}
+#| label: tbl-cmm2019-03
+#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific albacore catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific.'
+
+
+# a11 <- read_csv(str_c('./data/', member, '/CMM2019_03.csv'))
+a11 <- read_and_clean(this_yr_folder, member, r_code=3602)
+
+if (nrow(a11) > 0) {
+  msg = ' '
+  flextable(a11) |>
+  fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("There was no fishing effort or catch of albacore north of the equator in ",params$max_year,".")
+}
+```
+`r msg`
+
+\newpage
+#### CMM 2023-03 [North Pacific Swordfish], Para 4
+
+All CCMs shall report annually to the WCPFC Commission all catches of North Pacific swordfish in the Area and all fishing effort in those fisheries as well as catch and effort across the North Pacific subject to the measures in paragraph 2, by gear type using the template provided in Annex 1.
+
+\**Note: CMM 2023-03:*
+
+*Paragraph 2: The Members, Cooperating Non-Members and participating territories (hereinafter referred to as CCMs) shall take necessary measures to ensure that the level of fishing effort of their fisheries taking more than 200 metric tons per year of North Pacific swordfish in the Area is not increased beyond 2008-2010 average annual levels.*
+
+*Paragraph 3 clarifies that paragraphs 2 and 4 shall not be applied to those fisheries taking less than 200 metric tons of North Pacific swordfish in the Area per year.  However, if the catches of such fisheries exceed 200 metric tons in any given year, the Commission shall adopt appropriate management measure for such fisheries.*
+
+```{r}
+#| label: tbl-cmm2023-03
+#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific swordfish catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific.'
+
+
+a12 <- read_csv(str_c('./data/', member, '/CMM2023_03.csv'))
+
+if (nrow(a12) > 0) {
+  msg = ' '
+  flextable(a12) |>
+  fontsize(size = 8, part = "all")
+} else {
+  msg = paste0("There was no fishing effort nor catch of North Pacific swordfish in ",params$max_year,".")
+}
+```
+`r msg`

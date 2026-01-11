@@ -1,0 +1,1057 @@
+---
+title: "Addendum"
+format: html
+---
+
+```{r}
+#| message: false 
+#| warning: false
+
+# Load necessary libraries
+library(DBI)
+library(odbc)
+library(tidyverse)
+
+# Define the list of country codes
+country_codes <- c("CK", "FJ", "FM", "KI", "MH","NC", "NR", "NU", "PF","PG","PW", "WS", "SB","TK","TO", "TV", "VU")  # Add or modify the country codes as needed
+
+# Define the year
+year <- 2024
+curr.year <- 2024
+
+# Delete all existing data files before re-running
+unlink('./data', recursive=T)
+dir.create('data')
+```
+
+## CMM 2009-03 \[Swordfish\], Para 8 Report No. 2918
+
+```{r cmm200903}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql1;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+      SELECT  
+        vi.flag_id AS flag, 
+        YEAR(logdate) AS year,
+        COUNT(DISTINCT CASE WHEN RIGHT(lat, 1) = 'S' AND LEFT(lat, 2) >= '20' 
+            THEN t.vessel_id ELSE NULL END) AS vessels,
+        SUM(CASE WHEN c.sp_code = 'SWO' AND RIGHT(lat, 1) = 'S' 
+          AND LEFT(lat, 2) >= '20' THEN COALESCE(sp_n_est, sp_n) ELSE 0 END) AS swo_n,
+        SUM(CASE WHEN c.sp_code = 'SWO' AND RIGHT(lat, 1) = 'S' 
+          AND LEFT(lat, 2) >= '20' THEN COALESCE(sp_kg_est, sp_kg) ELSE 0 END) / 1000.0 AS swo_mt  -- Ensure float division
+      FROM log.trips_ll t
+      INNER JOIN log.sets_ll s ON t.log_trip_id = s.log_trip_id
+      INNER JOIN log.catch_ll c ON s.log_set_id = c.log_set_id
+      INNER JOIN ref.vessel_instances vi ON t.vessel_id = vi.vessel_id 
+        AND t.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      WHERE YEAR(logdate) <= %d
+        AND YEAR(logdate) >= %d - 2
+        AND vi.flag_id = '%s'
+        AND in_wcpfc_area = 1
+      GROUP BY vi.flag_id, YEAR(logdate)
+    ", year, year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+    # Convert swo_mt to numeric for precision
+    result$swo_mt <- round(as.numeric(result$swo_mt))
+    
+      fs::dir_create(path = paste0("data/",flag_code))
+      readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2009_03.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+```
+
+## Observer coverage
+
+```{r obs}
+connection_string <- "Driver={SQL Server};Server=nouesql6; Database=tufman2_dorado"
+
+# Establish the database connection
+con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+cc <- paste(shQuote(country_codes, type='sh'), collapse=',')
+
+#-- Step 1: Estimate from logbook
+obs.log = dbGetQuery(con, 
+    paste0("SELECT vi.flag_id,
+            Year(logdate) as year,
+            SUM(hooks_n)/100 as total_hhooks
+            FROM log.trips_ll t inner join log.sets_ll s on t.log_trip_id = s.log_trip_id 
+            inner join ref.vessel_instances vi on t.vessel_id = vi.vessel_id 
+              AND t.depart_date BETWEEN vi.start_date 
+              AND vi.calculated_end_date
+            WHERE year(logdate) = ",curr.year,"
+            and flag_id in (",cc,")
+            group by vi.flag_id,year(logdate)")  )
+
+
+execute_query <- function(flag_code,year) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql6; Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    sql_query <- 
+    sprintf("SELECT
+          flag_id AS vessel_flag,
+          gear AS gear_code,
+          year,
+          COUNT(DISTINCT vt.vms_trip_id) AS vms_trips,
+          SUM(vd.day_fishing) AS days_fishing,
+          SUM(vd.day_at_sea) AS days_at_sea
+        FROM vms.vms_trips vt
+        INNER JOIN vms.vms_trip_efforts vd 
+          ON vt.vms_trip_id = vd.vms_trip_id
+        INNER JOIN ref.vessel_instances vi 
+          ON vt.vessel_id = vi.vessel_id 
+          AND vt.departure_date BETWEEN vi.start_date AND vi.calculated_end_date
+        INNER JOIN ref.vessels v 
+          ON vt.vessel_id = v.vessel_id
+        WHERE gear = 'L'
+        AND eez_code <> 'IW'
+        AND (
+          YEAR(vt.departure_date) = %d
+          OR YEAR(vt.return_date) = %d
+          OR (YEAR(vt.departure_date) < %d  AND YEAR(vt.return_date) > %d )
+        )
+        AND flag_id = '%s'
+        GROUP BY flag_id, gear, year",year, year, year, year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(flag_code = code, year = year)
+})
+
+mapped_vms_trip = purrr::map_df(results_list, ~as.data.frame(.))
+
+#-- Step 2: Fetch Observer Data
+# Create a connection string
+
+ObsDat = c()
+
+for (i in country_codes){
+connection_string <- "Driver={SQL Server};Server=nouesql6; Database=tufman2_dorado"
+
+# Establish the database connection
+con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+
+ObserverData <- dbGetQuery(con,
+        paste0("SELECT 
+               v.flag_id,
+               COUNT(t.obstrip_id) AS obs_trips,
+               SUM(CASE WHEN data_status IN (263, 264) THEN 1 ELSE 0 END) AS trip_processed,
+               SUM(DATEDIFF(DAY, 
+                   CASE WHEN YEAR(dep_date) < ",year," THEN CAST(CAST(",year," AS CHAR(4)) + '-01-01' AS DATETIME) ELSE dep_date END, 
+                   CASE WHEN YEAR(ret_date) > ",year," THEN CAST(CAST(",year," AS CHAR(4)) + '-12-31' AS DATETIME) ELSE ret_date END) + 1
+               ) AS obs_sea_days,
+               MAX(x.fish_days) AS obs_fish_days,
+               MAX(x.hks_obsv)/100 AS hhooks_obsv
+          FROM obsv.trip t 
+          INNER JOIN ref.vessel_instances v 
+               ON t.vessel_id = v.vessel_id 
+               AND t.dep_date BETWEEN v.start_date AND v.calculated_end_date
+          LEFT JOIN (
+               SELECT 
+                   v.flag_id,
+                   COUNT(DISTINCT CASE WHEN YEAR(set_date) = ",year," THEN ls.l_set_id ELSE NULL END) AS fish_days,
+                   sum(coalesce(hook_observed,bask_observed*hk_bt_flt,0)) as    hks_obsv
+               FROM obsv.trip t 
+               INNER JOIN ref.vessel_instances v 
+                   ON t.vessel_id = v.vessel_id 
+                   AND t.dep_date BETWEEN v.start_date AND v.calculated_end_date
+               INNER JOIN obsv.l_set ls 
+                   ON t.obstrip_id = ls.obstrip_id
+               WHERE obsprg_code NOT LIKE '%EM' 
+               AND gear_code = 'L'
+               AND v.flag_id = '",i,"'
+               AND (
+                   YEAR(dep_date) = ",year," 
+                   OR YEAR(ret_date) = ",year," 
+                   OR (YEAR(dep_date) < ",year," AND YEAR(ret_date) > ",year,")
+               )
+               GROUP BY v.flag_id
+          ) x ON x.flag_id = v.flag_id
+          WHERE obsprg_code NOT LIKE '%EM'
+          AND gear_code = 'L'
+          AND v.flag_id = '",i,"'
+          AND (
+               YEAR(dep_date) = ",year," 
+               OR YEAR(ret_date) = ",year," 
+               OR (YEAR(dep_date) < ",year," AND YEAR(ret_date) > ",year,")
+          )
+          GROUP BY v.flag_id") )
+
+ObsDat = rbind(ObsDat, ObserverData)
+}
+
+#     -- Step 3: Generate Final Report
+obs.final <- 
+  mapped_vms_trip |> 
+  rename(flag_id = vessel_flag) |> 
+  left_join(ObsDat) |> 
+  left_join(obs.log) |> 
+  mutate(hhooks_obsv = ifelse(is.na(hhooks_obsv),0, hhooks_obsv),
+         hks_cov = round(hhooks_obsv/total_hhooks*100,digits = 0),
+         hks_cov = ifelse(is.na(hks_cov),0, hks_cov),
+         days_fishing = round(days_fishing),
+         obs_fish_days = ifelse(is.na(obs_fish_days),0,obs_fish_days),
+         fishday_cov = round(obs_fish_days/days_fishing*100,digits = 0),
+         fishday_cov = ifelse(is.na(fishday_cov),0,fishday_cov),
+         days_at_sea = round(days_at_sea),
+         obs_sea_days = ifelse(is.na(obs_sea_days),0,obs_sea_days),
+         sea_cov = round(obs_sea_days/days_at_sea*100,digits = 0),
+         sea_cov = ifelse(is.na(sea_cov),0, sea_cov),
+         obs_trips = ifelse(is.na(obs_trips),0,obs_trips),
+         trip_cov = round(obs_trips/vms_trips*100,digits = 0),
+         trip_cov = ifelse(is.na(trip_cov),0,trip_cov)) |> 
+  filter(year==curr.year, gear_code=='L', flag_id %in% country_codes) |> 
+  select(year, flag_id, gear_code,total_hhooks, hhooks_obsv, hks_cov, days_fishing, obs_fish_days, fishday_cov, days_at_sea, obs_sea_days,sea_cov, vms_trips, obs_trips, trip_cov) |> 
+  rename(flag=flag_id, gear=gear_code,hhooks = total_hhooks)
+
+
+for(i in obs.final$flag){
+  readr::write_csv(x = obs.final |> filter(flag==i),
+                   file =  paste0("data/",i,"/ObsCov.csv"))
+}    
+
+```
+
+## CMM 2011-03 \[Impact of PS fishing on cetaceans\],Para 5 Report No. 3222
+
+```{r cmm201103}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+      SELECT  
+        vi.flag_id AS flag,
+        CONVERT(VARCHAR(10), logdate, 103) AS date,
+        lat,
+        lon,
+        eez_code as eez,
+        sp.sp_name AS species,
+        CASE WHEN catch_ps.sp_n = 0 THEN 1 ELSE catch_ps.sp_n END AS number,
+        CASE WHEN discard = 1 THEN 'Released' ELSE 'Retained' END AS fate
+      FROM log.trips_ps trip_ps
+      INNER JOIN ref.vessel_instances vi 
+        ON trip_ps.vessel_id = vi.vessel_id AND trip_ps.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      INNER JOIN log.sets_ps set_ps ON set_ps.log_trip_id = trip_ps.log_trip_id
+      INNER JOIN log.catch_ps catch_ps ON catch_ps.log_set_id = set_ps.log_set_id
+      INNER JOIN ref.species sp ON sp.sp_code = catch_ps.sp_code
+      WHERE YEAR(logdate) = COALESCE(%d, YEAR(logdate))
+        AND vi.flag_id = COALESCE('%s', vi.flag_id)
+        AND sp.sp_cat_code = 'MAM'
+    ", year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+     fs::dir_create(path = paste0("data/",flag_code))
+     readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2011_03.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+
+```
+
+## CMM 2018-03 \[Seabirds\] Para 13 – Table X - USE AURELIENS QUERY
+
+```{r cmm201803x}
+
+# --1. Summarize effort in vessels and trips from VMS, by year and area
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, min_year, max_year) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+
+sql_query <- 
+paste0(
+      "SELECT eez.year, vi.flag_id, gear, COUNT(DISTINCT vi.vesselname) AS nb_vessel
+        FROM vms.vms_trips t
+        JOIN ref.vessel_instances vi ON vi.vessel_id = t.vessel_id 
+        AND return_date >= vi.start_date 
+        AND departure_date <= vi.calculated_end_date
+        JOIN ref.vessels v ON v.vessel_id = vi.vessel_id
+        JOIN vms.vms_trip_efforts eez ON eez.vms_trip_id = t.vms_trip_id 
+        WHERE day_fishing > 0
+        AND gear = 'L' 
+        AND vi.flag_id = '",flag_code,"'
+        AND eez.year between ",min_year," and ",max_year,"
+        GROUP BY eez.year, vi.flag_id, gear
+        ORDER BY eez.year, vi.flag_id, gear")
+
+result <- dbGetQuery(con, sql_query)
+
+     #fs::dir_create(path = paste0("data/",flag_code))
+     #readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2018_03_x_1.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, min_year=year-4, year)
+})
+
+
+mapped_table_x_1 = map_df(results_list, ~as.data.frame(.))
+
+# --2. Summarise effort in hundred hooks from logbook data, by year and area
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+sql_query <- 
+    paste0(
+    "SELECT	vi.flag_id,
+      Year(logdate) as year, 
+      --SUM(hooks_n) as hhooks,
+      SUM( case when latd < -30 then hooks_n else 0 end)/100 as hks_south_of_30s,
+      SUM(case when latd > 23  then hooks_n else 0 end)/100 as hks_north_of_23n,
+      SUM(case when latd between -30 and -25  then hooks_n else 0 end)/100 as hks_between_25s_30s,
+      SUM(case when latd between -25 and 23 then hooks_n else 0 end)/100 as hks_between_25s_23n
+      FROM log.trips_ll t inner join log.sets_ll s on t.log_trip_id = s.log_trip_id 
+      		inner join ref.vessel_instances vi on t.vessel_id = vi.vessel_id AND t.depart_date BETWEEN         
+      		vi.start_date AND vi.calculated_end_date
+      WHERE	year(logdate)	between year(getdate())-5 and year(getdate())-1
+      and vi.flag_id	= '",flag_code,"'
+      group by vi.flag_id,Year(logdate)")
+
+result <- dbGetQuery(con, sql_query)
+
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code)
+})
+
+mapped_table_x_2 = map_df(results_list, ~as.data.frame(.))
+
+# -- 3. Summarize observed effort in hundred hooks and seabird catches, by area and year
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- sprintf("Driver={SQL Server};Server=nouesql4;Database=OBSV_%s",flag_code)
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    
+  sql_query <- 
+    paste0("SELECT year(set_date) as year, vi.flag_id,
+        --	SUM(HOOK_OBSERVED) as hooks_observed,
+        --	SUM(coalesce(sc.brd_no,0)) as brd_no,
+        --	SUM(coalesce(sc.brd_no,0))*1.0/SUM(HOOK_OBSERVED)*1000 as capture_rate,
+        	SUM( case when sc.latd < -30 then sc.brd_no else 0 end) as south_of_30s,
+        	SUM( case when sh.latd < -30 then HOOK_OBSERVED else 0 end)/100 as hks_obs_south_of_30s,
+        	SUM(case when sc.latd > 23  then sc.brd_no else 0 end)/100 as north_of_23n,
+        	SUM(case when sh.latd > 23  then HOOK_OBSERVED else 0 end)/100 as hks_obs_north_of_23n,
+        	SUM(case when sc.latd between -30 and -25  then sc.brd_no else 0 end)/100 as between_25s_30s,
+        	SUM(case when sh.latd between -30 and -25  then HOOK_OBSERVED else 0 end) as 
+        	hks_obs_between_25s_30s,
+        	SUM(case when sc.latd between -25 and 23 then sc.brd_no else 0 end) as between_25s_23n,
+        	SUM(case when sh.latd between -25 and 23 then HOOK_OBSERVED else 0 end) as hks_obs_between_25s_23n
+         FROM    obsv.trip ot 
+                 JOIN obsv.l_set ls on ot.obstrip_id = ls.obstrip_id 
+        		 join obsv.l_sethaullog sh on sh.l_set_id = ls.l_set_id and stend_id=83
+        		 JOIN ref.vessel_instances vi on ot.vessel_id = vi.vessel_id AND ot.dep_date BETWEEN vi.start_date 
+        		 AND vi.calculated_end_date
+        		 LEFT JOIN (
+        			SELECT sc.l_set_id,latd,count(*) brd_no from obsv.l_setcatch sc
+        			JOIN ref.species sp on sc.sp_code = sp.sp_code
+        			JOIN obsv.l_set l on l.l_set_id = sc.l_set_id
+        			join obsv.l_sethaullog sh on sh.l_set_id = l.l_set_id and stend_id=83
+        			WHERE sp_cat_code = 'BRD'
+        			GROUP BY sc.l_set_id,latd) sc on sc.l_set_id = ls.l_set_id
+        WHERE year(set_date) between year(getdate())-5 and year(getdate())-1 
+        AND flag_id = '",flag_code,"'
+        GROUP BY year(set_date), vi.flag_id") 
+  
+result <- dbGetQuery(con, sql_query)
+
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code)
+})
+mapped_table_x_3 = map_df(results_list, ~as.data.frame(.))
+
+CMM2018_03_x <- 
+  mapped_table_x_2 |> 
+  left_join(mapped_table_x_1) |> 
+  left_join(mapped_table_x_3)
+
+# Function to execute the SQL query for a given country code
+
+write_tbl_x_by_flag <- function(flag_code) {
+  tryCatch({
+    
+    result <- CMM2018_03_x |> 
+      filter(flag_id == flag_code)
+
+
+     fs::dir_create(path = paste0("data/",flag_code))
+     readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2018_03_x.csv"))
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+purrr::map(.x = country_codes,.f = ~write_tbl_x_by_flag(flag_code = .x))
+
+  
+
+
+```
+## CMM 2018-03 \[Seabirds\] Para 13 – Table y Report No. 3315
+
+Run the provided SQL query in R, you can use the `DBI` and `odbc` packages to connect to the database and execute the query.
+
+Below is an R script that dynamically loops over a list of country codes, connects to the appropriate database, and runs the query for each country code.
+
+### R Script
+
+### Explanation:
+
+1.  **Country Codes**: The script loops over a list of country codes (`country_codes`). You can modify this list as needed.
+2.  **Dynamic Connection**: The connection string is dynamically created based on the `flag_code`.
+3.  **Query Execution**: The SQL query is executed for each country code using `dbGetQuery`.
+4.  **Results**: The results for each country are stored in a list and combined into a single data frame at the end.
+
+```{r cmm201803y}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  # Create a connection string (generic connection, no database specified)
+  connection_string <- "Driver={SQL Server};Server=nouesql4;Trusted_Connection=yes;"
+  
+  # Establish the database connection
+  con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+  
+  # Define the SQL query with fully qualified table names
+  sql_query <- sprintf("
+    SELECT 
+      year, fleet, total_sets, reqs, mitigation,
+      s30s, 
+      round(s30s * 100.0 / NULLIF(SUM(s30s) OVER (PARTITION BY year, fleet),0),1) AS s30s_pct,
+      b25s_30s, 
+      round(b25s_30s * 100.0 / NULLIF(SUM(b25s_30s) OVER (PARTITION BY year, fleet),0),1) AS b25s_30s_pct,
+      b25s_23n, 
+      round(b25s_23n * 100.0 / NULLIF(SUM(b25s_23n) OVER (PARTITION BY year, fleet),0),1) AS b25s_23n_pct,
+      n23n, 
+      round(n23n * 100.0 / NULLIF(SUM(n23n) OVER (PARTITION BY year, fleet),0),1) AS n23n_pct
+    FROM (
+      SELECT
+        t1.year,
+        t1.flag_id AS fleet,
+        COUNT(*) total_sets,
+        CASE 
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'TL NS' THEN '1. Options required south of 25S'
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'TL WB' THEN '1. Options required south of 25S'
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'NS WB' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'TL WB NS' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'HS' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'WB' THEN '2. Other options 25S-30S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'TL' THEN '2. Other options 25S-30S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB DSL' THEN '3. Other options north of 23N'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB MOD' THEN '3. Other options north of 23N'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB BDB' THEN '3. Other options north of 23N'
+          ELSE '4. Other combination'
+        END AS reqs,
+        COALESCE(NULLIF(TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS, ''), 'No Mitigation') AS mitigation,
+        SUM(CASE WHEN area = 'South of 30S' THEN 1 ELSE 0 END) AS s30s,
+        SUM(CASE WHEN area = '25S-30S' THEN 1 ELSE 0 END) AS b25s_30s,
+        SUM(CASE WHEN area = '25S-23N' THEN 1 ELSE 0 END) AS b25s_23n,
+        SUM(CASE WHEN area = 'North of 23N' THEN 1 ELSE 0 END) AS n23n
+      FROM (
+        SELECT 
+          YEAR(dep_date) AS year,
+          flag_id,
+          ls.l_set_id,
+          CASE WHEN COALESCE(tori_poles_yn, 0) = 1 THEN 'TL ' ELSE '' END AS TL,
+          CASE WHEN (DATEPART(hh, set_dtime) >= 18 OR DATEPART(hh, set_dtime) <= 4) THEN 'NS ' ELSE '' END AS NS,
+          CASE WHEN COALESCE(weighted_lines_yn, 0) = 1 THEN 'WB ' ELSE '' END AS WB,
+          '' AS HS,
+          '' AS SS,
+          CASE WHEN COALESCE(bird_curtain_yn, 0) = 1 THEN 'BC ' ELSE '' END AS BC,
+          CASE WHEN COALESCE(underwater_chute_yn, 0) = 1 THEN 'DSLS ' ELSE '' END AS DSLS,
+          CASE WHEN (coalesce(offal_discharged_yn,0) = 1 and coalesce(offal_opposite_yn,0) = 1) or (coalesce(offal_discharged_yn,0) = 0 and coalesce(offal_opposite_yn,0) = 0) then 'MOD ' else '' end AS MOD,
+          CASE WHEN COALESCE(bait1_dyed_ans, 0) = 1 OR COALESCE(bait2_dyed_ans, 0) = 1 OR COALESCE(bait3_dyed_ans, 0) = 1 OR COALESCE(bait4_dyed_ans, 0) = 1 OR COALESCE(bait5_dyed_ans, 0) = 1 THEN 'BDB ' ELSE '' END AS BDB,
+          CASE 
+            WHEN latd < -30 THEN 'South of 30S'
+            WHEN latd BETWEEN -30 AND -25 THEN '25S-30S'
+            WHEN latd BETWEEN -25 AND 23 THEN '25S-23N'
+            WHEN latd > 23 THEN 'North of 23N'
+          END AS area
+        FROM [OBSV_%s].[obsv].[trip] ot  -- Fully qualified table name
+        JOIN [OBSV_%s].[ref].[vessel_instances] v ON ot.vessel_id = v.vessel_id AND ot.dep_date BETWEEN v.start_date AND v.calculated_end_date
+        JOIN [OBSV_%s].[obsv].[l_set] ls ON ot.obstrip_id = ls.obstrip_id
+        LEFT JOIN [OBSV_%s].[obsv].[l_sethaullog] hl ON hl.l_set_id = ls.l_set_id AND stend_id = 83
+        LEFT JOIN [OBSV_%s].[obsv].[l_gear] g ON g.obstrip_id = ot.obstrip_id
+        WHERE latd IS NOT NULL
+          AND YEAR(dep_date) = COALESCE(%d, YEAR(dep_date))
+          AND flag_id = COALESCE('%s', flag_id)
+      ) t1
+      GROUP BY t1.year, flag_id, area, COALESCE(NULLIF(TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS, ''), 'No Mitigation'),
+        CASE 
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'TL NS' THEN '1. Options required south of 25S'
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'TL WB' THEN '1. Options required south of 25S'
+          WHEN TL + NS + WB + SS + BC + BDB + DSLS + MOD + HS = 'NS WB' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'TL WB NS' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'HS' THEN '1. Options required south of 25S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'WB' THEN '2. Other options 25S-30S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'TL' THEN '2. Other options 25S-30S'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB DSL' THEN '3. Other options north of 23N'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB MOD' THEN '3. Other options north of 23N'
+          WHEN TL + WB + NS + SS + BC + BDB + DSLS + MOD + HS = 'SS BC WB BDB' THEN '3. Other options north of 23N'
+          ELSE '4. Other combination'
+        END
+    ) t
+  ", flag_code, flag_code, flag_code, flag_code, flag_code, year, flag_code)
+  
+  # Execute the query
+  result <- dbGetQuery(con, sql_query)
+  
+  # Close the connection
+  dbDisconnect(con)
+  
+  fs::dir_create(path = paste0("data/",flag_code))
+  readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2018_03_y.csv"))
+  
+  # Return the result
+  return(result)
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+mapped_table_y = map_df(results_list, ~as.data.frame(.))
+
+
+# write.csv(final_results, "final_results.csv", row.names = FALSE)
+```
+
+### CMM 2018-03 \[Seabirds\] Para 13 – Table z
+
+### Key Features of the Script
+
+1.  **Dynamic Country Codes**:
+    -   The script loops over a list of country codes (`country_codes`).
+    -   For each country code, it dynamically generates and executes the SQL query.
+2.  **Fully Qualified Table Names**:
+    -   The table names in the query are fully qualified with the schema name (e.g., `[obsv].[trip]`).
+    -   This ensures the query runs against the correct database and schema.
+3.  **Error Handling**:
+    -   The `tryCatch` block ensures that errors (e.g., invalid country codes or database issues) are caught and logged without stopping the script.
+4.  **Dynamic Year Filter**:
+    -   The query filters data for the specified year (`year`).
+5.  **Results Aggregation**:
+    -   Results for each country code are stored in a list and combined into a single data frame at the end.
+
+### Example Output
+
+For each country code, the script will return a data frame with the following columns: - `year`: The year of the catch. - `species`: The name of the species. - `birds_below_30S`: The number of birds caught below 30°S. - `birds_between_25and30S`: The number of birds caught between 25°S and 30°S. - `birds_between_23N_and_25S`: The number of birds caught between 23°N and 25°S. - `birds_above_23N`: The number of birds caught above 23°N. - `total_number`: The total number of birds caught.
+
+```{r cmm201803z}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql4;Trusted_Connection=yes;"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+      SELECT         
+        YEAR(sc.catch_date) AS year,
+        sp.sp_name AS species,
+        CAST(SUM(CASE WHEN latd < -30 THEN 1 ELSE 0 END) AS INT) AS south30S,
+        CAST(SUM(CASE WHEN latd < -25 AND latd >= -30 THEN 1 ELSE 0 END) AS INT) AS b25S_30S,
+        CAST(SUM(CASE WHEN latd <= 23 AND latd >= -25 THEN 1 ELSE 0 END) AS INT) AS b23N_25S,
+        CAST(SUM(CASE WHEN latd > 23 THEN 1 ELSE 0 END) AS INT) AS north23N,    
+        COUNT(*) AS total
+      FROM [OBSV_%s].[obsv].[trip] ot
+      INNER JOIN [OBSV_%s].[ref].[vessel_instances] v 
+        ON ot.vessel_id = v.vessel_id AND ot.dep_date BETWEEN v.start_date AND v.calculated_end_date
+      INNER JOIN [OBSV_%s].[obsv].[l_set] sd ON ot.obstrip_id = sd.obstrip_id
+      INNER JOIN [OBSV_%s].[obsv].[l_sethaullog] sa ON sd.l_set_id = sa.l_set_id AND sa.stend_id = 83
+      INNER JOIN [OBSV_%s].[obsv].[l_setcatch] sc ON sc.l_set_id = sd.l_set_id
+      INNER JOIN [OBSV_%s].[ref].[species] sp ON sc.sp_code = sp.sp_code
+      WHERE YEAR(sc.catch_date) = COALESCE(%d, YEAR(sc.catch_date))
+        AND ot.gear_code = 'L'
+        AND flag_id = COALESCE('%s', flag_id)
+        AND sp.sp_cat_code = 'BRD'
+      GROUP BY YEAR(sc.catch_date), sp.sp_name
+    ",flag_code,flag_code,flag_code,flag_code,flag_code,flag_code, year,flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+     fs::dir_create(path = paste0("data/",flag_code))
+     readr::write_csv(x = result,file =  paste0("data/",flag_code,"/CMM2018_03_z.csv"))
+    
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+mapped_table_z = map_df(results_list, ~as.data.frame(.))
+
+
+
+```
+
+### CMM 2006-04 \[South West Striped Marlin\] Para 4
+
+```{r cmm200604}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string (generic connection, no database specified)
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+    SELECT
+      vi.flag_id AS flag, 
+        YEAR(logdate) AS year,
+        COUNT(DISTINCT CASE WHEN RIGHT(lat, 1) = 'S' AND LEFT(lat, 2) >= '15' THEN t.vessel_id ELSE NULL END) AS vessels,
+        SUM(CASE WHEN c.sp_code = 'MLS' AND RIGHT(lat, 1) = 'S' AND LEFT(lat, 2) >= '15' THEN COALESCE(sp_n_est, sp_n) ELSE 0 END) AS num,
+        round(SUM(CASE WHEN c.sp_code = 'MLS' AND RIGHT(lat, 1) = 'S' AND LEFT(lat, 2) >= '15' THEN COALESCE(sp_kg_est, sp_kg) ELSE 0 END) / 1000.0,0) AS kg  -- Ensure float division
+      FROM log.trips_ll t 
+      INNER JOIN log.sets_ll s ON t.log_trip_id = s.log_trip_id 
+      INNER JOIN log.catch_ll c ON s.log_set_id = c.log_set_id 
+      INNER JOIN ref.vessel_instances vi 
+        ON t.vessel_id = vi.vessel_id AND t.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      WHERE YEAR(logdate) <= %d
+        AND YEAR(logdate) >= %d - 2
+        AND vi.flag_id = '%s'
+      GROUP BY vi.flag_id, YEAR(logdate)", 
+      year, year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+    # Convert kg to numeric for precision
+    result$kg <- as.numeric(result$kg)
+    
+    # Save results
+    dir_path <- paste0("data/", flag_code)
+    fs::dir_create(path = dir_path)
+    readr::write_csv(x = result, file = paste0(dir_path, "/CMM2006_04.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+
+```
+
+### CMM 2015-02 \[South Pacific Albacore\] Para 4
+
+```{r cmm201502}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+       SELECT  
+        'L' AS gear,
+        vi.flag_id AS flag, 
+        YEAR(logdate) AS year,
+        COUNT(DISTINCT CASE WHEN RIGHT(lat, 1) = 'S' THEN CAST(t.vessel_id AS VARCHAR(50)) ELSE NULL END) AS vessels,
+        COUNT(DISTINCT CASE WHEN RIGHT(lat, 1) = 'S' AND l_activity_id IN (1) 
+            THEN CONCAT(CAST(t.vessel_id AS VARCHAR(50)), CAST(logdate AS VARCHAR(20))) 
+            ELSE NULL END) AS days,
+        SUM(CASE WHEN c.sp_code = 'ALB' AND RIGHT(lat, 1) = 'S' THEN COALESCE(sp_n_est, sp_n) ELSE 0 END) AS n,
+        round(SUM(CASE WHEN c.sp_code = 'ALB' AND RIGHT(lat, 1) = 'S' 
+                  THEN COALESCE(CAST(sp_kg_est AS DECIMAL(18,6)), CAST(sp_kg AS DECIMAL(18,6))) 
+                  ELSE 0 END) / 1000.0,0) AS mt -- Ensure precise decimal division
+      FROM log.trips_ll t 
+      INNER JOIN log.sets_ll s ON t.log_trip_id = s.log_trip_id 
+      INNER JOIN log.catch_ll c ON s.log_set_id = c.log_set_id 
+      INNER JOIN ref.vessel_instances vi 
+        ON t.vessel_id = vi.vessel_id AND t.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      WHERE YEAR(logdate) <= %d
+        AND YEAR(logdate) >= %d - 4
+        AND vi.flag_id = '%s'
+        AND RIGHT(lat,1) = 'S'
+        AND LEFT(lat,2) >= '20'
+      GROUP BY vi.flag_id, YEAR(logdate)", 
+      year, year, flag_code)
+  
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+    # Convert mt to numeric for precision
+    result$mt <- as.numeric(result$mt)
+    
+    
+    # Save results
+    dir_path <- paste0("data/", flag_code)
+    fs::dir_create(path = dir_path)
+    readr::write_csv(x = result, file = paste0(dir_path, "/CMM2015_02.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+
+
+```
+
+### CMM 2019-03 \[North Pacific Albacore\] Para 4
+
+```{r cmm201903}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Database=tufman2_dorado"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+      SELECT  
+        'L' AS gear,
+        vi.flag_id AS flag, 
+        YEAR(logdate) AS year,
+        COUNT(DISTINCT CASE 
+            WHEN RIGHT(lat, 1) = 'N' THEN CAST(t.vessel_id AS VARCHAR(50)) 
+            ELSE NULL END) AS vessels,
+        COUNT(DISTINCT CASE 
+            WHEN RIGHT(lat, 1) = 'N' AND l_activity_id IN (1) 
+            THEN CONCAT(CAST(t.vessel_id AS VARCHAR(50)), CAST(logdate AS VARCHAR(20))) 
+            ELSE NULL END) AS days,
+        SUM(CASE 
+            WHEN c.sp_code = 'ALB' AND RIGHT(lat, 1) = 'N' 
+            THEN COALESCE(sp_n_est, sp_n) 
+            ELSE 0 END) AS n,
+        CAST(SUM(CASE 
+            WHEN c.sp_code = 'ALB' AND RIGHT(lat, 1) = 'N' 
+            THEN COALESCE(sp_kg_est * 1.0, sp_kg * 1.0) 
+            ELSE 0 END) / 1000.0 AS DECIMAL(10,3)) AS mt
+      FROM log.trips_ll t 
+      INNER JOIN log.sets_ll s ON t.log_trip_id = s.log_trip_id 
+      INNER JOIN log.catch_ll c ON s.log_set_id = c.log_set_id 
+      INNER JOIN ref.vessel_instances vi 
+        ON t.vessel_id = vi.vessel_id 
+        AND t.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      WHERE YEAR(logdate) <= COALESCE(%d, YEAR(logdate))
+        AND YEAR(logdate) >= COALESCE(%d, YEAR(logdate)) - 4
+        AND vi.flag_id = '%s'
+        AND RIGHT(lat,1) = 'N'
+        AND LEFT(lat,2) >= '20'
+      GROUP BY vi.flag_id, YEAR(logdate)", 
+      year, year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+    # Ensure WeightCaught is properly formatted with 3 decimal places
+    result$mt <- round(as.numeric(result$mt), 0)
+    
+    # Save results
+    dir_path <- paste0("data/", flag_code)
+    fs::dir_create(path = dir_path)
+    readr::write_csv(x = result, file = paste0(dir_path, "/CMM2019_03.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+
+```
+
+### CMM 2023-03 \[North Pacific Swordfish\] Para 4
+
+```{r cmm202303}
+#| message: false 
+#| warning: false
+
+
+# Function to execute the SQL query for a given country code
+execute_query <- function(flag_code, year) {
+  tryCatch({
+    # Create a connection string
+    connection_string <- "Driver={SQL Server};Server=nouesql6;Trusted_Connection=yes;"
+    
+    # Establish the database connection
+    con <- dbConnect(odbc::odbc(), .connection_string = connection_string)
+    
+    # Define the SQL query with fully qualified table names
+    sql_query <- sprintf("
+      SELECT  
+        vi.flag_id AS flag, 
+        YEAR(logdate) AS year,
+        COUNT(DISTINCT CASE 
+            WHEN RIGHT(lat, 1) = 'N' AND LEFT(lat, 2) >= '20' 
+            THEN t.vessel_id 
+            ELSE NULL END) AS vessels,
+        SUM(CASE 
+            WHEN c.sp_code = 'SWO' AND RIGHT(lat, 1) = 'N' AND LEFT(lat, 2) >= '20' 
+            THEN COALESCE(sp_n_est, sp_n) 
+            ELSE 0 END) AS swo_n,
+        CAST(SUM(CASE 
+            WHEN c.sp_code = 'SWO' AND RIGHT(lat, 1) = 'N' AND LEFT(lat, 2) >= '20' 
+            THEN COALESCE(sp_kg_est, sp_kg) 
+            ELSE 0 END) / 1000.0 AS DECIMAL(10,3)) AS swo_mt
+      FROM [tufman2_dorado].[log].[trips_ll] t 
+      INNER JOIN [tufman2_dorado].[log].[sets_ll] s ON t.log_trip_id = s.log_trip_id 
+      INNER JOIN [tufman2_dorado].[log].[catch_ll] c ON s.log_set_id = c.log_set_id 
+      INNER JOIN [tufman2_dorado].[ref].[vessel_instances] vi 
+        ON t.vessel_id = vi.vessel_id 
+        AND t.FIRST_LOGDATE BETWEEN vi.start_date AND vi.calculated_end_date
+      WHERE YEAR(logdate) <= COALESCE(%d, YEAR(logdate))
+        AND YEAR(logdate) >= COALESCE(%d, YEAR(logdate)) - 4
+        AND vi.flag_id = '%s'
+        AND in_wcpfc_area = 1
+      GROUP BY vi.flag_id, YEAR(logdate)", 
+      year, year, flag_code)
+    
+    # Execute the query
+    result <- dbGetQuery(con, sql_query)
+    
+    # Ensure SWO_mt is properly formatted with 3 decimal places
+    result$swo_mt <- round(as.numeric(result$swo_mt), 0)
+    
+    # Save results
+    dir_path <- paste0("data/", flag_code)
+    fs::dir_create(path = dir_path)
+    readr::write_csv(x = result, file = paste0(dir_path, "/CMM2023_03.csv"))
+    
+    # Close the connection
+    dbDisconnect(con)
+    
+    # Return the result
+    return(result)
+  }, error = function(e) {
+    cat("Error processing country code:", flag_code, "\n")
+    cat("Error message:", e$message, "\n")
+    return(NULL)
+  })
+}
+
+# Loop over each country code and execute the query
+results_list <- lapply(country_codes, function(code) {
+  cat("Processing country code:", code, "\n")
+  execute_query(code, year)
+})
+
+
+```

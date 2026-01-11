@@ -7,6 +7,12 @@ library("processx")
 library("dotenv")
 library("jsonlite")
 
+# Custom functions
+# -- lazy for as.numeric()
+an = function(x) as.numeric(x)
+# -- "not in" function
+'%nin%' <- function(x, y) !(x %in% y)
+
 load_dot_env(file = ".env")
 
 # function to generate a token
@@ -98,6 +104,10 @@ process_country_data <- function(country_code,
   # Create data folder if it doesn't exist
   this_yr_folder <- paste0("./data/report_", r_year, "_", tolower(country_code), "/")
   dir.create(this_yr_folder, showWarnings = FALSE, recursive = TRUE)
+  dir.create(paste0(this_yr_folder, "/additional_files"), showWarnings = FALSE, recursive = TRUE)
+  
+  dir.create("./data/", showWarnings = FALSE, recursive = TRUE)
+  
   
   # Get all report file names
   report_files <- paste0(tolower(country_code), "_", report_ids, ".csv")
@@ -182,7 +192,8 @@ download_report_data <- function(token,
                                          country_code, 
                                          user_name, 
                                          overwrite = overwrite,
-                                         save_folder = this_yr_folder)
+                                         save_folder = save_folder,
+                                         list_reports = filtered_reports)
   
   # select key reports
   reports_selection <- all_reports |>
@@ -197,7 +208,7 @@ download_report_data <- function(token,
     attrs = attrs,
     record_current_date = record_current_date,
     overwrite = overwrite,
-    save_folder = this_yr_folder
+    save_folder = save_folder
   )         
   
 }
@@ -207,7 +218,8 @@ get_list_of_t2_reports <- function(token,
                                    country_code, 
                                    user_name, 
                                    overwrite = FALSE,
-                                   save_folder = "data/"){
+                                   save_folder = "data/",
+                                   list_reports = c("all")){
   
   if (overwrite){
     filename_csv <- paste0(save_folder, "/list_of_t2_reports_", tolower(country_code), ".csv")
@@ -245,6 +257,12 @@ get_list_of_t2_reports <- function(token,
   
   all_reports <- fromJSON(result_reports$stdout) |>
     select(Guid, 1:9, OptionLabels, LastModifiedDateTime)
+
+  # if only certain reports were requested, retrieve only those ones
+  if (!("all" %in% list_reports && length(list_reports) == 1)){
+    all_reports <- all_reports |>
+      filter(UserReportId %in% list_reports)
+  }
   
   # Get reports attributes and combine with full list of reports ####
   attributes_per_report <- data.frame()
@@ -455,3 +473,37 @@ data_wrangling <- function(df, report_id){
   return(ret)
 }
 
+# Function to safely read a CSV file, returning empty data if file doesn't exist
+read_csv <- function(path) {
+  if (file.exists(path)) {
+    read.csv(path)
+  } else {
+    message(paste("File not found:", path))
+    # Return an empty data frame
+    data.frame()
+  }
+}
+
+read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TRUE){
+  
+  if (t2_dataset){
+    data <- read_csv(str_c(this_yr_folder, country_code, "_", r_code, ".csv"))
+    
+    if (nrow(data) > 0) {
+      
+      data <- data |>
+        data_wrangling(report_id = r_code) 
+      
+      if("yr" %in% colnames(data)){
+        data <- data |>
+          rename(year = yr)
+      }
+    }
+    
+  }else{
+    data <- read_csv(str_c(this_yr_folder, "additional_files/", r_code, ".csv"))
+  }
+  
+
+  return(data)
+}

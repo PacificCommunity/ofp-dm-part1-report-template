@@ -40,39 +40,6 @@ this_yr_folder = params$country_folder
 
 options(scipen=0, knitr.kable.NA = '')
 
-# Custom functions
-# -- lazy for as.numeric()
-an = function(x) as.numeric(x)
-# -- "not in" function
-'%nin%' <- function(x, y) !(x %in% y)
-
-# Function to safely read a CSV file, returning empty data if file doesn't exist
-read_csv <- function(path) {
-  if (file.exists(path)) {
-    read.csv(path)
-  } else {
-    message(paste("File not found:", path))
-    # Return an empty data frame
-    data.frame()
-  }
-}
-
-read_and_clean <- function(this_yr_folder, country_code, r_code){
-  data <- read_csv(str_c(this_yr_folder, country_code, "_", r_code, ".csv"))
-
-  if (nrow(data) > 0) {
-    
-    data <- data |>
-      data_wrangling(report_id = r_code) 
-    
-    if("yr" %in% colnames(data)){
-      data <- data |>
-      rename(year = yr)
-    }
-  }
-    return(data)
-}
-
 ```
 
 
