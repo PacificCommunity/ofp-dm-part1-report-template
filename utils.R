@@ -97,16 +97,15 @@ process_country_data <- function(country_code,
                                  report_ids, 
                                  rewrite_files = FALSE,
                                  user_name = Sys.getenv("USER_NAME"),
-                                 overwrite = FALSE) {
+                                 overwrite = TRUE) {
   
   print(country_code)
-  
-  # Create data folder if it doesn't exist
+
   this_yr_folder <- paste0("./data/report_", r_year, "_", tolower(country_code), "/")
+  dir.create("./reports", showWarnings = FALSE, recursive = TRUE)
   dir.create(this_yr_folder, showWarnings = FALSE, recursive = TRUE)
   dir.create(paste0(this_yr_folder, "/additional_files"), showWarnings = FALSE, recursive = TRUE)
-  
-  dir.create("./data/", showWarnings = FALSE, recursive = TRUE)
+  # dir.create("./data/", showWarnings = FALSE, recursive = TRUE) # I think this is not needed, check
   
   
   # Get all report file names
@@ -507,3 +506,74 @@ read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TR
 
   return(data)
 }
+
+build_reports <- function(country_codes, 
+                          max_year,
+                          author, 
+                          reports = c("addendum", "part1", "artisinal")){
+  
+  for (country_code in country_codes){
+    
+    country_folder = paste0("./data/report_", as.character(r_year),"_", tolower(country_code), "/")
+    
+    
+    if ("part1" %in% reports){
+      params_part1 <- list(
+        country_code = country_code,
+        year = r_year,
+        author = report_author
+      )
+      
+      # define output filenames
+      output_filename_part1 = paste0("part1_report_", tolower(country_code), "_", r_year, ".pdf")
+      
+      
+      # Render the document with parameters
+      quarto_render(
+        input = "template_part1_test.qmd",
+        execute_params = params_part1,
+        output_file = output_filename_part1
+      )
+      
+      file.rename(
+        from = output_filename_part1,
+        to = file.path("./reports", output_filename_part1)
+      )
+      
+      
+      
+    }
+    
+    if ("addendum" %in% reports){
+      
+      # Define parameters for each report
+      params_addendum <- list(
+        country_code = country_code,
+        country_folder = country_folder,
+        max_year = r_year,
+        author = report_author
+      )
+        
+      output_filename_addendum = paste0("addendum_report_", tolower(country_code), "_", r_year, ".docx")
+        
+      # Render the document with parameters
+      quarto_render(
+        input = "template_addendum_test.qmd",
+        execute_params = params_addendum,
+        output_file = output_filename_addendum
+      )
+      
+      # Move the rendered file to the reports directory
+      file.rename(
+        from = output_filename_addendum,
+        to = file.path("./reports", output_filename_addendum)
+      )
+      
+    }
+    
+    if ("artisinal" %in% reports){
+      cat("TODO artisinal template")
+    }
+  }
+  return(list(reports))
+  }
