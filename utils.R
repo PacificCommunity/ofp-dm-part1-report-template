@@ -507,6 +507,25 @@ read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TR
   return(data)
 }
 
+safe_read_and_clean <- function(folder, country, r_code, post_process = NULL) {
+  tryCatch({
+    data <- read_and_clean(folder, country, r_code = r_code) |>
+      mutate(across(where(is.character), tolower)) |>
+      filter(year %in% yrs_long)
+    
+    # Apply any additional post-processing if provided
+    if (!is.null(post_process)) {
+      data <- post_process(data)
+    }
+    
+    return(data)
+  }, error = function(e) {
+    message(paste0("Warning: Could not load data for r_code ", r_code, ". Creating empty tibble."))
+    message(paste0("Error details: ", e$message))
+    return(data.frame())
+  })
+}
+
 build_reports <- function(country_codes, 
                           max_year,
                           author, 
