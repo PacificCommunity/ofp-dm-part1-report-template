@@ -16,6 +16,7 @@ library("knitr")
 library("scales")
 library("maps")
 library("sf")
+library("janitor")
 source("utils.R")
 
 # Step 2: Define params - check if data and files exist, if not, create it ####
