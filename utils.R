@@ -105,8 +105,6 @@ process_country_data <- function(country_code,
   dir.create("./reports", showWarnings = FALSE, recursive = TRUE)
   dir.create(this_yr_folder, showWarnings = FALSE, recursive = TRUE)
   dir.create(paste0(this_yr_folder, "/additional_files"), showWarnings = FALSE, recursive = TRUE)
-  # dir.create("./data/", showWarnings = FALSE, recursive = TRUE) # I think this is not needed, check
-  
   
   # Get all report file names
   report_files <- paste0(tolower(country_code), "_", report_ids, ".csv")

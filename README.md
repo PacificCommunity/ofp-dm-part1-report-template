@@ -29,5 +29,23 @@ These attributes will be used to:
    ```
 3. Ensure there's an empty line at the end of the `.env` file
 4. **Important**: Never commit the `.env` file to version control
+5. Open script main.R and make sure all packages are installed
+6. Run main.R - this will "download" all T2 data required for Part 1 as well as
+generate Part 1, addendum and artisinal reports
 
+# T2 data and data presented in reports
+
+All tables, figures and maps presented in the report are based on data available
+in T2 reports.
+
+Below we specify the data source for each result displayed in the reports
+(ie.: which T2 report is used to produce each of the graphs, figures and maps in 
+the reports).
+
+## Part 1
+
+## Addendum
+
+
+## Artisinal
 
