@@ -1,27 +1,11 @@
 # Step 1: Load libraries ####
+
 rm(list = ls())
-# install.packages("sf") # recommended when using RCloud
-library("readr")
-library("quarto")
-library("tidyverse")
-library("tidyr")
-library("viridis")
-library("data.table")
-library("stringr")
-library("processx")
-library("dotenv")
-library("jsonlite")
-library("flextable")
-library("knitr")
-library("scales")
-library("maps")
-library("sf")
-library("janitor")
 source("utils.R")
 
 # Step 2: Define params - check if data and files exist, if not, create it ####
-country_codes = c("FJ", "VU", "SB", "KI") 
-# c("CK", "FJ", "FM", "KI", "MH", "NC", "NR", "NU", "PF", "PG", "PW", "SB", "TK", "TO", "TV")
+
+country_codes = c("FJ")   # options = c("CK", "FJ", "FM", "KI", "MH", "NC", "NR", "NU", "PF", "PG", "PW", "SB", "TK", "TO", "TV")
 r_year = 2024                                             
 r_5yr_ago = r_year - 4
 report_ids = c(
@@ -31,11 +15,8 @@ report_ids = c(
                                                                       # Ikasavea - in the future
                )
 
-# report_ids = c(3317, 3315, 3314, 3513)
 report_author = "Jessica LS"
-rewrite_files = TRUE # set this to TRUE if you want to make sure the data is updated,
-                      # otherwise, it will load the T2 reports you already have  
-                      # saved in your data/ folder (if any).
+rewrite_files = FALSE # set this to TRUE if you want to make sure the data is updated.
 
 # Step 3: Loop through the countries to check if all data is available in your computer ####
 for (country_code in country_codes) {

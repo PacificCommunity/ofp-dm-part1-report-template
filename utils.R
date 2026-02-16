@@ -1,3 +1,6 @@
+# install.packages("sf") # recommended when using RCloud
+library("readr")
+library("quarto")
 library("tidyverse")
 library("tidyr")
 library("viridis")
@@ -6,6 +9,12 @@ library("stringr")
 library("processx")
 library("dotenv")
 library("jsonlite")
+library("flextable")
+library("knitr")
+library("scales")
+library("maps")
+library("sf")
+library("janitor")
 
 # Custom functions
 # -- lazy for as.numeric()
