@@ -173,14 +173,6 @@ Describe recent activities by national fleets (by gear type) in the Convention A
 # Load all raw data - from t2
 data_2953 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 2953)
 
-data_3063 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3063)
-
-data_3153 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3153)
-
-data_3155 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3155)
-
-data_3040 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3040)
-
 data_3168 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3168)
 
 data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
@@ -460,7 +452,7 @@ render_ssi_table <- function(data, gear_code, gear_name, intro_text = NULL) {
 ```  
 
 
-```{r}
+```{r-3-ps-tbl-ace}
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1s
@@ -478,7 +470,7 @@ render_gear_tbl_section3(
 )
 ```
 
-```{r}
+```{r-3-ll-tbl-ace}
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1l
@@ -494,7 +486,7 @@ render_gear_tbl_section3(
 )
 ```
 
-```{r}
+```{r-3-pl-tbl-ace}
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1pl
@@ -511,7 +503,7 @@ render_gear_tbl_section3(
 ```
 
 \newpage
-```{r}
+```{r-3-ll-hist_ace}
 #| echo: false
 #| results: 'asis'
 #| fig-pos: 'H'
@@ -533,7 +525,7 @@ render_gear_figs_section3(
 
 \newpage
 
-```{r}
+```{r-3-ps-hist_ace}
 #| echo: false
 #| results: 'asis'
 #| fig-pos: 'H'
@@ -555,7 +547,7 @@ render_gear_figs_section3(
 
 \newpage
 
-```{r}
+```{r-3-pl-hist_ace}
 #| echo: false
 #| results: 'asis'
 #| fig-pos: 'H'
@@ -578,7 +570,7 @@ render_gear_figs_section3(
 \newpage
 ## Historical annual vessel numbers for the national fleet
 
-```{r}
+```{r-3-hist_annual_vessels}
 #| label: fig-fig2
 #| fig-pos: 'H'
 #| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area") else ""
@@ -625,7 +617,7 @@ ggplot(ves_calcs, aes(x = year, y = Vessels, colour = gear)) +
 \newpage
 ## Number of active vessels by gear and size category over recent years
 
-```{r}
+```{r-3-data-prep-active_vessels}
 
 #| echo: false
 
@@ -680,7 +672,7 @@ pl_size_fn <- function(data) {
 
 ```
 
-```{r}
+```{r-3-ll-tbl-active_vessels}
 #| label: tbl-tbl2-longline
 #| tbl-cap: !expr if(nrow(ves_raw |> filter(gear_code == "l")) > 0) glue::glue("Number of {country_name} longline vessels, by size category, active in the WCPFC Convention Area, over {yr_range}") else ""
 #| echo: false
@@ -694,7 +686,7 @@ render_vessel_table(
 )
 ```
 
-```{r}
+```{r-3-ps-tbl-active_vessels}
 #| label: tbl-tbl2-ps
 #| tbl-cap: !expr  if(nrow(ves_raw |> filter(gear_code == "s")) > 0) glue::glue("Number of {country_name} purse seine vessels, by size category, active in the WCPFC Convention Area, over {yr_range}") else ""
 #| echo: false
@@ -709,7 +701,7 @@ render_vessel_table(
 )
 ```
 
-```{r}
+```{r-3-pl-tbl-active_vessels}
 #| label: tbl-tbl2-pl
 #| tbl-cap: !expr  if(nrow(ves_raw |> filter(gear_code == "pl")) > 0) glue::glue("Number of {country_name} pole-and-line vessels, by size category, active in the WCPFC Convention Area, over {yr_range}") else ""
 #| echo: false
@@ -727,9 +719,7 @@ render_vessel_table(
 \newpage
 ## Distribution of catches of target species for different national fisheries
 
-
-
-```{r}
+```{r-3-ps-map-distribution}
 #| label: fig-figmapps
 #| fig-cap: !expr  if(nrow(data_3608 |> filter(gear_code == "s") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery.") else ""
 #| fig-width: 13
@@ -753,7 +743,7 @@ render_spatial_map(
 )
 ```
 
-```{r}
+```{r-3-ll-map-distribution}
 #| label: fig-figmapl
 #| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "l") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery.") else ""
 #| fig-width: 13
@@ -775,7 +765,7 @@ render_spatial_map(
 )
 ```
 
-```{r}
+```{r-3-pl-map-distribution}
 #| label: fig-figmappl
 #| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "pl") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} pole line fishery.") else ""
 #| fig-width: 13
@@ -802,7 +792,7 @@ render_spatial_map(
 ## Captures of species of special interest (SSIs)
 Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. PW has no SSI captures and TK and NU have no flagged fleets.
 
-```{r}
+```{r-3-ps-tbl-capture}
 #| label: tbl-tbl3s
 #| tbl-cap: !expr if(nrow(data_2953 |> filter(gear == "s") > 0)) glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status.") else ""
 #| echo: false
@@ -817,7 +807,7 @@ render_ssi_table(
 )
 ```
 
-```{r}
+```{r-3-ll-tbl-capture}
 #| label: tbl-tbl3ll
 #| tbl-cap: !expr if(nrow(data_2953 |> filter(gear == "l") > 0)) glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} longline fleet, in the WCPFC Convention Area, for years {yr_range}") else ""
 #| echo: false
@@ -832,7 +822,7 @@ render_ssi_table(
 )
 ```
 
-```{r}
+```{r-3-pl-tbl-capture}
 #| label: tbl-tbl3lpl
 #| tbl-cap: !expr if(nrow(data_2953 |> filter(gear == "pl") > 0)) glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} pole line fleet, in the WCPFC Convention Area, for years {yr_range}") else ""
 #| echo: false
@@ -863,7 +853,7 @@ PS_tab <-
 #todo: present species name instead of codes
 ```
 
-```{r}
+```{r-3-ps-tbl-nontarget}
 #| label: tbl-tbl4s
 #| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} purse seine fleet, in the WCPFC Convention Area over {yr_range}")
 #| echo: false
@@ -898,7 +888,7 @@ LL_tab <-
   arrange(sp_code)
 ```
 
-```{r}
+```{r-3-ll-tbl-nontarget}
 #| label: tbl-tbl4l
 #| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} longline fleet, in the WCPFC Convention Area over {yr_range}")
 #| echo: false
@@ -933,26 +923,21 @@ Associated socioeconomic factors (which may influence or explain the above trend
 
 Disposal of catch (fresh/frozen/other) / market destination (export/domestic).
 
-<!-- ```{r} -->
-<!-- #| label: tbl-tbldis -->
-<!-- #| tbl-cap: !expr glue::glue("Summary of the disposal of catches in {country_name} ports from the fishing fleets (purse seine, longline, pole and line) operating in {country_name} in {params$year}") -->
 
-<!-- dis_dat <- read.csv("data/catch_disposals.csv") -->
+```{r}
+#| label: tbl-tbldis
+#| tbl-cap: !expr glue::glue("Summary of the disposal of catches in {country_name} ports from the fishing fleets (purse seine, longline, pole and line) operating in {country_name} in {params$year}")
 
-<!-- flextable(dis_dat) |>  -->
-<!--   set_table_properties(layout = "fixed", width = 0.95) |>  -->
-<!--   fontsize(size = 5, part = "all") |>  -->
-<!--   set_header_labels(values =    -->
-<!--                       c("Activities",rep(c("PS","LL","PL"),time=2),rep(c("PS","LL"),time=5)) ) |>  -->
-<!--     add_header_row(values =  -->
-<!--                      c("","Skipjack(mt)","Yellowfin(mt)","Bigeye(mt)", -->
-<!--                        "Albacore(mt)","Billfish(mt)","Sharks(mt)","Other(mt)"), -->
-<!--                    colwidths = c(1,3,3,2,2,2,2,2)) |>  -->
-<!--     #width(width = .5) |>   -->
-<!--     width(j = 2:17, width = .33) |>  -->
-<!--     align(align = "center", part = "header") -->
+catch_file <- paste0(this_yr_folder,"/additional_files/catch_disposals.csv")
 
-<!-- ``` -->
+if (file.exists(catch_file)){
+  dis_dat <- read.csv(catch_file)
+  flextable(dis_dat)
+}
+
+
+
+```
 
 # Onshore developments
 

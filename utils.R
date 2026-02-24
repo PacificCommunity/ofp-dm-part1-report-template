@@ -15,6 +15,92 @@ library("scales")
 library("maps")
 library("sf")
 library("janitor")
+library("httr")
+
+# baseurl ikasavea
+baseurl_ika="https://www.spc.int/coastalfisheries/"
+
+get_all_country_codes <- function(x){
+  res <- c("VU" ,"CK", "FJ", "FM", "KI", "MH", "NC", "NR", "NU", "PF", "PG", "PW", "SB", "TK", "TO", "TV")
+  return(res)
+}
+
+download_ikasavea_data <- function(country_code, report_ids, folder_path, r_year){
+  
+  # Step 1: Authenticate with the SPC Coastal Fisheries API
+  connection <- POST(
+    paste0(baseurl_ika, "account/SignIn"),
+    body = list(
+      username = Sys.getenv("IKA_USER_NAME"),
+      password = Sys.getenv("IKA_PASSWORD")
+    ),
+    encode = "form"
+  )
+  
+  # Check if authentication was successful
+  if (status_code(connection) == 200 && length(content(connection)) > 0) {
+    # Store session cookies for reuse in other API calls
+    session_cookies <- cookies(connection)
+  } else {
+    cat("❌ Authentication failed!\n")
+    cat("Please check your credentials in the .env file\n")
+    cat(paste("Status Code:", status_code(connection), "\n"))
+    stop("Authentication for Ikasavea failed")
+  }
+  
+  # Step 2: get authorities
+  auths <- read.csv("config/list_authorities.csv") |>
+    filter(flag %in% tolower(country_code)) 
+  if (nrow(auths) == 0) {
+    cat(paste0("No data from Ikasavea for country_code: "), country_code)
+    return(invisible(NULL))   
+  }
+  
+  # if auths, extract ids
+  authority_ids <- auths |>
+    dplyr::pull(Id)
+  
+  for (report_id in report_ids){
+    body <- list(
+      reportId           = report_id,
+      includeIdColumns   = "false",
+      includeIgnoredData = "false"
+    )
+    
+    for (i in seq_along(authority_ids)) { body[[sprintf("authorityIds[%d]", i - 1)]] <- authority_ids[i] }
+    
+    # Request data export
+    resp <- POST( paste0(baseurl_ika, "FieldSurveys/LdsStatistics/ExportDataAsJson"), 
+                  body = body, 
+                  encode = "form" )
+    
+    # Parse the JSON response
+    response_data <- content(resp, "parsed")
+    
+    # Convert the data to a data frame for analysis
+    if ("data" %in% names(response_data)) {
+      df_result <- bind_rows(response_data$data) |>
+        filter(Year == r_year)
+      
+      cat(paste("IKASAVEA: Retrieved", nrow(df_result), "data records for report", report_id, "year ", r_year, "\n"))
+      
+      
+      if (report_id == "b1559368-b7a3-464e-883a-34fe3d2cd7c0") {
+        report_name <- "trips_landing_site"
+      } else if (report_id == "91a1cb61-8436-49aa-a552-512f0362f403") {
+        report_name <- "catch_by_fishing_event"
+      } else {
+        report_name <- report_id
+      }
+      
+      filename_csv = paste0(folder_path, "/ikasavea/", tolower(country_code), "_", report_name, ".csv")
+      write.csv(df_result, file = filename_csv, row.names = FALSE)
+
+    } else {
+      cat(paste0("⚠️ IKASAVEA: No 'data' field found in response for report", report_id,, "year ", r_year, "\n"))
+    }
+  }
+}
 
 # Custom functions
 # -- lazy for as.numeric()
@@ -103,7 +189,8 @@ load_token <- function(user_name, country_code){
 
 process_country_data <- function(country_code, 
                                  r_year, 
-                                 report_ids, 
+                                 report_ids,
+                                 report_ids_ikasavea = c(),
                                  rewrite_files = FALSE,
                                  user_name = Sys.getenv("USER_NAME"),
                                  overwrite = TRUE) {
@@ -114,6 +201,7 @@ process_country_data <- function(country_code,
   dir.create("./reports", showWarnings = FALSE, recursive = TRUE)
   dir.create(this_yr_folder, showWarnings = FALSE, recursive = TRUE)
   dir.create(paste0(this_yr_folder, "/additional_files"), showWarnings = FALSE, recursive = TRUE)
+  dir.create(paste0(this_yr_folder, "/ikasavea"), showWarnings = FALSE, recursive = TRUE)
   
   # Get all report file names
   report_files <- paste0(tolower(country_code), "_", report_ids, ".csv")
@@ -128,22 +216,29 @@ process_country_data <- function(country_code,
   # If any files are missing or rewrite is requested, download data
   if (!files_exist | rewrite_files) {
     attrs <- list(
-      flag_code = country_code,      
+      flag_code = country_code,
       year = r_year
     )
-    
+
     token <- load_token(user_name, country_code)
-    
+
     download_report_data(
-      token, 
-      user_name, 
-      country_code, 
-      filtered_reports = report_ids, 
+      token,
+      user_name,
+      country_code,
+      filtered_reports = report_ids,
       attrs = attrs,
-      record_current_date = FALSE, 
+      record_current_date = FALSE,
       overwrite = overwrite,
       save_folder = this_yr_folder
     )
+    
+    if (length(report_ids_ikasavea) > 0 & !is.null(report_ids_ikasavea)){
+      download_ikasavea_data(country = country_code, report_ids = report_ids_ikasavea, 
+                             folder_path = this_yr_folder, r_year = r_year)  
+    }
+    
+
   }
   
   # Process existing files
@@ -167,7 +262,7 @@ process_country_data <- function(country_code,
   
   # Display missing files summary
   if (length(missing_files) > 0) {
-    message("Missing report IDs for ", country_code, ": ", 
+    message("Missing T2 report IDs for ", country_code, ": ", 
             paste(missing_files, collapse = ", "))
   }
   
@@ -536,7 +631,7 @@ safe_read_and_clean <- function(folder, country, r_code, post_process = NULL) {
 build_reports <- function(country_codes, 
                           max_year,
                           author, 
-                          reports = c("addendum", "part1", "artisinal")){
+                          reports = c("addendum", "part1", "artisanal")){
   
   for (country_code in country_codes){
     
@@ -597,8 +692,29 @@ build_reports <- function(country_codes,
       
     }
     
-    if ("artisinal" %in% reports){
-      cat("TODO artisinal template")
+    if ("artisanal" %in% reports){
+      
+      # Define parameters for each report
+      params_art <- list(
+        flag = country_code,
+        year = r_year,
+        author = report_author
+      )
+      
+      output_filename_art = paste0("artisanal_report_", tolower(country_code), "_", r_year, ".html")
+      
+      # Render the document with parameters
+      quarto_render(
+        input = "template_artisanal_test.qmd",
+        execute_params = params_art,
+        output_file = output_filename_art
+      )
+      
+      # Move the rendered file to the reports directory
+      file.rename(
+        from = output_filename_art,
+        to = file.path("./reports", output_filename_art)
+      )
     }
   }
   return(list(reports))

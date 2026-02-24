@@ -23,7 +23,6 @@ params:
   author: "ENTER AUTHOR"
   
 ---
-
 <!-- urlcolor: blue -->
 <!-- toccolor: blue -->
 
@@ -230,7 +229,7 @@ CCMs shall annually provide to the Commission, in Part 1 of their annual reports
 
 
 # Use the exact file path from your directory structure
-a6 <- read_and_clean(this_yr_folder, member, r_code=3317) # 3317 will need help from Shaaz, data struct is too diff from what we had before...
+a6 <- read_and_clean(this_yr_folder, member, r_code=3317)
 
 
 if (nrow(a6) > 0) {
