@@ -1,23 +1,26 @@
 ---
-title: "Annual Part 1 Report to the Western and Central Pacific Fisheries Commission"
-author: "`r params$author`"
 date: today
 date-format: "DD MMMM YYYY"
 format: 
   pdf:
-    # include-in-header: preamble.tex
     tbl-cap-location: bottom
     toc: false
     number-sections: true
     highlight-style: github
-    
+    mainfont: "Times New Roman"
+    geometry:
+      - top=1in
+      - bottom=1in
+      - left=1in
+      - right=1in
 page-layout: full
 edit: visual
 params:
-  country_code: 'TV'          # 2-letter country code (all CAPS)
-  year: 2024                  # Reporting year (max year of data)
-  data_provided: 'Yes'        # Was SciData provided by deadline?
+  country_code: 'CK'          
+  year: 2025                  
+  data_provided: 'Yes'        
   author: "AUTHOR"
+  aceman: FALSE
 execute: 
   eval: true
   echo: false
@@ -28,9 +31,10 @@ execute:
 ```{r libs}
 library(tidyverse)
 library(flextable)
-library(scales) # Needed for commas in figure axis text
+library(scales) 
 library(maps)
 library(sf)
+library(stringr)
 
 source("utils.R")
 
@@ -43,7 +47,6 @@ this_yr_folder = paste0("./data/report_", as.character(report_year), "_", tolowe
 '%nin%' = function(x,y) !x %in% y            
 
 ```
-
 
 ```{r header}
 row1 <- glue::glue("Scientific data was provided to the Commission in accordance with the decision relating to the provision of scientific data to the Commission by 30 April {params$year+1}: [Yes/No]")
@@ -86,53 +89,94 @@ pl_species <- c("skj", "yft", "bet", "alb", "pbf")
 
 # Define species labels for each gear type
 ps_species_labels <- c(
-  alb = "ALBACORE",
-  bet = "BIGEYE TUNA",
-  skj = "SKIPJACK TUNA",
-  yft = "YELLOWFIN TUNA"
+  alb = "Albacore",
+  bet = "Bigeye tuna",
+  skj = "Skipjack tuna",
+  yft = "Yellowfin tuna",
+  pbf = "Pacific bluefin tuna"
 )
 
 ll_species_labels <- c(
-  alb = "ALBACORE",
-  bet = "BIGEYE TUNA",
-  skj = "SKIPJACK TUNA",
-  yft = "YELLOWFIN TUNA",
-  pbf = "PACIFIC BLUEFIN TUNA",
-  swo = "SWORDFISH",
-  blm = "BLACK MARLIN",
-  bum = "BLUE MARLIN",
-  mls = "STRIPED MARLIN"
+  alb = "Albacore",
+  bet = "Bigeye tuna",
+  skj = "Skipjack tuna",
+  yft = "Yellowfin tuna",
+  pbf = "Pacific bluefin tuna",
+  swo = "Swordfish",
+  blm = "Black marlin",
+  bum = "Blue marlin",
+  mls = "Striped marlin"
 )
 
 pl_species_labels <- c(
-  alb = "ALBACORE",
-  bet = "BIGEYE TUNA",
-  skj = "SKIPJACK TUNA",
-  yft = "YELLOWFIN TUNA"
+  alb = "Albacore",
+  bet = "Bigeye tuna",
+  skj = "Skipjack tuna",
+  yft = "Yellowfin tuna",
+  pbf = "Pacific bluefin tuna"
+
 )
 
+species_labels_all <-  c(
+  alb = "Albacore",
+  bet = "Bigeye tuna",
+  skj = "Skipjack tuna",
+  yft = "Yellowfin tuna",
+  pbf = "Pacific bluefin tuna",
+  swo = "Swordfish",
+  blm = "Black marlin",
+  bum = "Blue marlin",
+  mls = "Striped marlin",
+  ssp = "Shortbill spearfish",
+  sfa = "Sailfish",
+  bsh = "Blue shark",
+  fal = "Silky shark",
+  ocs = "Oceanic whitetip shark",
+  
+  mak = "Mako sharks (mak)",
+  sma = "Mako sharks (sma)",
+  lma = "Mako sharks (lma)",
+  
+  thr = "Thresher sharks (thr)",
+  alv = "Thresher sharks (alv)",
+  pth = "Thresher sharks (pth)",
+  bth = "Thresher sharks (bth)",
+  
+  por = "Porbeagle shark",
+  
+  spn = "Hammerhead sharks (spn)",
+  spk = "Hammerhead sharks (spk)",
+  spl = "Hammerhead sharks (spl)",
+  spz = "Hammerhead sharks (spz)",
+  spq = "Hammerhead sharks (spq)",
+  eub = "Hammerhead sharks (eub)",
+
+  rhn = "Whale shark"
+  
+  )
 
 country_names <- c(
-  fj  = "FIJI",
-  fm = "FEDERATED STATES OF MICRONESIA",
-  gu = "GUAM",
-  ki = "KIRIBATI",
-  mh = "MARSHALL ISLANDS",
-  mp = "NORTHERN MARIANA IS.",
-  nc = "NEW CALEDONIA",
-  nr = "NAURU",
-  nu = "NIUE",
-  pf = "FRENCH POLYNESIA",
-  pg = "PAPUA NEW GUINEA",
-  pn = "PITCAIRN",
-  pw = "PALAU",
-  sb = "SOLOMON ISLANDS",
-  tk = "TOKELAU",
-  to = "TONGA",
-  tv = "TUVALU",
-  vu = "VANUATU",
-  wf = "WALLIS AND FUTUNA ISLANDS",
-  ws = "SAMOA"
+  fj  = "Fiji",
+  fm = "Federated States of Micronesia",
+  gu = "Guam",
+  ki = "Kiribati",
+  mh = "Marshall Islands",
+  mp = "Northern Mariana Is.",
+  nc = "New Caledonia",
+  nr = "Nauru",
+  nu = "Niue",
+  pf = "French Polynesia",
+  pg = "Papua New Guinea",
+  pn = "Pitcairn",
+  pw = "Palau",
+  sb = "Solomon Islands",
+  tk = "Tokelau",
+  to = "Tonga",
+  tv = "Tuvalu",
+  vu = "Vanuatu",
+  wf = "Wallis and Futuna Islands",
+  ck = "Cook Islands",
+  ws = "Samoa"
 )
 
 # get country name
@@ -145,11 +189,11 @@ country_name <- country_names[country_cd]
 sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue","orange",
                                   "pink","wheat","purple3","grey40","dodgerblue4","purple4",
                                   "#66CCFF","salmon4","magenta3","gold"),
-                         nm = c("ALBACORE","BIGEYE TUNA","BLACK MARLIN","BLUE MARLIN","BLUE SHARK",
-                                "HAMMERHEAD SHARKS NEI","MAKO SHARKS","OCEANIC WHITETIP SHARK",
-                                "PACIFIC BLUEFIN TUNA","SILKY SHARK","SKIPJACK TUNA",
-                                "STRIPED MARLIN","SWORDFISH","THRESHER SHARKS NEI",
-                                "WHALE SHARK","YELLOWFIN TUNA"))
+                         nm = c("Albacore","Bigeye tuna","Black marlin","Blue marlin","Blue shark",
+                                "Hammerhead sharks nei","Mako sharks","Oceanic whitetip shark",
+                                "Pacific bluefin tuna","Silky shark","Skipjack tuna",
+                                "Striped marlin","Swordfish","Thresher sharks nei",
+                                "Whale shark","Yellowfin tuna"))
   
 ```
 
@@ -173,7 +217,18 @@ Describe recent activities by national fleets (by gear type) in the Convention A
 # Load all raw data - from t2
 data_2953 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 2953)
 
-data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
+# this is a quick fix, it is misleading to have a df called data_3605 when 
+# data is being sourced from report 3619...
+if(params$aceman){
+  data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3619)
+  
+  if("catch" %in% colnames(data_3605)){
+    data_3605$unadjcatch <- data_3605$catch
+  } 
+  
+}else{
+  data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
+}
 
 # For 3608 with special post-processing
 data_3608 <- safe_read_and_clean(
@@ -571,12 +626,21 @@ render_gear_figs_section3(
 )
 ```
 
-\newpage
-## Historical annual vessel numbers for the national fleet
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr nrow(data_3605) > 0
+
+if (nrow(data_3605) > 0) {
+  cat("\\newpage\n\n")
+  cat("## Historical annual vessel numbers for the national fleet\n\n")
+}
+```
 
 ```{r}
 #| label: fig-fig2
 #| fig-pos: 'H'
+#| eval: !expr nrow(data_3605) > 0
 #| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area") else ""
 #| fig-width: 12
 #| fig-height: 7
@@ -611,15 +675,21 @@ ggplot(ves_calcs, aes(x = year, y = Vessels, colour = gear)) +
     legend.title = element_blank(),
     legend.text = element_text(size = 13)
   )
-  }else{
-    cat(paste0("No fishing was reported in ",report_year,", nor was any catch reported."))
-    }
-
-
+  }
 ```
 
-\newpage
-## Number of active vessels by gear and size category over recent years
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr nrow(data_3605) > 0
+
+if (nrow(data_3605) > 0) {
+  cat("\\newpage\n\n")
+  cat("## Number of active vessels by gear and size category over recent years\n\n")
+}
+```
+
 
 ```{r}
 
@@ -675,6 +745,7 @@ pl_size_fn <- function(data) {
 }
 
 ```
+
 
 ```{r}
 ll_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "l")) > 0) {
@@ -755,6 +826,7 @@ render_vessel_table(
 #| echo: false
 #| message: false
 #| warning: false
+#| results: 'asis'
 
 # explain that this is BEST data, how it is calculated, how it differs from ACE and how often it gets updated.
 
@@ -764,7 +836,7 @@ render_spatial_map(
   gear_name = "purse seine",
   target_species = c("bet","skj","yft"),
   year_range = c(params$year - 4, params$year),
-  intro_text = "Some text"
+  intro_text = "Some text Here"
 
 )
 ```
@@ -780,6 +852,7 @@ render_spatial_map(
 #| echo: false
 #| message: false
 #| warning: false
+#| results: 'asis'
 
 render_spatial_map(
   data = data_3608,
@@ -803,6 +876,7 @@ render_spatial_map(
 #| echo: false
 #| message: false
 #| warning: false
+#| results: 'asis'
 
 render_spatial_map(
   data = data_3608,
@@ -930,12 +1004,14 @@ if (nrow(PS_tab) > 0) {
   # Print header
   cat(glue::glue("## Annual catch estimates for non-target, associated and dependent species for the national purse seine fleet\n\n"))
   
-  flextable(PS_tab) |>  
+  flextable(PS_tab |>
+              rename(Species = sp_code)) |>  
     set_table_properties(layout = "autofit", width = 0.95, align = "center") |> 
     fontsize(size = 9, part = "all") |> 
     width(j = 1, width = 2) |> 
     colformat_num(big.mark = ",") |> 
     align(align = "center", part = "all") |> 
+    labelizor(labels = species_labels_all, part = "all") |>
     padding(padding.left = 5, padding.right = 5, part = "all")
 }
 ```
@@ -954,12 +1030,14 @@ if (nrow(LL_tab) > 0) {
   # Print header
   cat(glue::glue("## Annual catch estimates for non-target, associated and dependent species for the national longline fleet\n\n"))
   
-  flextable(LL_tab) |>  
+  flextable(LL_tab |>
+            rename(Species = sp_code)) |>    
     set_table_properties(layout = "autofit", width = 0.95, align = "center") |> 
     fontsize(size = 9, part = "all") |> 
     width(j = 1, width = 2) |> 
     colformat_num(big.mark = ",") |> 
     align(align = "center", part = "all") |> 
+    labelizor(labels = species_labels_all, part = "all") |>
     padding(padding.left = 5, padding.right = 5, part = "all")
 }
 ```

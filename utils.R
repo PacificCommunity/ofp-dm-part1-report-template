@@ -19,8 +19,8 @@ library("httr")
 
 ### Never change/update the values below:
 report_ids_list = c(2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
-               3615, 3527, 3614,                                          # artisanal
-               3605, 2953, 3608)#, 3619)                                    # Part1
+                    3615, 3527, 3614,                                          # artisanal
+                    3605, 2953, 3608, 3619)                                    # Part1
 
 report_ids_ikasavea_list = c("b1559368-b7a3-464e-883a-34fe3d2cd7c0") 
 
@@ -87,7 +87,7 @@ download_ikasavea_data <- function(country_code, report_ids, folder_path, r_year
     # Convert the data to a data frame for analysis
     if ("data" %in% names(response_data)) {
       df_result <- bind_rows(response_data$data) #|>
-        # filter(Year == r_year)
+      # filter(Year == r_year)
       
       cat(paste("IKASAVEA: Retrieved", nrow(df_result), "data records for report", report_id, "year ", r_year, "\n"))
       
@@ -100,7 +100,7 @@ download_ikasavea_data <- function(country_code, report_ids, folder_path, r_year
       
       filename_csv = paste0(folder_path, "/ikasavea/", tolower(country_code), "_", report_name, ".csv")
       write.csv(df_result, file = filename_csv, row.names = FALSE)
-
+      
     } else {
       cat(paste0("⚠️ IKASAVEA: No 'data' field found in response for report", report_id, "year ", r_year, "\n"))
     }
@@ -179,7 +179,7 @@ load_token <- function(user_name, country_code){
     token <- generate_token(user_name = user_name, 
                             country_code = country_code)
   }
-
+  
   return(token)
 }
 
@@ -201,7 +201,7 @@ process_country_data <- function(country_code,
                                  overwrite = TRUE) {
   
   print(country_code)
-
+  
   this_yr_folder <- paste0("./data/report_", r_year, "_", tolower(country_code), "/")
   dir.create("./reports", showWarnings = FALSE, recursive = TRUE)
   dir.create(this_yr_folder, showWarnings = FALSE, recursive = TRUE)
@@ -224,9 +224,9 @@ process_country_data <- function(country_code,
       flag_code = country_code,
       year = r_year
     )
-
+    
     token <- load_token(user_name, country_code)
-
+    
     download_report_data(
       token,
       user_name,
@@ -245,7 +245,7 @@ process_country_data <- function(country_code,
                              r_year = r_year)  
     }
     
-
+    
   }
   
   # Process existing files
@@ -297,11 +297,11 @@ download_report_data <- function(token,
                                  save_folder = "data/"){
   
   reports_selection <- get_list_of_t2_reports( token, 
-                                         country_code, 
-                                         user_name, 
-                                         overwrite = overwrite,
-                                         save_folder = save_folder,
-                                         list_reports = filtered_reports)
+                                               country_code, 
+                                               user_name, 
+                                               overwrite = overwrite,
+                                               save_folder = save_folder,
+                                               list_reports = filtered_reports)
   
   # select key reports
   # reports_selection <- all_reports |>
@@ -350,7 +350,7 @@ get_list_of_t2_reports <- function(token,
     args = c(
       "-X", "GET",
       "--max-time", "2",        # timeout after 2 seconds
-
+      
       "https://www.spc.int/ofp/tufman2api/api/ReportDefinition/AllSimple",
       "-H", "accept: application/json, text/plain, */*'",
       "-H", paste0("authorization: Bearer ", token),
@@ -367,7 +367,7 @@ get_list_of_t2_reports <- function(token,
   
   all_reports <- fromJSON(result_reports$stdout) |>
     select(Guid, 1:9, OptionLabels, LastModifiedDateTime)
-
+  
   # if only certain reports were requested, retrieve only those ones
   if (!("all" %in% list_reports && length(list_reports) == 1)){
     all_reports <- all_reports |>
@@ -457,119 +457,119 @@ get_reports <- function(token, user_name, country_code, filtered_reports, attrs,
                         base_url = "https://www.spc.int/ofp/tufman2api/api/ReportDefinition/DownloadResults",
                         lang = "en",record_current_date = TRUE, overwrite = FALSE,
                         save_folder = "data/"){
-
-    reports_selected <- filtered_reports |>
-      pull(title)
+  
+  reports_selected <- filtered_reports |>
+    pull(title)
+  
+  api_calls <- vector("character", length(reports_selected))
+  for (i in seq_along(reports_selected)) {
     
-    api_calls <- vector("character", length(reports_selected))
-    for (i in seq_along(reports_selected)) {
+    # Get guid and attributes for this report
+    report_info <- filtered_reports |>
+      filter(title == reports_selected[i]) |>
+      select(guid, report_attrs, report_group_by, user_report_id, title)
+    
+    guid <- report_info$guid
+    user_id <- report_info$user_report_id
+    group_by <- report_info$report_group_by
+    
+    if (record_current_date) {
+      filename_csv <-  paste0(save_folder,
+                              tolower(country_code), "_",
+                              user_id, "_", Sys.Date(), ".csv")
+    } else {
+      filename_csv <-  paste0(save_folder,
+                              tolower(country_code), "_",
+                              user_id, ".csv")
+    }
+    
+    
+    if (file.exists(filename_csv) && !overwrite) {
+      print(paste0("The csv data from report ", report_info$title,
+                   " already exists in your computer: ", filename_csv))
+      next
+    } else {
       
-      # Get guid and attributes for this report
-      report_info <- filtered_reports |>
-        filter(title == reports_selected[i]) |>
-        select(guid, report_attrs, report_group_by, user_report_id, title)
+      report_attr_names <- strsplit(report_info$report_attrs, ",") |> 
+        unlist() |> trimws()
       
-      guid <- report_info$guid
-      user_id <- report_info$user_report_id
-      group_by <- report_info$report_group_by
+      # Build runParams only for attributes relevant to this report
+      params_list <- attrs[names(attrs) %in% report_attr_names]
       
-      if (record_current_date) {
-        filename_csv <-  paste0(save_folder,
-                               tolower(country_code), "_",
-                               user_id, "_", Sys.Date(), ".csv")
-      } else {
-        filename_csv <-  paste0(save_folder,
-                               tolower(country_code), "_",
-                               user_id, ".csv")
+      # Add group_by if not NA or empty
+      if (!is.null(group_by) && !is.na(group_by) && nzchar(group_by)) {
+        params_list$group_by <- group_by
       }
       
-
-      if (file.exists(filename_csv) && !overwrite) {
-        print(paste0("The csv data from report ", report_info$title,
-                     " already exists in your computer: ", filename_csv))
+      # Convert runParams list to JSON and URL encode it
+      runParams_json <- jsonlite::toJSON(params_list, auto_unbox = TRUE)
+      runParams_encoded <- utils::URLencode(runParams_json, reserved = TRUE)
+      
+      # Build the full curl URL
+      api_url <- glue::glue(
+        "{base_url}?guid={guid}&lang={lang}&runParams={runParams_encoded}"
+      )
+      
+      ret <- run(
+        "curl",
+        args = c(
+          "-X", "GET",
+          api_url,
+          "-H", "accept: application/json, text/plain, */*'",
+          "-H", paste0("authorization: Bearer ", token),
+          "-H", "content-type: application/json",
+          "-H", paste0("tufinstance: ", country_code),
+          "-H", "tufmodule: Reports",
+          "-H", paste0("tufuser: ", user_name)
+        )
+      )
+      
+      if (is.null(ret$stdout) || trimws(paste(ret$stdout, collapse = "")) == "") {
+        message(
+          paste0(
+            "No data available for report: ", report_info$title,
+            " and attributes: ", as.character(runParams_json),
+            ", or your token has expired. Skipping..."
+          )
+        )
         next
+      }
+      
+      if (grepl("^[{\\[]", trimws(ret$stdout))) {
+        # JSON case
+        ret_df <- jsonlite::fromJSON(paste(ret$stdout, collapse = ""), flatten = TRUE)$Rows |>
+          data.frame()
       } else {
-        
-        report_attr_names <- strsplit(report_info$report_attrs, ",") |> 
-          unlist() |> trimws()
-        
-        # Build runParams only for attributes relevant to this report
-        params_list <- attrs[names(attrs) %in% report_attr_names]
-        
-        # Add group_by if not NA or empty
-        if (!is.null(group_by) && !is.na(group_by) && nzchar(group_by)) {
-          params_list$group_by <- group_by
-        }
-        
-        # Convert runParams list to JSON and URL encode it
-        runParams_json <- jsonlite::toJSON(params_list, auto_unbox = TRUE)
-        runParams_encoded <- utils::URLencode(runParams_json, reserved = TRUE)
-        
-        # Build the full curl URL
-        api_url <- glue::glue(
-          "{base_url}?guid={guid}&lang={lang}&runParams={runParams_encoded}"
-        )
-        
-        ret <- run(
-          "curl",
-          args = c(
-            "-X", "GET",
-            api_url,
-            "-H", "accept: application/json, text/plain, */*'",
-            "-H", paste0("authorization: Bearer ", token),
-            "-H", "content-type: application/json",
-            "-H", paste0("tufinstance: ", country_code),
-            "-H", "tufmodule: Reports",
-            "-H", paste0("tufuser: ", user_name)
-          )
-        )
-        
-        if (is.null(ret$stdout) || trimws(paste(ret$stdout, collapse = "")) == "") {
-          message(
-            paste0(
-              "No data available for report: ", report_info$title,
-              " and attributes: ", as.character(runParams_json),
-              ", or your token has expired. Skipping..."
-            )
-          )
-          next
-        }
-        
-        if (grepl("^[{\\[]", trimws(ret$stdout))) {
-          # JSON case
-          ret_df <- jsonlite::fromJSON(paste(ret$stdout, collapse = ""), flatten = TRUE)$Rows |>
-            data.frame()
-        } else {
-          # CSV case
-          ret_df <- read.csv(text = ret$stdout, stringsAsFactors = FALSE)
-        }
-        
-        
-        if(length(ret_df) == 0){
-          print(paste0("No data available for report: ", report_info$title, " and attributes: ",
-                       as.character(runParams_json), ", skipping..."))
-          next
-        }
-        
-        ret_df <- ret_df |>
-          dplyr::mutate(
-            report_id = user_id,
-            attrs_query = runParams_json,
-            guid = guid
-          ) |>
-          dplyr::select(guid, attrs_query, dplyr::everything())
-          
-        print(paste0("Saving data from report ", report_info$title, " as csv: ", filename_csv))
-        write.csv(ret_df, file = filename_csv, row.names = FALSE)
-        
+        # CSV case
+        ret_df <- read.csv(text = ret$stdout, stringsAsFactors = FALSE)
       }
       
       
-      api_calls[i] <- api_url
+      if(length(ret_df) == 0){
+        print(paste0("No data available for report: ", report_info$title, " and attributes: ",
+                     as.character(runParams_json), ", skipping..."))
+        next
+      }
+      
+      ret_df <- ret_df |>
+        dplyr::mutate(
+          report_id = user_id,
+          attrs_query = runParams_json,
+          guid = guid
+        ) |>
+        dplyr::select(guid, attrs_query, dplyr::everything())
+      
+      print(paste0("Saving data from report ", report_info$title, " as csv: ", filename_csv))
+      write.csv(ret_df, file = filename_csv, row.names = FALSE)
       
     }
-    return(api_calls)
     
+    
+    api_calls[i] <- api_url
+    
+  }
+  return(api_calls)
+  
 }
 
 # function for basisc data_wrangling
@@ -578,7 +578,7 @@ data_wrangling <- function(df, report_id){
   ret <- df |>
     janitor::clean_names() |>
     dplyr::select(-guid, -attrs_query, -report_id)
-    
+  
   
   return(ret)
 }
@@ -608,13 +608,18 @@ read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TR
         data <- data |>
           rename(year = yr)
       }
+      
+      if("yy" %in% colnames(data)){
+        data <- data |>
+          rename(year = yy)
+      }
     }
     
   }else{
     data <- read_csv(str_c(this_yr_folder, "additional_files/", r_code, ".csv"))
   }
   
-
+  
   return(data)
 }
 
@@ -637,10 +642,81 @@ safe_read_and_clean <- function(folder, country, r_code, post_process = NULL) {
   })
 }
 
+generate_preamble <- function(country_code, 
+                              report_year,
+                              sc_session  = "21",
+                              ccm_num     = "24",
+                              report_date = "4 July 2025",
+                              location    = "Nuku\\textquotesingle alofa, Tonga",
+                              session_dates = "13--21 August 2025",
+                              output_dir  = "./preambles",
+                              template_path = "./preambles/preamble_template.tex") {
+  
+  country_names <- c(
+    fj = "FIJI", 
+    fm = "FEDERATED STATES OF MICRONESIA", 
+    gu = "GUAM",
+    ki = "KIRIBATI", 
+    mh = "MARSHALL ISLANDS", 
+    mp = "NORTHERN MARIANA IS.",
+    nc = "NEW CALEDONIA", 
+    nr = "NAURU", 
+    nu = "NIUE", 
+    pf = "FRENCH POLYNESIA",
+    pg = "PAPUA NEW GUINEA", 
+    pn = "PITCAIRN", 
+    pw = "PALAU",
+    sb = "SOLOMON ISLANDS", 
+    tk = "TOKELAU", 
+    to = "TONGA", 
+    tv = "TUVALU",
+    vu = "VANUATU", 
+    wf = "WALLIS AND FUTUNA ISLANDS", 
+    ws = "SAMOA",
+    ck = "COOK ISLANDS"
+  )
+  
+  country_cd   <- tolower(country_code)
+  country_name <- country_names[country_cd]
+  
+  # Download flag
+  dir.create(output_dir, showWarnings = FALSE)
+  flag_path <- paste0("preambles/flag_", country_cd, ".png")
+  download.file(
+    paste0("https://flagcdn.com/w320/", country_cd, ".png"),
+    flag_path, mode = "wb", quiet = TRUE
+  )
+  
+  # Read template and substitute placeholders
+  preamble <- readLines(template_path) |>
+    paste(collapse = "\n") |>
+    gsub("__REPORT_YEAR__",   report_year,    x = _, fixed = TRUE) |>
+    gsub("__SC_SESSION__",    sc_session,     x = _, fixed = TRUE) |>
+    gsub("__CCM_NUM__",       ccm_num,        x = _, fixed = TRUE) |>
+    gsub("__REPORT_DATE__",   report_date,    x = _, fixed = TRUE) |>
+    gsub("__COUNTRY_NAME__",  country_name,   x = _, fixed = TRUE) |>
+    gsub("__FLAG_PATH__",     flag_path,      x = _, fixed = TRUE) |>
+    gsub("__LOCATION__",      location,       x = _, fixed = TRUE) |>
+    gsub("__SESSION_DATES__", session_dates,  x = _, fixed = TRUE)
+  
+  # Write final preamble
+  preamble_path <- file.path(output_dir, paste0("preamble_", country_cd, ".tex"))
+  writeLines(c(preamble, ""), preamble_path)
+  
+  return(preamble_path)
+}
+
 build_reports <- function(country_codes, 
                           max_year,
+                          aceman,
                           author, 
-                          reports = c("addendum", "part1", "artisanal")){
+                          sc_session    = "21",
+                          ccm_num       = "24",
+                          report_date   = "4 July 2025",
+                          location      = "Nuku\\textquotesingle alofa, Tonga",
+                          session_dates = "13--21 August 2025",
+                          reports       = c("addendum", "part1", "artisanal"),
+                          quiet_tag     = FALSE){
   
   for (country_code in country_codes){
     
@@ -648,29 +724,44 @@ build_reports <- function(country_codes,
     
     
     if ("part1" %in% reports){
-      params_part1 <- list(
-        country_code = country_code,
-        year = r_year,
-        author = report_author
+      
+      # Generate preamble BEFORE rendering
+      preamble_path <- generate_preamble(
+        country_code  = country_code,
+        report_year   = max_year,
+        sc_session    = sc_session,
+        ccm_num       = ccm_num,
+        report_date   = report_date,
+        location      = location,
+        session_dates = session_dates,
+        output_dir    = "./preambles"
       )
       
+      params_part1 <- list(
+        country_code   = country_code,
+        year           = max_year,
+        data_provided  = 'Yes',
+        author         = author,
+        aceman         = aceman
+      )
+
       # define output filenames
       output_filename_part1 = paste0("part1_report_", tolower(country_code), "_", r_year, ".pdf")
-      
+      # preamble_path <- paste0("./preambles/preamble_", tolower(country_code), ".tex")
       
       # Render the document with parameters
       quarto_render(
-        input = "template_part1.qmd",
+        input          = "template_part1.qmd",
         execute_params = params_part1,
-        output_file = output_filename_part1
+        output_file    = output_filename_part1,
+        quarto_args    = c("--metadata", paste0("include-in-header=", preamble_path)),
+        quiet          = quiet_tag  
       )
       
       file.rename(
         from = output_filename_part1,
         to = file.path("./reports", output_filename_part1)
       )
-      
-      
       
     }
     
@@ -683,14 +774,15 @@ build_reports <- function(country_codes,
         max_year = r_year,
         author = report_author
       )
-        
+      
       output_filename_addendum = paste0("addendum_report_", tolower(country_code), "_", r_year, ".docx")
-        
+      
       # Render the document with parameters
       quarto_render(
         input = "template_addendum.qmd",
         execute_params = params_addendum,
-        output_file = output_filename_addendum
+        output_file = output_filename_addendum,
+        quiet          = quiet_tag
       )
       
       # Move the rendered file to the reports directory
@@ -716,7 +808,8 @@ build_reports <- function(country_codes,
       quarto_render(
         input = "template_artisanal.qmd",
         execute_params = params_art,
-        output_file = output_filename_art
+        output_file = output_filename_art,
+        quiet          = quiet_tag
       )
       
       # Move the rendered file to the reports directory
@@ -727,4 +820,4 @@ build_reports <- function(country_codes,
     }
   }
   return(list(reports))
-  }
+}

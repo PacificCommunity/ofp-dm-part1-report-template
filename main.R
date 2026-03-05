@@ -11,11 +11,12 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- get_all_country_codes() # "VU"
+country_codes <- "TO"
 r_year <- 2025
 report_author <- "Jessica LS"
-rewrite_files <- FALSE # TRUE if you want to make sure the data is updated.
-reports_list <- c("artisanal")#, "addendum", "part1")
+rewrite_files <- TRUE
+reports_list <- c("part1")           # options are: c("artisanal", "addendum", "part1")
+aceman = FALSE
 
 # Step 3: Read/download data ####
 
@@ -29,5 +30,11 @@ for (country_code in country_codes) {
 # Step 4: Generate reports ####
 res <- build_reports(country_codes = country_codes,
                      max_year = r_year,
+                     aceman = aceman,
                      author = report_author,
-                     reports = reports_list)
+                     reports = reports_list,
+                     sc_session    = "21",
+                     ccm_num       = "22",
+                     report_date   = format(Sys.Date(), "%d %b %Y"),
+                     location      = "Nuku\\textquotesingle alofa, Tonga",
+                     session_dates = "9--13 March 2025")
