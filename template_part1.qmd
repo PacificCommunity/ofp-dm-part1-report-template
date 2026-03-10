@@ -7,7 +7,7 @@ format:
     toc: false
     number-sections: true
     highlight-style: github
-    mainfont: "Times New Roman"
+    # mainfont: "Times New Roman"
     geometry:
       - top=1in
       - bottom=1in
@@ -829,52 +829,27 @@ if (nrow(data_3605) > 0) {
 
 ```{r}
 #| label: fig-figmapps
-#| eval: !expr "nrow(data_3608) > 0"
-#| fig-cap: !expr  if(nrow(data_3608 |> filter(gear_code == "s") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery.") else ""
-#| fig-width: 13
-#| fig-height: 13
-#| fig-align: "center"
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery.")
 #| fig-pos: "H"
 #| echo: false
-#| message: false
-#| warning: false
-#| results: 'asis'
+#| fig-width: 9
+#| fig-height: 9
 
-# explain that this is BEST data, how it is calculated, how it differs from ACE and how often it gets updated.
-
-render_spatial_map(
-  data = data_3608,
-  gear_code = "s",
-  gear_name = "purse seine",
-  target_species = c("bet","skj","yft"),
-  year_range = c(params$year - 4, params$year),
-  intro_text = "Some text Here"
-
-)
+map_ps <- file.path(this_yr_folder, glue::glue("map_ps_{country_cd}_{params$year}.png"))
+if (file.exists(map_ps)) knitr::include_graphics(map_ps)
 ```
+
 
 ```{r}
 #| label: fig-figmapl
-#| eval: !expr "nrow(data_3608) > 0"
-#| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "l") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery.") else ""
-#| fig-width: 13
-#| fig-height: 13
-#| fig-align: "center"
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery.")
 #| fig-pos: "H"
 #| echo: false
-#| message: false
-#| warning: false
-#| results: 'asis'
+#| fig-width: 9
+#| fig-height: 9
 
-render_spatial_map(
-  data = data_3608,
-  gear_code = "l",
-  gear_name = "longline",
-  target_species = c("bet","alb","yft"),
-  year_range = c(params$year - 4, params$year),
-  intro_text = "Some text"
-
-)
+map_ll <- file.path(this_yr_folder, glue::glue("map_ll_{country_cd}_{params$year}.png"))
+if (file.exists(map_ll)) knitr::include_graphics(map_ll)
 ```
 
 ```{r}

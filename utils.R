@@ -16,6 +16,7 @@ library("maps")
 library("sf")
 library("janitor")
 library("httr")
+library("odbc")
 
 ### Never change/update the values below:
 report_ids_list = c(2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
@@ -602,13 +603,13 @@ read_csv <- function(path) {
 read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TRUE){
   
   if (t2_dataset){
-    data <- read_csv(str_c(this_yr_folder, country_code, "_", r_code, ".csv"))
+    data <- read_csv(str_c(this_yr_folder, tolower(country_code), "_", r_code, ".csv"))
     
     if (nrow(data) > 0) {
       
       data <- data |>
         data_wrangling(report_id = r_code) 
-      
+
       if("yr" %in% colnames(data)){
         data <- data |>
           rename(year = yr)
@@ -828,3 +829,126 @@ build_reports <- function(country_codes,
   }
   return(list(reports))
 }
+
+# Step 3.5: Pre-generate spatial maps ####
+
+save_spatial_maps <- function(data_3608, country_cd, report_year, newmap, output_dir) {
+  
+  gears <- list(
+    ps = list(code = "s",  name = "purse seine", species = c("bet", "skj", "yft")),
+    ll = list(code = "l",  name = "longline",    species = c("bet", "alb", "yft")),
+    pl = list(code = "pl", name = "pole line",   species = c("skj", "yft", "bet"))
+  )
+  
+  year_range  <- c(report_year - 4, report_year)
+  saved_paths <- list()
+  
+  for (g in names(gears)) {
+    
+    gear_code_val  <- gears[[g]][["code"]]    # ✅ access by name explicitly
+    gear_name_val  <- gears[[g]][["name"]]
+    gear_species   <- gears[[g]][["species"]]
+    
+    gear_data <- data_3608 |> filter(gear_code == gear_code_val)
+    
+    if (nrow(gear_data) == 0) {
+      message("  No data for ", gear_name_val, " - skipping")
+      next
+    }
+    
+    spatial_data <- gear_data |>
+      filter(
+        between(year, year_range[1], year_range[2]),
+        sp_code %in% gear_species
+      ) |>
+      group_by(lat, lon, year, species) |>
+      summarise(catch = sum(catch), .groups = "drop") |>
+      filter(catch > 0)
+    
+    if (nrow(spatial_data) == 0) {
+      message("  No spatial data for ", gear_name_val, " - skipping")
+      next
+    }
+    
+    p <- ggplot() +
+      
+      geom_polygon(
+        data = newmap,
+        aes(x = long, y = lat, group = group),
+        fill = 'bisque1', col = 'gray'
+      ) +
+      geom_tile(data = spatial_data, aes(lon, lat, fill = catch)) +
+      scale_fill_distiller(palette = "Spectral") +
+      scale_x_continuous(limits = c(120, 230), expand = c(0, 0), breaks = seq(140, 220, 40)) +
+      scale_y_continuous(limits = c(-40, 30), expand = c(0, 0))+
+      facet_grid(year ~ species) +
+      xlab("Longitude") + ylab("Latitude") + labs(fill = "Catch (mt)") +
+      ggtitle(glue::glue("Spatial patterns in catch for the {gear_name_val} fishery")) +
+      theme_bw() +
+      theme(
+        axis.text        = element_text(size = 14),
+        legend.text      = element_text(size = 14),
+        legend.title     = element_text(size = 14),
+        strip.background = element_rect(fill = 'white'),
+        strip.text       = element_text(size = 14),
+        axis.title       = element_text(size = 16),
+        title            = element_text(size = 16)
+      ) +
+      coord_cartesian()
+    
+    out_path <- file.path(
+      output_dir,
+      glue::glue("map_{g}_{country_cd}_{report_year}.png")
+    )
+    
+    ggsave(out_path, plot = p, width = 9, height = 9, dpi = 150, bg = "white")
+    message("  Saved: ", out_path)
+    
+    saved_paths[[g]] <- out_path
+    rm(p, spatial_data, gear_data); gc()
+  }
+  
+  return(saved_paths)
+}
+
+create_maps <- function(country_code, r_year){
+  country_cd     <- tolower(country_code)
+  this_yr_folder <- paste0("./data/report_", r_year, "_", country_cd, "/")
+  
+  message("Pre-generating maps for: ", country_code)
+  
+  # Load map background once
+  library(maps)
+  raw_map <- map("world2", plot = FALSE, fill = TRUE)
+  newmap  <- fortify(raw_map)  
+  yrs_long <- (r_year - 4):r_year
+  
+  # Load spatial data
+  data_3608 <- safe_read_and_clean(
+    this_yr_folder, country_cd, r_code = 3608,
+    post_process = function(data) {
+      data |> mutate(
+        lon = ifelse(lon < 0, lon + 360, lon),
+        lat = ifelse(gear_code == "s", lat + 0.5, lat + 2.5),
+        lon = ifelse(gear_code == "s", lon + 0.5, lon + 2.5)
+      )
+    }
+  )
+  
+  # Only generate if data exists
+  if (nrow(data_3608) > 0) {
+    save_spatial_maps(
+      data_3608   = data_3608,
+      country_cd  = country_cd,
+      report_year = r_year,
+      newmap      = newmap,
+      output_dir  = this_yr_folder
+    )
+    message("Maps saved for: ", country_code)
+  } else {
+    message("No spatial data found for: ", country_code, " - skipping maps")
+  }
+  
+  rm(data_3608, newmap); gc()
+}  
+

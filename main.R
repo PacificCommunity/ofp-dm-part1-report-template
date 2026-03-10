@@ -11,7 +11,7 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("TO")
+country_codes <- get_all_country_codes()
 r_year <- 2024
 report_author <- "Jessica LS"
 rewrite_files <- FALSE
@@ -22,7 +22,9 @@ aceman = FALSE # if TRUE, source only ACEs data from member country, if false, s
 
 # Use the params above to download data from T2 and Ikasavea or read data if available in your computer
 for (country_code in country_codes) {
-  process_country_data(country_code = country_code, 
+  create_maps(country_code = country_code, 
+              r_year = r_year)
+  process_country_data(country_code = country_code,
                        r_year = r_year,
                        rewrite_files = rewrite_files)
 }
