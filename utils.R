@@ -28,7 +28,7 @@ report_ids_ikasavea_list = c("b1559368-b7a3-464e-883a-34fe3d2cd7c0")
 baseurl_ika="https://www.spc.int/coastalfisheries/"
 
 get_all_country_codes <- function(x){
-  res <- c("VU" ,"CK", "FJ", "FM", "KI", "MH", "NC", "NR", "NU", "PF", "PG", "PW", "SB", "TK", "TO", "TV", "WS")
+  res <- c("VU" ,"CK", "FJ", "FM", "KI", "MH", "NC", "NR", "NU", "PF", "PG", "PW", "SB", "TK", "TO", "TV", "WS", "WF")
   return(res)
 }
 
@@ -117,6 +117,7 @@ load_dot_env(file = ".env")
 
 # function to generate a token
 generate_token <- function(user_name, country_code){
+  country_code <- toupper(country_code)
   
   result <- run(
     "curl",
@@ -296,6 +297,8 @@ download_report_data <- function(token,
                                  overwrite = FALSE,
                                  save_folder = "data/"){
   
+  country_code = toupper(country_code)
+  
   reports_selection <- get_list_of_t2_reports( token, 
                                                country_code, 
                                                user_name, 
@@ -328,6 +331,8 @@ get_list_of_t2_reports <- function(token,
                                    overwrite = FALSE,
                                    save_folder = "data/",
                                    list_reports = c("all")){
+  
+  country_code = toupper(country_code)
   
   if (overwrite){
     filename_csv <- paste0(save_folder, "/list_of_t2_reports_", tolower(country_code), ".csv")
@@ -719,23 +724,24 @@ build_reports <- function(country_codes,
                           quiet_tag     = FALSE){
   
   for (country_code in country_codes){
+    country_code = toupper(country_code)
     
     country_folder = paste0("./data/report_", as.character(r_year),"_", tolower(country_code), "/")
     
+    # Generate preamble BEFORE rendering
+    preamble_path <- generate_preamble(
+      country_code  = country_code,
+      report_year   = max_year,
+      sc_session    = sc_session,
+      ccm_num       = ccm_num,
+      report_date   = report_date,
+      location      = location,
+      session_dates = session_dates,
+      output_dir    = "./preambles"
+    )
+    
     
     if ("part1" %in% reports){
-      
-      # Generate preamble BEFORE rendering
-      preamble_path <- generate_preamble(
-        country_code  = country_code,
-        report_year   = max_year,
-        sc_session    = sc_session,
-        ccm_num       = ccm_num,
-        report_date   = report_date,
-        location      = location,
-        session_dates = session_dates,
-        output_dir    = "./preambles"
-      )
       
       params_part1 <- list(
         country_code   = country_code,
@@ -746,7 +752,7 @@ build_reports <- function(country_codes,
       )
 
       # define output filenames
-      output_filename_part1 = paste0("part1_report_", tolower(country_code), "_", r_year, ".pdf")
+      output_filename_part1 = paste0("part1_report_", tolower(country_code), "_aceman_", tolower(as.character(aceman)),"_", r_year, ".pdf")
       # preamble_path <- paste0("./preambles/preamble_", tolower(country_code), ".tex")
       
       # Render the document with parameters
@@ -802,13 +808,14 @@ build_reports <- function(country_codes,
         author = report_author
       )
       
-      output_filename_art = paste0("artisanal_report_", tolower(country_code), "_", r_year, ".html")
+      output_filename_art = paste0("artisanal_report_", tolower(country_code), "_", r_year, ".pdf")
       
       # Render the document with parameters
       quarto_render(
         input = "template_artisanal.qmd",
         execute_params = params_art,
         output_file = output_filename_art,
+        quarto_args    = c("--metadata", paste0("include-in-header=", preamble_path)),
         quiet          = quiet_tag
       )
       

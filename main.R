@@ -11,12 +11,12 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- "TO"
-r_year <- 2025
+country_codes <- c("TO")
+r_year <- 2024
 report_author <- "Jessica LS"
-rewrite_files <- TRUE
+rewrite_files <- FALSE
 reports_list <- c("part1")           # options are: c("artisanal", "addendum", "part1")
-aceman = FALSE
+aceman = FALSE # if TRUE, source only ACEs data from member country, if false, source data from yearbook.
 
 # Step 3: Read/download data ####
 
@@ -36,5 +36,5 @@ res <- build_reports(country_codes = country_codes,
                      sc_session    = "21",
                      ccm_num       = "22",
                      report_date   = format(Sys.Date(), "%d %b %Y"),
-                     location      = "Nuku\\textquotesingle alofa, Tonga",
+                     location      = "Apia, Samoa",
                      session_dates = "9--13 March 2025")

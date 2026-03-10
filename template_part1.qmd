@@ -16,11 +16,11 @@ format:
 page-layout: full
 edit: visual
 params:
-  country_code: 'CK'          
+  country_code: 'VU'          
   year: 2025                  
   data_provided: 'Yes'        
   author: "AUTHOR"
-  aceman: FALSE
+  aceman: TRUE
 execute: 
   eval: true
   echo: false
@@ -274,7 +274,8 @@ if (nrow(data_3605_ps) > 0){
   mutate(across(2:5, ~replace_na(.,0))) |>
   arrange(sp_code) |>
   rename(Species = sp_code) |>
-  janitor::adorn_totals("row")
+  janitor::adorn_totals("row") |>
+  select(Species, sort(tidyselect::peek_vars()))
 }
 
 if (nrow(data_3605_ll) > 0){
@@ -283,7 +284,8 @@ if (nrow(data_3605_ll) > 0){
     mutate(across(where(is.numeric), ~replace_na(.,0))) |>
     arrange(sp_code) |>
     rename(Species = sp_code) |>
-    janitor::adorn_totals("row")
+    janitor::adorn_totals("row") |>
+    select(Species, sort(tidyselect::peek_vars()))
 }
 
 if (nrow(data_3605_pl) > 0){
@@ -292,7 +294,8 @@ if (nrow(data_3605_pl) > 0){
     mutate(across(where(is.numeric), ~replace_na(.,0))) |>
     arrange(sp_code) |>
     rename(Species = sp_code) |>
-    janitor::adorn_totals("row")
+    janitor::adorn_totals("row") |>
+    select(Species, sort(tidyselect::peek_vars()))
 }
 
 ```
@@ -812,8 +815,17 @@ render_vessel_table(
 ```
 
 
-\newpage
-## Distribution of catches of target species for different national fisheries
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr nrow(data_3608) > 0
+
+if (nrow(data_3605) > 0) {
+  cat("\\newpage\n\n")
+  cat("## Distribution of catches of target species for different national fisheries\n\n")
+}
+```
+
 
 ```{r}
 #| label: fig-figmapps
@@ -890,9 +902,18 @@ render_spatial_map(
 ```
 
 
-\newpage
-## Captures of species of special interest (SSIs)
-Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. PW has no SSI captures and TK and NU have no flagged fleets.
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0
+
+if (nrow(data_3605) > 0) {
+  cat("\\newpage\n\n")
+  cat("## Captures of species of special interest (SSIs)\n\n")
+  cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. PW has no SSI captures and TK and NU have no flagged fleets.")
+}
+```
+
 
 ```{r}
 ssi_s_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0) {

@@ -53,7 +53,7 @@ a. vessels flying their flag anywhere in the Convention Area south of 20$^\circ$
 b. vessels operating under charter, lease or other similar mechanism as part of their domestic fishery south of 20$^\circ$S; and
 c. any other vessels fishing within their waters south of 20$^\circ$S.
 
-This information shall be provided in Part 1of each CCM's annual report. Initially, this information will be provided in the template provided at Annex 2 for the period 2000-2009 and then updated annually.
+This information shall be provided in Part 1 of each CCM's annual report. Initially, this information will be provided in the template provided at Annex 2 for the period 2000-2009 and then updated annually.
 
 \* *Note: WCPFC11 confirmed a common understanding that "total catch" in this reporting requirement refers to both targeted and bycatch catches of swordfish*
 
@@ -73,7 +73,7 @@ if (nrow(a1) > 0) {
   colformat_num(j = "year", big.mark='') |> 
   fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("No fishing for swordfish was reported in ",params$max_year,", nor was any catch reported.")
+  msg=paste0("No fishing for swordfish was reported in ",params$max_year," or not applicable.")
 }
 ```
 `r msg`
@@ -126,7 +126,7 @@ if (nrow(a2) > 0) {
     fit_to_width(8)
 
 } else {
-  msg = "No observer coverage data available."
+  msg = "No observer coverage data available or not applicable."
 }
 ```
 `r msg`
@@ -207,7 +207,7 @@ if (nrow(a5) > 0) {
   flextable(a5)  |>
     fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("No cetacean encirclements by purse seine nets were reported in ",params$max_year,".")
+  msg = paste0("No cetacean encirclements by purse seine nets were reported in ",params$max_year," or not applicable.")
 }
 ```
 `r msg`
@@ -331,7 +331,7 @@ if (nrow(a6) > 0) {
   colformat_num(j = "year", big.mark='') |> 
   fontsize(size = 8, part = "all")
 } else {
-     msg=paste0("There was no reported longline activity in ",params$max_year," for the region.")
+     msg=paste0("There was no reported longline activity in ",params$max_year," for the region or not applicable.")
     }
 
 
@@ -349,7 +349,7 @@ if(exists(df_name) && is.data.frame(get(df_name))){
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area south of 30S.")
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area south of 30S or not applicable.")
 }
 ```
 `r msg`
@@ -368,7 +368,7 @@ if(exists(df_name) && is.data.frame(get(df_name))){
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 30S and 25S.")
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 30S and 25S or not applicable.")
 }
 ```
 `r msg`
@@ -387,7 +387,7 @@ if(exists(df_name) && is.data.frame(get(df_name))){
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("TODO:There was no reported longline activity in ",params$max_year," for area between 25S and 23N.")
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 25S and 23N or not applicable.")
 }
 ```
 `r msg`
@@ -406,7 +406,7 @@ if(exists(df_name) && is.data.frame(get(df_name))){
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("TODO: There was no reported longline activity in ",params$max_year," for area north of 23N.")
+  msg=paste0("There was no reported longline activity in ",params$max_year," for area north of 23N or not applicable.")
 }
 ```
 `r msg`
@@ -477,7 +477,7 @@ if (nrow(a7.south) > 0) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("TODO:No data were reported in ",params$max_year," for area south of 30S.")
+  msg=paste0("No data were reported in ",params$max_year," for area south of 30S or not applicable.")
 }
 ```
 `r msg`
@@ -495,7 +495,7 @@ if (nrow(a7.mids) > 0) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg= paste0("TODO:No data were reported in ",params$max_year," for area between 30S and 25S.")
+  msg= paste0("No data were reported in ",params$max_year," for area between 30S and 25S or not applicable.")
 }
 ```
 `r msg`
@@ -513,7 +513,7 @@ if (nrow(a7.midn) > 0) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("TODO:No data were reported in ",params$max_year," for the area between 25S and south of 23N.")
+  msg=paste0("No data were reported in ",params$max_year," for the area between 25S and south of 23N or not applicable.")
 }
 ```
 `r msg`
@@ -531,7 +531,7 @@ if (nrow(a7.north) > 0) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("TODO:No data were reported in ",params$max_year," for area north of 23N.")
+  msg = paste0("No data were reported in ",params$max_year," for area north of 23N or not applicable.")
 }
 ```
 `r msg`
@@ -555,7 +555,7 @@ if (nrow(a8) > 0) {
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
 } else {
-  msg = "No seabird interaction data (Table z) available."
+  msg = "No seabird interaction data (Table z) available or not applicable."
 }
 ```
 `r msg`
@@ -587,7 +587,7 @@ if (nrow(a9) > 0) {
       weight_kg = 'weight_kg')) |>
   fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("No vessels fished for striped marlin in ",params$max_year,".")
+  msg = paste0("No vessels fished for striped marlin in ",params$max_year," or not applicable.")
 }
 ```
 `r msg`
@@ -616,7 +616,7 @@ if (nrow(a11) > 0) {
       weightcaught_mt = 'wt')) |>
   fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("There was no fishing effort or catch of albacore north of the equator in ",params$max_year,".")
+  msg = paste0("There was no fishing effort or catch of albacore north of the equator in ",params$max_year," or not applicable.")
 }
 ```
 `r msg`
@@ -646,7 +646,7 @@ if (nrow(a12) > 0) {
   flextable(a12) |>
   fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("There was no fishing effort nor catch of North Pacific swordfish in ",params$max_year,".")
+  msg = paste0("There was no fishing effort nor catch of North Pacific swordfish in ",params$max_year," or not applicable.")
 }
 ```
 `r msg`

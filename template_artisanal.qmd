@@ -1,22 +1,17 @@
 ---
-title: "Generate Artisanal ACE"
-author: "`r params$author`"
 format: 
-  html:
-    page-layout: full
+  pdf:
+    geometry: "margin=2cm"
 editor: visual
-toc: true
-toc-location: left
-toccolor: blue
-urlcolor: blue
+toc: false
 embed-resources: true 
 execute: 
   echo: false
   message: false
   warning: false
 params:
-  flag: 'FJ'
-  year: 2025
+  flag: 'NU'
+  year: 2024
   author: "AUTHOR"
 ---
 
@@ -104,23 +99,25 @@ if (exists("data_ika_raw")){
 
 both_exist <- exists('data_ika_trips') && nrow(data_ika_trips) > 0 && exists('data_3615') && 
               is.data.frame(get('data_3615')) && nrow(data_3615) > 0
+
+local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.csv')
+
 ```
 
-::: panel-tabset
 
 ## Methodology
 
-The steps for preparing the artisanal catch estimates (ACE) for key tuna species are outlined below. The following tabs showing the catch and effort estimates that are used to prepare the final catch estimates.
+The steps for preparing the artisanal catch estimates (ACE) for key tuna species are outlined below. The following sections on this document show the catch and effort estimates that are used to prepare the final catch estimates.
 
-It should be noted that the Tails and Ikasavea apps are separate applications collecting a sample of the artisanal fishing activity. Some members only use Ikasavea, others use only Tails and some use both. At this point, we do not have comprehensive surveys in place to scale up how much of the fishing activity is recorded using these ereporting platforms in a reliable and representative manner. Therefore, we are basing the ACE estimates presented here on a combination of reporting catch and effort from these two sources (in case data is stored in both sources we will combine their effort and catch values) as well as local expert knowledge of the activities at different landing sites.
+It should be noted that the Tails and Ikasavea apps are separate applications collecting a sample of the artisanal fishing activity. Some members only use Ikasavea, others use only Tails and some use both. At this point, we do not have comprehensive surveys in place to scale up how much of the fishing activity is recorded using these ereporting platforms in a reliable and representative manner. Therefore, we are basing the ACE estimates presented here on a combination of reporting catch and effort from these two sources (in case data is stored in both sources, effort and catch values from these two sources are combined) as well as local expert knowledge of the activities at different landing sites.
 
 In the future, we hope to progress the Frame Survey concept to refine the estimates of total effort that are used to scale up the sampled catch estimates reported in the respective applications.
 
-**1.** We provide a summary of number of trips by month and landing site recorded in Tails (if any)
+**1.** A summary of number of trips by month and landing site recorded in Tails (if any)
 
-**2.** We provide a summary of number of trips by month and landing site recorded in Ikasavea (if any)
+**2.** A summary of number of trips by month and landing site recorded in Ikasavea (if any)
 
-**3.** If available data is collected using Ikasavea and TAILS we combine (sum) those values to provide final number of trips based on ereporting platforms
+**3.** If data is collected using Ikasavea and TAILS we combine (sum) the values to provide final number of trips based on ereporting platforms
 
 **4.** We compare to "rough" estimates of average monthly landings (trips) per month and landing site provided by members
 
@@ -132,15 +129,10 @@ In the future, we hope to progress the Frame Survey concept to refine the estima
 
 ## Fishing Effort
 
-### Data prep: Effort
-
-The tables below present the number of reported **trips** in `r params$year` by month and landing site, as reported in Tails, Ikasavea and in both platforms together (in case you have data reported in these two sources).
+The tables below present the number of reported **trips** in `r params$year` by month and landing site, as reported in Tails (if any), Ikasavea (if any) and in both platforms together (in case you have data reported in these two sources).
 
 If member provided a spreadsheet with the estimated trips per month at each landing site this will also be presented below. Some landing sites may not have any activity, that is OK. The member-provided estimates of effort by landing site and compared with the Tails (or Ikasavea or both sources combined) reported effort to produce a 'best' estimate of effort.
 
-<details>
-
-<summary> Trips: Tails</summary>
 
 ```{r}
 #| echo: false
@@ -159,40 +151,41 @@ if (!(nrow(data_3615) == 0)) {
     select(-entity)
   
   flextable(data_3615) |>  
+  set_header_labels(landing_site_name = "Landing Site") |>
   width(j=1, width=1.2) |> 
-  fontsize(size = 10, part = "all")
-}else{
-  cat("No fishing trips recorded in Tails for the selected year.")
+  fontsize(size = 8, part = "all") |>
+  fit_to_width(max_width = 6.5)
 }
 ```
-
-</details>
-
-<details>
-
-<summary> Trips: Ikasavea</summary>
 
 
 ```{r}
 #| echo: false
 #| results: 'asis'
 #| label: Monthly-effort-ika
-#| tbl-cap: !expr if(!exists('data_ika_trips')) glue::glue("Number of trips per month and landing site reported in Ikasavea") else ""
-if (!exists('data_ika_trips')){
-  cat("No fishing trips recorded in Ikasavea for the selected year.")
-}else{
-  flextable(df_ika_wide) |>  
+#| tbl-cap: !expr if(exists('data_ika_trips')) glue::glue("Number of trips per month and landing site reported in Ikasavea") else ""
+if (exists('data_ika_trips')){
+  flextable(df_ika_wide) |> 
+  set_header_labels(landing_site_name = "Landing Site") |>
+
   width(j=1, width=1.2) |> 
-  fontsize(size = 10, part = "all")
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
   }
 ```
-</details>
 
-<details>
 
-<summary>Differences in Landing Sites: Ikasavea + Tails</summary>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr both_exist
 
-If you have artisanal data being collected in Tails and in Ikasavea, you will see a summary table below of all landing sites common to T2 and Ikasavea as well the ones unique to each of these sources (if any). Use this section to identify issues in landing site names between these two sources.
+if (both_exist) {
+  cat("### Differences in Landing Sites: Ikasavea + Tails\n\n")
+  cat("Artisanal data is collected using Tails and in Ikasavea platforms. The summary table below of all landing sites common to T2 and Ikasavea as well the ones unique to each of these sources (if any).")
+}
+```
+
 
 ```{r}
 #| echo: false
@@ -222,8 +215,10 @@ if (both_exist) {
     
     # cat("### Landing site name comparison\n\n")
       flextable(summary_df) |>  
+        set_header_labels(landing_site_name = "Landing Site") |>
          width(j=1, width=1.2) |> 
-        fontsize(size = 10, part = "all")
+        fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 
     
     # Table of mismatches
@@ -237,21 +232,27 @@ if (both_exist) {
       )
       # cat("\n### Unmatched landing site names\n\n")
       flextable(mismatch_df) |>  
+        set_header_labels(landing_site_name = "Landing Site") |>
          width(j=1, width=1.2) |> 
-        fontsize(size = 10, part = "all")
+        fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
     }
   }
 }
 
 ```
 
-</details>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr both_exist
 
-<details>
+if (both_exist) {
+  cat("### Trips: Ikasavea + Tails\n\n")
+  cat("The final number of trips combining what was reported on these two platforms is presented in the table below.")
+}
+```
 
-<summary>Trips: Ikasavea + Tails</summary>
-
-If you have data being collected through these two ereporting tools you will see the final number of trips considering what was reported on both.
 
 ```{r}
 #| echo: false
@@ -276,23 +277,33 @@ if (both_exist) {
     select(landing_site_name, tolower(month.abb))
   
   ft <- flextable(combined_t2_ika) |>  
+
     width(j=1, width=1.2) |> 
-    fontsize(size = 10, part = "all")
+    set_header_labels(landing_site_name = "Landing Site") |>
+
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
   
-  flextable::htmltools_value(ft)
+  # flextable::htmltools_value(ft)
+  ft
 
 } else {
   combined_t2_ika <- data.frame()
 }
 ```
 
-</details>
 
-<details>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr nrow(data_3615) > 0 && file.exists(local_knowl_trips_file)
 
-<summary>Trips: Local Knowledge</summary>
+if (nrow(data_3615) > 0 && file.exists(local_knowl_trips_file)) {
+  cat("### Trips: Local Knowledge\n\n")
+  cat("Member-estimated **trips** per month at each landing site are presented in the table below. These estimates are used to compare with what is reported in the ereportng tools to produce a 'best' estimate of effort.")
+}
+```
 
-Read in member-estimated **trips** per month at each landing site. Some landing sites may not have any activity, that is OK. The member-provided estimates of effort by landing site and compared with the Tails reported effort to produce a 'best' estimate of effort.
 
 ```{r trips-est-mem}
 #| echo: false
@@ -300,22 +311,21 @@ Read in member-estimated **trips** per month at each landing site. Some landing 
 #| label: mem-trips
 #| tbl-cap: !expr if(nrow(data_3615) > 0) glue::glue("Member reported estimated trips per month per landing site") else ""
 
-local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.csv')
-
 if (file.exists(local_knowl_trips_file)){
   local_knowl_trips = read.csv(local_knowl_trips_file)
   flextable(local_knowl_trips)  |>  
-    fontsize(size = 10, part = "all") |> 
-    width(j=1, width=2)
+    fontsize(size = 8, part = "all") |> 
+    width(j=1, width=2) |>
+        fit_to_width(max_width = 6.5)
+
 }
 
 ```
 
-</details>
 
 ### Best estimate of fishing trips
 
-Now estimate monthly trips, based on the **max** *value either reported by the member or reported in the ereporting tools Tails and Ikasavea*. In case the er have data in Tails and Ikasavea the combination of trips in both sources will be used as your best estimate monthly trips (tab above).
+Estimate monthly trips are based on the **max** *value either reported by the member or reported in the ereporting tools Tails and Ikasavea*. In case ereporting data is collected through Tails and Ikasavea tools the combination of trips in both sources will be used as your best estimate monthly trips (tab above).
 
 ```{r prep-ereporting_trips, echo = F}
 
@@ -391,15 +401,16 @@ if (nrow(ereporting_trips) > 0){
   }
   }
 
-flextable(best_estimate_trips)  |>  
-  fontsize(size = 8, part = "all")
+flextable(best_estimate_trips)  |>    
+  set_header_labels(landing_site_name = "Landing Site") |>
 
+  fontsize(size = 8, part = "all") |>
+  fit_to_width(max_width = 6.5)
 
 ```
 
 ## Catch Estimates
 
-### Data prep: Catch
 
 ```{r prep-catch-data}
 # ── Month number → abbreviated name (keeps columns in calendar order) ─────────
@@ -576,11 +587,7 @@ for (sp in species){
 }
 ```
 
-**Unraised** tuna catches reported in ereporting tools are illustrated below, in kilograms (kgs).
-
-<details>
-
-<summary>Skipjack: SKJ</summary>
+**Unraised** tuna catches reported in ereporting tools are illustrated in the tables below, in kilograms (kgs).
 
 ```{r}
 #| echo: false
@@ -590,17 +597,16 @@ for (sp in species){
 
 # Check if data exists
 if ("skj" %in% names(unr_list)) { 
-    flextable(unr_list$skj) |>  
+    flextable(unr_list$skj|> 
+                mutate(across(where(is.numeric), as.integer))) |>
+    set_header_labels(landing_site_name = "Landing Site") |>
+    colformat_num(j = 2:13, digits = 0) |>  
     width(j=1, width=1.2) |> 
-    fontsize(size = 10, part = "all")
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 17, unit = "cm")
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Yellowfin: YFT</summary>
 
 ```{r}
 #| echo: false
@@ -610,18 +616,17 @@ if ("skj" %in% names(unr_list)) {
 
 # Check if data exists
 if ("yft" %in% names(unr_list)) { 
-    flextable(unr_list$yft) |>  
+    flextable(unr_list$yft|> 
+                mutate(across(where(is.numeric), as.integer))) |>
+    set_header_labels(landing_site_name = "Landing Site") |>
+
     width(j=1, width=1.2) |> 
-    fontsize(size = 10, part = "all")
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 17, unit = "cm")
 }
 
 ```
 
-</details>
-
-<details>
-
-<summary>Bigeye: BET</summary>
 
 ```{r}
 #| echo: false
@@ -631,24 +636,26 @@ if ("yft" %in% names(unr_list)) {
 
 # Check if data exists
 if ("bet" %in% names(unr_list)) { 
-    flextable(unr_list$bet) |>  
+    flextable(unr_list$bet|> 
+                mutate(across(where(is.numeric), as.integer))) |>  
+    set_header_labels(landing_site_name = "Landing Site") |>
+    colformat_num(j = 2:13, digits = 0) |>  
+
     width(j=1, width=1.2) |> 
-    fontsize(size = 10, part = "all")
-}
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 17, unit = "cm")
+    }
 
 ```
 
-</details>
+**Raised** catches are produced using the average catch per trip, raised by the best estimate of trips, to produce a representative estimate of total artisanal tuna catches. It should be **noted** that if there are sites with no catches reported, these are removed from the totals, even if effort was indicated by the member. This should be revisited - and an error message is noted in this document when that occurs.
 
-**Raised** catches are produced using the average catch per trip, raised by the best estimate of trips, to produce a representative estimate of total artisanal tuna catches. It should be **noted** that is there are sites with no catches reported, these are removed from the totals, even if effort was indicated by the member. This should be revisited - and an error message is noted in this document when that occurs.
+```{r}
+#| echo: false
+#| results: 'asis'
+#| label: raise-skj
+#| tbl-cap: !expr if ("skj" %in% names(raised_list)) glue::glue("Raised skipjack catch (kgs) reported in ereporting tools.") else ""
 
-<details>
-
-<summary>Skipjack: SKJ</summary>
-
-Raised catch estimates for skipjack tuna (kg) in `r params$year`:
-
-```{r raise-skj}
 # Remove rows where no catch was reported - as no average exists...
 
 if ("skj" %in% names(raised_list)) { 
@@ -662,34 +669,43 @@ if ("skj" %in% names(raised_list)) {
     filter(no_catch>0) |>  
     select(-no_catch)
   
-  flextable(df_unraised) |> 
+  flextable(df_unraised) |>
+    set_header_labels(landing_site_name = "Landing Site") |>
+
     colformat_num(j = 2:13, digits = 0) |>  
-    fontsize(size = 8, part = "all")
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
 
-</details>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0
 
-<details>
-
-<summary>Missing skipjack catch with effort</summary>
+if (exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0) {
+  cat("Missing skipjack catch with effort are reported below.\n\n")
+}
+```
 
 ```{r missing_skj}
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0){
-  flextable(missing_unraised_skj) |> colformat_num(j = 2:13, digits = 0) |>  fontsize(size = 8, part = "all")
+  flextable(missing_unraised_skj |> select(-no_catch)) |> 
+    set_header_labels(landing_site_name = "Landing Site") |>
+
+  colformat_num(j = 2:13, digits = 0) |>  
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
 
-</details>
 
-<details>
-
-<summary>Yellowfin: YFT</summary>
-
-Raised catch estimates for yellowfin tuna (kg) in `r params$year`:
-
-```{r raise-yft}
+```{r}
+#| echo: false
+#| results: 'asis'
+#| label: raise-yft
+#| tbl-cap: !expr if ("yft" %in% names(raised_list)) glue::glue("Raised yellowfin catch (kgs) reported in ereporting tools.") else ""
 # Remove rows where no catch was reported - as no average exists...
 
 if ("yft" %in% names(raised_list)) { 
@@ -703,34 +719,44 @@ if ("yft" %in% names(raised_list)) {
     filter(no_catch>0) |>  
     select(-no_catch)
   
-  flextable(df_unraised) |> 
+  flextable(df_unraised) |>
+    set_header_labels(landing_site_name = "Landing Site") |>
+
     colformat_num(j = 2:13, digits = 0) |>  
-    fontsize(size = 8, part = "all")
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
 
-</details>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0
 
-<details>
-
-<summary>Missing yellowfin catch with effort</summary>
+if (exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0) {
+  cat("Missing yellowfin catch with effort are reported below.\n\n")
+}
+```
 
 ```{r missing_yft}
+
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0){
-  flextable(missing_unraised_yft) |> colformat_num(j = 2:13, digits = 0) |>  fontsize(size = 8, part = "all")
+  flextable(missing_unraised_yft |> select(-no_catch)) |> 
+    set_header_labels(landing_site_name = "Landing Site") |>
+
+  colformat_num(j = 2:13, digits = 0) |>  
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
 
-</details>
+```{r}
+#| echo: false
+#| results: 'asis'
+#| label: raise-bet
+#| tbl-cap: !expr if ("bet" %in% names(raised_list)) glue::glue("Raised bigeye catch (kgs) reported in ereporting tools.") else ""
 
-<details>
-
-<summary>Bigeye: BET</summary>
-
-Raised catch estimates for bigeye tuna (kg) in `r params$year`:
-
-```{r raise-bet}
 # Remove rows where no catch was reported - as no average exists...
 
 if ("bet" %in% names(raised_list)) { 
@@ -745,25 +771,36 @@ if ("bet" %in% names(raised_list)) {
     select(-no_catch)
   
   flextable(df_unraised) |> 
+    set_header_labels(landing_site_name = "Landing Site") |>
+
     colformat_num(j = 2:13, digits = 0) |>  
-    fontsize(size = 8, part = "all")
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
 
-</details>
 
-<details>
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0
 
-<summary>Missing bigeye catch with effort</summary>
+if (exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0) {
+  cat("Missing bigeye catch with effort are reported below.\n\n")
+}
+```
 
 ```{r missing_bet}
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0){
-  flextable(missing_unraised_bet) |> colformat_num(j = 2:13, digits = 0) |>  fontsize(size = 8, part = "all")
+  flextable(missing_unraised_bet|> select(-no_catch)) |> 
+    set_header_labels(landing_site_name = "Landing Site") |>
+
+  colformat_num(j = 2:13, digits = 0) |>  
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 }
 ```
-
-</details>
 
 ## Final Estimates
 
@@ -810,7 +847,9 @@ ace_final = ace |>
   gather(key='Method', value='ACE', -1) |>
   spread(key = sp, value=ACE)
 
-flextable(ace_final) |>  fontsize(size = 12, part = "all")
+flextable(ace_final) |>  
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 
 ```
 
@@ -826,8 +865,8 @@ ace_final <- ace_final |>  mutate(SKJ = round(SKJ/tot*100,2),
   select(-tot)
 
 flextable(ace_final) |>
-  fontsize(size = 12, part = "all")
+  fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
 
 ```
 
-:::
