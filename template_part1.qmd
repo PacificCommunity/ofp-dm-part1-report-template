@@ -13,6 +13,12 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
+      
+  # docx:
+  #     tbl-cap-location: bottom
+  #     toc: false
+  #     number-sections: true
+  #     highlight-style: github
 page-layout: full
 edit: visual
 params:
@@ -222,7 +228,23 @@ if(params$aceman){
   
   if("catch" %in% colnames(data_3605)){
     data_3605$unadjcatch <- data_3605$catch
-  } 
+  }
+  
+  # data_3605_original <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
+  # 
+  # if(nrow(data_3605_original) > 0){
+  #   # select the data from years that are not in 3619
+  #   unique_yr_3619 <- data_3605 |>
+  #     distinct(year) |>
+  #     pull(year)
+  #     
+  #   missing_yr_data <- data_3605_original |>
+  #     filter(!(year %in% unique_yr_3619))
+  #   
+  #   # bind
+  #   data_3605_new <- rbind(colnames(missing_yr_data), colnames(data_3605))
+  # }
+  
   
 }else{
   data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
@@ -787,7 +809,7 @@ render_vessel_table(
 ```
 
 ```{r}
-pl_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "pl")) > 0) {
+pl_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code %in% c("pl", "p"))) > 0) {
   glue::glue("Number of {country_name} pole line vessels, by size category, active in the WCPFC Convention Area, over {yr_range}")
 } else NULL
 ```
@@ -947,10 +969,13 @@ if (nrow(data_3605) > 0){
   data_3605 |>  
   filter(gear_code == "s", 
          year %in% yrs_long,
-         !sp_code %in% ps_species) |>  # Exclude only the key species
+         !sp_code %in% ps_species) |>  
   group_by(sp_code, year) |> 
   summarise(catch = sum(catch, na.rm = TRUE), .groups = "drop") |> 
-  pivot_wider(names_from = year, values_from = catch, values_fill = 0) |> 
+  pivot_wider(names_from = year, 
+              values_from = catch, 
+              values_fill = 0,
+              names_sort = TRUE) |> 
   arrange(sp_code)
   
   # Create table of non-target species for longline
@@ -961,7 +986,10 @@ if (nrow(data_3605) > 0){
            !sp_code %in% ps_species) |>  # Exclude only the key species
     group_by(sp_code, year) |> 
     summarise(catch = sum(catch, na.rm = TRUE), .groups = "drop") |> 
-    pivot_wider(names_from = year, values_from = catch, values_fill = 0) |> 
+    pivot_wider(names_from = year, 
+                values_from = catch, 
+                values_fill = 0,
+                names_sort = TRUE) |> 
     arrange(sp_code)
 
 }else{

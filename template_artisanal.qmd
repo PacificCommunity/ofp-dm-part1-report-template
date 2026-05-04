@@ -2,6 +2,11 @@
 format: 
   pdf:
     geometry: "margin=2cm"
+  # docx:
+  #     tbl-cap-location: bottom
+  #     toc: false
+  #     number-sections: true
+  #     highlight-style: github
 editor: visual
 toc: false
 embed-resources: true 
@@ -11,7 +16,7 @@ execute:
   warning: false
 params:
   flag: 'NU'
-  year: 2024
+  year: 2025
   author: "AUTHOR"
 ---
 
@@ -104,7 +109,6 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-
 ## Methodology
 
 The steps for preparing the artisanal catch estimates (ACE) for key tuna species are outlined below. The following sections on this document show the catch and effort estimates that are used to prepare the final catch estimates.
@@ -133,7 +137,6 @@ The tables below present the number of reported **trips** in `r params$year` by 
 
 If member provided a spreadsheet with the estimated trips per month at each landing site this will also be presented below. Some landing sites may not have any activity, that is OK. The member-provided estimates of effort by landing site and compared with the Tails (or Ikasavea or both sources combined) reported effort to produce a 'best' estimate of effort.
 
-
 ```{r}
 #| echo: false
 #| results: 'asis'
@@ -158,7 +161,6 @@ if (!(nrow(data_3615) == 0)) {
 }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: 'asis'
@@ -174,7 +176,6 @@ if (exists('data_ika_trips')){
   }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: asis
@@ -185,7 +186,6 @@ if (both_exist) {
   cat("Artisanal data is collected using Tails and in Ikasavea platforms. The summary table below of all landing sites common to T2 and Ikasavea as well the ones unique to each of these sources (if any).")
 }
 ```
-
 
 ```{r}
 #| echo: false
@@ -253,7 +253,6 @@ if (both_exist) {
 }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: 'asis'
@@ -292,7 +291,6 @@ if (both_exist) {
 }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: asis
@@ -303,7 +301,6 @@ if (nrow(data_3615) > 0 && file.exists(local_knowl_trips_file)) {
   cat("Member-estimated **trips** per month at each landing site are presented in the table below. These estimates are used to compare with what is reported in the ereportng tools to produce a 'best' estimate of effort.")
 }
 ```
-
 
 ```{r trips-est-mem}
 #| echo: false
@@ -321,7 +318,6 @@ if (file.exists(local_knowl_trips_file)){
 }
 
 ```
-
 
 ### Best estimate of fishing trips
 
@@ -410,7 +406,6 @@ flextable(best_estimate_trips)  |>
 ```
 
 ## Catch Estimates
-
 
 ```{r prep-catch-data}
 # ── Month number → abbreviated name (keeps columns in calendar order) ─────────
@@ -607,7 +602,6 @@ if ("skj" %in% names(unr_list)) {
 }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: 'asis'
@@ -626,7 +620,6 @@ if ("yft" %in% names(unr_list)) {
 }
 
 ```
-
 
 ```{r}
 #| echo: false
@@ -699,7 +692,6 @@ if(exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0){
     fit_to_width(max_width = 6.5)
 }
 ```
-
 
 ```{r}
 #| echo: false
@@ -778,7 +770,6 @@ if ("bet" %in% names(raised_list)) {
     fit_to_width(max_width = 6.5)
 }
 ```
-
 
 ```{r}
 #| echo: false
@@ -869,4 +860,3 @@ flextable(ace_final) |>
     fit_to_width(max_width = 6.5)
 
 ```
-

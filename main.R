@@ -11,11 +11,11 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("TO")
-r_year <- 2024
+country_codes <- c("PG")
+r_year <- 2025
 report_author <- "Jessica LS"
-rewrite_files <- FALSE
-reports_list <- c("part1")           # options are: c("artisanal", "addendum", "part1")
+rewrite_files <- TRUE
+reports_list <-  c("part1")           # options are: c("artisanal", "addendum", "part1")
 aceman = FALSE # if TRUE, source only ACEs data from member country, if false, source data from yearbook.
 
 # Step 3: Read/download data ####

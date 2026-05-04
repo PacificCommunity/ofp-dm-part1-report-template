@@ -722,7 +722,8 @@ build_reports <- function(country_codes,
                           location      = "Nuku\\textquotesingle alofa, Tonga",
                           session_dates = "13--21 August 2025",
                           reports       = c("addendum", "part1", "artisanal"),
-                          quiet_tag     = FALSE){
+                          quiet_tag     = FALSE,
+                          file_template_part_1 = "template_part1.qmd"){
   
   for (country_code in country_codes){
     country_code = toupper(country_code)
@@ -758,7 +759,7 @@ build_reports <- function(country_codes,
       
       # Render the document with parameters
       quarto_render(
-        input          = "template_part1.qmd",
+        input          = file_template_part_1,
         execute_params = params_part1,
         output_file    = output_filename_part1,
         quarto_args    = c("--metadata", paste0("include-in-header=", preamble_path)),
