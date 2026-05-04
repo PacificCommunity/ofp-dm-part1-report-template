@@ -22,7 +22,7 @@ format:
 page-layout: full
 edit: visual
 params:
-  country_code: 'PG'          
+  country_code: 'NR'          
   year: 2025                  
   data_provided: 'Yes'        
   author: "AUTHOR"
@@ -76,7 +76,6 @@ ft <- border_inner(ft)
 
 ft
 ```
-
 
 ```{r}
 #| label: prelims
@@ -217,7 +216,6 @@ For example, a brief historical description of national fisheries in the WCPFC C
 
 Describe recent activities by national fleets (by gear type) in the Convention Area, including development/trends in each fishery (e.g. changes in fishing patterns, fleet operations, target species, trends in size composition, etc.).
 
-
 ```{r ps-prep}
 
 # Load all raw data - from t2
@@ -321,7 +319,6 @@ if (nrow(data_3605_pl) > 0){
 }
 
 ```
-
 
 ```{r funcs-render}
 #| echo: false
@@ -533,8 +530,7 @@ render_ssi_table <- function(data, gear_code, gear_name, intro_text = NULL) {
     padding(padding.left = 5, padding.right = 5, part = "all")
 }
 
-```  
-
+```
 
 ```{r}
 #| echo: false
@@ -587,6 +583,7 @@ render_gear_tbl_section3(
 ```
 
 \newpage
+
 ```{r}
 #| echo: false
 #| results: 'asis'
@@ -703,7 +700,6 @@ ggplot(ves_calcs, aes(x = year, y = Vessels, colour = gear)) +
   }
 ```
 
-
 ```{r}
 #| echo: false
 #| results: asis
@@ -714,7 +710,6 @@ if (nrow(data_3605) > 0) {
   cat("## Number of active vessels by gear and size category over recent years\n\n")
 }
 ```
-
 
 ```{r}
 
@@ -771,7 +766,6 @@ pl_size_fn <- function(data) {
 
 ```
 
-
 ```{r}
 ll_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "l")) > 0) {
   glue::glue("Number of {country_name} longline vessels, by size category, active in the WCPFC Convention Area, over {yr_range}")
@@ -793,11 +787,10 @@ render_vessel_table(
 ```
 
 ```{r}
-ps_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code %in% c("s","ps"))) > 0) {
+ps_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code %in% c("s", "ps"))) > 0) {
   glue::glue("Number of {country_name} purse seine vessels, by size category, active in the WCPFC Convention Area, over {yr_range}")
 } else NULL
 ```
-
 
 ```{r}
 #| label: tbl-tbl2-ps
@@ -836,7 +829,6 @@ render_vessel_table(
 )
 ```
 
-
 ```{r}
 #| echo: false
 #| results: asis
@@ -847,7 +839,6 @@ if (nrow(data_3605) > 0) {
   cat("## Distribution of catches of target species for different national fisheries\n\n")
 }
 ```
-
 
 ```{r}
 #| label: fig-figmapps
@@ -860,7 +851,6 @@ if (nrow(data_3605) > 0) {
 map_ps <- file.path(this_yr_folder, glue::glue("map_ps_{country_cd}_{params$year}.png"))
 if (file.exists(map_ps)) knitr::include_graphics(map_ps)
 ```
-
 
 ```{r}
 #| label: fig-figmapl
@@ -898,7 +888,6 @@ render_spatial_map(
 )
 ```
 
-
 ```{r}
 #| echo: false
 #| results: asis
@@ -910,7 +899,6 @@ if (nrow(data_3605) > 0) {
   cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. PW has no SSI captures and TK and NU have no flagged fleets.")
 }
 ```
-
 
 ```{r}
 ssi_s_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0) {
@@ -938,7 +926,6 @@ ssi_l_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(
 
 ```
 
-
 ```{r}
 #| label: tbl-tbl3ll
 #| eval: !expr "!is.null(ssi_l_caption)"
@@ -959,7 +946,6 @@ ssi_pl_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow
 
 ```
 
-
 ```{r}
 #| label: tbl-tbl3lpl
 #| eval: !expr "!is.null(ssi_pl_caption)"
@@ -973,7 +959,6 @@ render_ssi_table(
   intro_text = "Some text"
 )
 ```
-
 
 ```{r}
 # Create non-target purse seine table
@@ -1040,7 +1025,6 @@ if (nrow(PS_tab) > 0) {
 }
 ```
 
-
 ```{r}
 #| label: tbl-tbl4l
 #| eval: !expr "nrow(data_3605) > 0"
@@ -1067,6 +1051,7 @@ if (nrow(LL_tab) > 0) {
 ```
 
 \newpage
+
 # Coastal State Reporting
 
 Describe recent activities by foreign and domestic fleets in the waters of national jurisdiction, including development/trends in each fishery (e.g. changes in fishing patterns, fleet operations, target species, trends in size composition, etc.).
@@ -1078,7 +1063,6 @@ Associated socioeconomic factors (which may influence or explain the above trend
 # Disposal of catch
 
 Disposal of catch (fresh/frozen/other) / market destination (export/domestic).
-
 
 ```{r}
 #| label: tbl-tbldis
@@ -1116,5 +1100,3 @@ e.  Other
 # Research activities covering target and non-target species
 
 For example, biological studies supporting stock assessments; composition of the catch according to length, weight and sex; research on environmental factors, abundance/biomass surveys, oceanographic and ecological studies, etc.
-
-
