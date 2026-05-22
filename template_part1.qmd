@@ -22,8 +22,8 @@ format:
 page-layout: full
 edit: visual
 params:
-  country_code: 'NR'          
-  year: 2025                  
+  country_code: 'PF'          
+  year: 2024                  
   data_provided: 'Yes'        
   author: "AUTHOR"
   aceman: TRUE
@@ -230,22 +230,6 @@ if(params$aceman){
     data_3605$unadjcatch <- data_3605$catch
   }
   
-  # data_3605_original <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
-  # 
-  # if(nrow(data_3605_original) > 0){
-  #   # select the data from years that are not in 3619
-  #   unique_yr_3619 <- data_3605 |>
-  #     distinct(year) |>
-  #     pull(year)
-  #     
-  #   missing_yr_data <- data_3605_original |>
-  #     filter(!(year %in% unique_yr_3619))
-  #   
-  #   # bind
-  #   data_3605_new <- rbind(colnames(missing_yr_data), colnames(data_3605))
-  # }
-  
-  
 }else{
   data_3605 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3605)
 }
@@ -270,6 +254,12 @@ if (nrow(data_3605) == 0){
   data_3605_ll <- data.frame()
   data_3605_pl <- data.frame()
   }else{
+  
+  # only data until current report year
+  data_3605 <- data_3605 |>
+    mutate(year = as.numeric(year)) |>
+    filter(year <= report_year)
+    
   # separate in PS, LL and PL
   data_3605_ps <- data_3605 |>
     filter(gear_code == "s") |>

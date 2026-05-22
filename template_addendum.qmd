@@ -51,8 +51,8 @@ if (!exists("yy") || length(yy) == 0) {
 }
 
 if (!exists("this_yr_folder") || length(this_yr_folder) == 0 || !nzchar(this_yr_folder)) {
-  this_yr_folder <- if (!is.null(this_yr_folder) && nzchar(this_yr_folder)) {
-    this_yr_folder
+  this_yr_folder <- if (!is.null(params$country_folder) && nzchar(params$country_folder)) {
+    params$country_folder
   } else {
     paste0("./data/report_", as.character(yy), "_", member, "/") |> tolower()
   }
