@@ -17,11 +17,19 @@ library("sf")
 library("janitor")
 library("httr")
 library("odbc")
+library("rnaturalearth")
 
 ### Never change/update the values below:
 report_ids_list = c(2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
-                    3615, 3527, 3614,                                          # artisanal
-                    3605, 2953, 3608, 3619)                                    # Part1
+                    3615, 3527, 3614,
+                    2900, # PS catch EEZ per country # we need to check if only considers thumbs up and the catch are only in the eez? Only key sp?
+                    2894, # LL catch EEZ (I think…)                 # artisanal
+                    # we are also interested in high seas, but what is the area (only WCPFC)?
+                    3375, # LL spatial catch 3375
+                    2904, # PS spatial catch 3375
+                    3634,
+                    3605, 2953, 3608, 3619)                         # Part1
+# report_ids_list = c(3375, 2904)         
 
 report_ids_ikasavea_list = c("b1559368-b7a3-464e-883a-34fe3d2cd7c0") 
 
@@ -53,7 +61,7 @@ download_ikasavea_data <- function(country_code, report_ids, folder_path, r_year
     cat("❌ Authentication failed!\n")
     cat("Please check your credentials in the .env file\n")
     cat(paste("Status Code:", status_code(connection), "\n"))
-    stop("Authentication for Ikasavea failed")
+    message("Authentication for Ikasavea failed. If you are expecting data sourced from Ikasavea please check youur credentials in the .env file, otherwise, you can ignore this message.")
   }
   
   # Step 2: get authorities
@@ -307,10 +315,7 @@ download_report_data <- function(token,
                                                save_folder = save_folder,
                                                list_reports = filtered_reports)
   
-  # select key reports
-  # reports_selection <- all_reports |>
-  #   filter(user_report_id %in% report_ids)
-  
+
   # download data
   report_data <- get_reports(
     token = token, 
@@ -499,10 +504,21 @@ get_reports <- function(token, user_name, country_code, filtered_reports, attrs,
       report_attr_names <- strsplit(report_info$report_attrs, ",") |> 
         unlist() |> trimws()
       
-      # Build runParams only for attributes relevant to this report
-      params_list <- attrs[names(attrs) %in% report_attr_names]
+      if (guid %in% c("0026f9a9-b8ec-4812-96e5-f22d90914bac", # 2984 YM
+                      "1a70dd40-7cca-46ab-b078-e02fd81f67cf", # 2900 YM
+                      "870a80ad-cce4-4cb6-b5a0-ab5d00b0233c", # 337
+                      "5ed9c890-760b-4c32-8402-665a2e5bf3a9" # 2904 Y
+      )) {
+        # Artisanal-style reports: keep year and other attrs, but don't restrict by flag
+        params_list <- attrs[names(attrs) %in% report_attr_names]
+        params_list$flag_code <- NULL   # remove flag restriction so we get all flags
+        params_list$year <- NULL   # remove flag restriction so we get all flags
+      } else {
+        # Build runParams only for attributes relevant to this report
+        params_list <- attrs[names(attrs) %in% report_attr_names]
+      }
       
-      # Add group_by if not NA or empty
+      # Add group_by if not NA or empty (applies to both branches)
       if (!is.null(group_by) && !is.na(group_by) && nzchar(group_by)) {
         params_list$group_by <- group_by
       }
@@ -515,7 +531,7 @@ get_reports <- function(token, user_name, country_code, filtered_reports, attrs,
       api_url <- glue::glue(
         "{base_url}?guid={guid}&lang={lang}&runParams={runParams_encoded}"
       )
-      
+
       ret <- run(
         "curl",
         args = c(
@@ -723,7 +739,9 @@ build_reports <- function(country_codes,
                           session_dates = "13--21 August 2025",
                           reports       = c("addendum", "part1", "artisanal"),
                           quiet_tag     = FALSE,
-                          file_template_part_1 = "template_part1.qmd"){
+                          file_template_part_1 = "template_part1.qmd",
+                          file_template_artisanal = "template_artisanal.qmd"
+                          ){
   
   for (country_code in country_codes){
     country_code = toupper(country_code)
@@ -814,7 +832,7 @@ build_reports <- function(country_codes,
       
       # Render the document with parameters
       quarto_render(
-        input = "template_artisanal.qmd",
+        input = file_template_artisanal,
         execute_params = params_art,
         output_file = output_filename_art,
         quarto_args    = c("--metadata", paste0("include-in-header=", preamble_path)),
@@ -872,17 +890,13 @@ save_spatial_maps <- function(data_3608, country_cd, report_year, newmap, output
     }
     
     p <- ggplot() +
-      
-      geom_polygon(
-        data = newmap,
-        aes(x = long, y = lat, group = group),
-        fill = 'bisque1', col = 'gray'
-      ) +
+      geom_sf(data = newmap, fill = 'bisque1', colour = 'gray') +
       geom_tile(data = spatial_data, aes(lon, lat, fill = catch)) +
       scale_fill_distiller(palette = "Spectral") +
-      scale_x_continuous(limits = c(120, 230), expand = c(0, 0), breaks = seq(140, 220, 40)) +
-      scale_y_continuous(limits = c(-40, 30), expand = c(0, 0))+
+      scale_x_continuous(breaks = seq(140, 220, 40), expand = c(0, 0)) +
+      scale_y_continuous(breaks = seq(-40, 20, 20), expand = c(0, 0)) +
       facet_grid(year ~ species) +
+      coord_sf(xlim = c(120, 230), ylim = c(-40, 30), expand = FALSE) +
       xlab("Longitude") + ylab("Latitude") + labs(fill = "Catch (mt)") +
       ggtitle(glue::glue("Spatial patterns in catch for the {gear_name_val} fishery")) +
       theme_bw() +
@@ -893,9 +907,10 @@ save_spatial_maps <- function(data_3608, country_cd, report_year, newmap, output
         strip.background = element_rect(fill = 'white'),
         strip.text       = element_text(size = 14),
         axis.title       = element_text(size = 16),
-        title            = element_text(size = 16)
-      ) +
-      coord_cartesian()
+        title            = element_text(size = 16),
+        panel.grid.major = element_line(colour = "grey85", linewidth = 0.3),
+        panel.grid.minor = element_blank()
+      )
     
     out_path <- file.path(
       output_dir,
@@ -918,10 +933,21 @@ create_maps <- function(country_code, r_year){
   
   message("Pre-generating maps for: ", country_code)
   
-  # Load map background once
-  library(maps)
-  raw_map <- map("world2", plot = FALSE, fill = TRUE)
-  newmap  <- fortify(raw_map)  
+  sf::sf_use_s2(FALSE)
+  
+  newmap <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Keep only continents relevant to the Pacific region
+  newmap <- newmap[newmap$continent %in% c("Oceania", "Asia"), ]
+  
+  newmap <- st_make_valid(newmap)
+  newmap <- st_shift_longitude(newmap)
+  newmap <- st_make_valid(newmap)
+  newmap <- st_crop(newmap, xmin = 120, xmax = 230, ymin = -45, ymax = 35)
+  
+  # Plot just the map to see what's actually there
+  plot(st_geometry(newmap), col = 'bisque1', border = 'gray')
+  
   yrs_long <- (r_year - 4):r_year
   
   # Load spatial data
@@ -952,4 +978,4 @@ create_maps <- function(country_code, r_year){
   
   rm(data_3608, newmap); gc()
 }  
-
+# create_maps(country_code = country_code, r_year = r_year)

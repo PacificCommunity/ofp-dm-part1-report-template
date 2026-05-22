@@ -17,11 +17,11 @@ format:
 page-layout: full
 edit: visual
 params:
-  country_code: "FJ" # Default value, will be overridden when rendering
-  country_folder: "./data/report_2024_fj/" # Defaul value, will be overriden when rendering - this_yr_folder
+  country_code: "FJ"
+  country_folder: "./data/report_2024_fj/"
   max_year: 2024
   author: "ENTER AUTHOR"
-  
+  applicable_measures: "all"   # "all" or e.g. c("2009-06", "2011-03", "2018-03")
 ---
 <!-- urlcolor: blue -->
 <!-- toccolor: blue -->
@@ -32,16 +32,66 @@ library(flextable)
 library(knitr)
 source("utils.R")
 
-# Reporting years
-yy = params$max_year
-min.yy = yy-4
-member = tolower(params$country_code)  # Use the parameter value
-this_yr_folder = params$country_folder
 
-options(scipen=0, knitr.kable.NA = '')
+# Detect context: standalone render vs. knit_child from parent
+if (!exists("member") || length(member) == 0 || !nzchar(member)) {
+  if (exists("country_cd") && length(country_cd) == 1 && nzchar(country_cd)) {
+    member <- country_cd
+  } else {
+    member <- tolower(params$country_code)
+  }
+}
 
+if (!exists("yy") || length(yy) == 0) {
+  if (exists("report_year") && length(report_year) == 1) {
+    yy <- report_year
+  } else {
+    yy <- params$max_year
+  }
+}
+
+if (!exists("this_yr_folder") || length(this_yr_folder) == 0 || !nzchar(this_yr_folder)) {
+  this_yr_folder <- if (!is.null(this_yr_folder) && nzchar(this_yr_folder)) {
+    this_yr_folder
+  } else {
+    paste0("./data/report_", as.character(yy), "_", member, "/") |> tolower()
+  }
+}
+
+if (!exists("applicable_measures") || length(applicable_measures) == 0) {
+  applicable_measures <- if (!is.null(params$applicable_measures)) {
+    params$applicable_measures
+  } else {
+    "all"
+  }
+}
+
+stopifnot(
+  length(member)         == 1, nzchar(member),
+  length(yy)             == 1,
+  length(this_yr_folder) == 1, nzchar(this_yr_folder)
+)
+
+min.yy <- yy - 4
+
+# --- Applicability helpers --------------------------------------------------
+is_applicable <- function(measure_code) {
+  if (identical(applicable_measures, "all")) return(TRUE)
+  measure_code %in% applicable_measures
+}
+
+no_data_msg <- function(measure_code, year = yy, context = "") {
+  if (!is_applicable(measure_code)) {
+    "Not applicable."
+  } else {
+    paste0("No data reported in ", year,
+           if (nzchar(context)) paste0(" for ", context) else "", ".")
+  }
+}
+# ---------------------------------------------------------------------------
+
+options(scipen = 0, knitr.kable.NA = '')
 ```
-
 
 ### Section A
 
@@ -57,23 +107,19 @@ This information shall be provided in Part 1 of each CCM's annual report. Initia
 
 \* *Note: WCPFC11 confirmed a common understanding that "total catch" in this reporting requirement refers to both targeted and bycatch catches of swordfish*
 
-
 ```{r}
 #| label: tbl-2009-03
 #| tbl-cap: "Total number of vessels fishing for swordfish and the catch (mt) of swordfish south of 20S."
 
-# Use the exact file path from your directory structure
 a1 <- read_and_clean(this_yr_folder, member, r_code=2918)
 
-if (nrow(a1) > 0) {
-  
-  msg = ' '
-  flextable(a1 |>
-              mutate(swo_mt = round(swo_mt,0))) |> 
-  colformat_num(j = "year", big.mark='') |> 
-  fontsize(size = 8, part = "all")
+if (nrow(a1) > 0 && is_applicable("2009-03")) {
+  msg <- ' '
+  flextable(a1 |> mutate(swo_mt = round(swo_mt, 0))) |> 
+    colformat_num(j = "year", big.mark='') |> 
+    fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("No fishing for swordfish was reported in ",params$max_year," or not applicable.")
+  msg <- no_data_msg("2009-03")
 }
 ```
 `r msg`
@@ -89,26 +135,23 @@ A sample report format is provided as guidance to assist CCMs with reporting (WC
 #| label: tbl-obs_cov
 #| tbl-cap: 'Observer coverage of longline fleet activity where hooks are in hundred hooks from logbook data and fishing days, sea days, and trips are all calculated from VMS data. Coverage percentages are rounded to the nearest whole number.'
 
-# Use the exact file path from your directory structure
 a2 <- read_and_clean(this_yr_folder, member, r_code=2986) 
 
-if (nrow(a2) > 0) {
-  msg = ' '
+if (nrow(a2) > 0 && is_applicable("obs-cov")) {
+  msg <- ' '
   flextable(a2 |>
-  mutate(gear = "L", year = as.character(params$max_year),
-         tot_effort = round(tot_effort/100, 0), 
-         hks_obsv = round(hks_obsv/100,0)
-         ) |>
-  select(year, flag = vessel_flag, gear, 
-         tot_effort, hks_obsv, hooks_cov, # todo: check, hooks is very diff from report from last year (FJ)
-         days_fishing, obs_fish_days, fishday_cov,
-         days_at_sea, obs_sea_days, sea_cov,
-         trips_est, obs_trips, trip_cov
-         )) |>
-   set_header_labels(
+    mutate(gear = "L", year = as.character(yy),
+           tot_effort = round(tot_effort/100, 0), 
+           hks_obsv = round(hks_obsv/100, 0)) |>
+    select(year, flag = vessel_flag, gear, 
+           tot_effort, hks_obsv, hooks_cov,
+           days_fishing, obs_fish_days, fishday_cov,
+           days_at_sea, obs_sea_days, sea_cov,
+           trips_est, obs_trips, trip_cov)) |>
+    set_header_labels(
       tot_effort = "hooks",
       hks_obsv = "obs",
-      hooks_cov= "cov %",
+      hooks_cov = "cov %",
       days_fishing = 'fish days',
       obs_fish_days = 'obs',
       fishday_cov = 'cov %',
@@ -118,27 +161,24 @@ if (nrow(a2) > 0) {
       trips_est = 'trips',
       obs_trips = 'obs',
       trip_cov = 'cov %') |>
-     add_header_row(top = TRUE, values = c("", "Hooks", "Fishing days", "Sea days", "Trips"),
-                    colwidths = c(3,3,3,3,3)) |>
-    vline(j=c(3,6,9,12)) |>
+    add_header_row(top = TRUE, values = c("", "Hooks", "Fishing days", "Sea days", "Trips"),
+                   colwidths = c(3,3,3,3,3)) |>
+    vline(j = c(3,6,9,12)) |>
     colformat_num(j = "year", big.mark='') |>
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
-
 } else {
-  msg = "No observer coverage data available or not applicable."
+  msg <- no_data_msg("obs-cov", context = "observer coverage")
 }
 ```
 `r msg`
-
-
 
 \newpage
 #### CMM 2009-06 [Transshipment], Para 11 (Annex II)
 
 CCMs shall report on all transhipment activities covered by this Measure (including transhipment activities that occur in ports or EEZs) as part of their Annual Report in accordance with the guidelines at Annex II. In doing so, CCMs shall take all reasonable steps to validate and where possible, correct information received from vessels undertaking transhipment using all available information such as catch and effort data, position data, observer reports and port monitoring data.
 
-WCPFC15 Outcome document para 48:  The Commission agreed to the TCC14 recommendation that the template provided in TCC14-2018-RP03 Annex 3 be used by all applicable CCMs for their future reporting in Annual Report Part 1, as per CMM 2009-06 paragraph 11 (Attachment O of WCPFC15). **Annex 3 of RP03:  Transhipment information to be provided annually by CCMs as required by CMM 2009-06 paragraph 11 in accordance with the guidelines in Annex II of the measure.**
+WCPFC15 Outcome document para 48: The Commission agreed to the TCC14 recommendation that the template provided in TCC14-2018-RP03 Annex 3 be used by all applicable CCMs for their future reporting in Annual Report Part 1, as per CMM 2009-06 paragraph 11 (Attachment O of WCPFC15). **Annex 3 of RP03: Transhipment information to be provided annually by CCMs as required by CMM 2009-06 paragraph 11 in accordance with the guidelines in Annex II of the measure.**
 
 Each CCM shall include in Part 1 of its Annual Report to the Commission:
 
@@ -154,16 +194,15 @@ g. fishing gear used
 
 ```{r}
 #| label: tbl-cmm2009-06.1
-# Check if you have trans1.csv files in your directory structure
-# Based on your directory listing, this file might not exist
-trans1_file <-  str_c(params$country_folder,  'additional_files/trans1.csv')
 
-if (file.exists(trans1_file)) {
+trans1_file <- str_c(this_yr_folder, 'additional_files/trans1.csv')
+
+if (file.exists(trans1_file) && is_applicable("2009-06")) {
   a3 <- read.csv(trans1_file)
-  msg = '';
+  msg <- ''
   flextable(a3)
 } else {
-  msg = "No transshipment quantity data available."
+  msg <- no_data_msg("2009-06", context = "transhipment quantities")
 }
 ```
 `r msg`
@@ -179,15 +218,14 @@ e. fishing gear
 ```{r}
 #| label: tbl-cmm2009-06.2
 
-# Check if you have trans2.csv files in your directory structure
-# Based on your directory listing, this file might not exist
-trans2_file <-  str_c(params$country_folder,  'additional_files/trans2.csv')
-if (file.exists(trans2_file)) {
+trans2_file <- str_c(this_yr_folder, 'additional_files/trans2.csv')
+
+if (file.exists(trans2_file) && is_applicable("2009-06")) {
   a4 <- read.csv(trans2_file)
-  msg = '';
+  msg <- ''
   flextable(a4)
 } else {
-  msg = "No transshipment count data available."
+  msg <- no_data_msg("2009-06", context = "transhipment counts")
 }
 ```
 `r msg`
@@ -202,12 +240,12 @@ CCMs shall include in their Part 1 Annual Report any instances in which cetacean
 
 a5 <- read_and_clean(this_yr_folder, member, r_code=3222)
 
-if (nrow(a5) > 0) {
-  msg = ' '
-  flextable(a5)  |>
+if (nrow(a5) > 0 && is_applicable("2011-03")) {
+  msg <- ' '
+  flextable(a5) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("No cetacean encirclements by purse seine nets were reported in ",params$max_year," or not applicable.")
+  msg <- no_data_msg("2011-03", context = "cetacean encirclements by purse seine nets")
 }
 ```
 `r msg`
@@ -216,7 +254,7 @@ if (nrow(a5) > 0) {
 
 #### CMM 2018-3 [Seabirds], Para 13
 
-CCMs shall annually provide to the Commission, in Part 1 of their annual reports, all available information on interactions with seabirds reported or collected by observers to enable the estimation of seabird mortality in all fisheries to which the Convention applies (see below for Part 1 reporting template guideline).These reports shall include information on:
+CCMs shall annually provide to the Commission, in Part 1 of their annual reports, all available information on interactions with seabirds reported or collected by observers to enable the estimation of seabird mortality in all fisheries to which the Convention applies (see below for Part 1 reporting template guideline). These reports shall include information on:
 
 1. the proportion of observed effort with specific mitigation measures used; and
 2. observed and reported species specific seabird bycatch rates and numbers or statistically rigorous estimates of species-specific seabird interaction rates (for longline, interactions per 1,000 hooks) and total numbers
@@ -227,18 +265,13 @@ CCMs shall annually provide to the Commission, in Part 1 of their annual reports
 #| label: tbl-cmm2018-03x
 #| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area.'
 
-
-# Use the exact file path from your directory structure
 a6 <- read_and_clean(this_yr_folder, member, r_code=3317)
 
-
-if (nrow(a6) > 0) {
+if (nrow(a6) > 0 && is_applicable("2018-03")) {
   
-  # we need to merge with another table
-  a6_1 <- read_and_clean(this_yr_folder, member, r_code=3612) # totals
+  a6_1 <- read_and_clean(this_yr_folder, member, r_code=3612)
   data_3605 <- read_and_clean(this_yr_folder, member, r_code=3605)
 
-  # Plot of vessel numbers for only Longline, Purse seine and Pole Line, aggregated over size class
   ves_calcs <- 
     data_3605 |>  
     filter(gear_code %in% c("L", "l")) |>  
@@ -251,162 +284,131 @@ if (nrow(a6) > 0) {
 
   a6 <- a6 |>
     left_join(a6_1, by = "year", suffix = c("_obs", "_tot")) |>
-    select(-total_vessels)
-    
-  a6 <- a6 |>
-    left_join(ves_calcs, by = "year")
-
-  a6 <- a6 %>%
-    mutate(flag_id = params$country_code) %>%
-
-    select(year, 
-           flag_id, 
-           
-           nb_vessel,
-           
+    select(-total_vessels) |>
+    left_join(ves_calcs, by = "year") |>
+    mutate(flag_id = member) |>
+    select(year, flag_id, nb_vessel,
            hhooks = totalhooks,
            hks_south_of_30s = hks_south_of30s_tot,
            hks_north_of_23n = hks_north_of23n_tot,   
            hks_between_25s_30s = hks_between25s30s_tot,
            hks_between_25s_23n = hks_between25s23n_tot,
-           
            south_of_30s = south_of30s,
            north_of_23n = north_of23n,
            between_25s_23n = between25s23n,
            between_25s_30s = between25s30s,
-
            hooks_obs = hooks_observed, 
            n_birds = brd_no, 
            hks_obs_south_of_30s = hks_south_of30s_obs,
            hks_obs_north_of_23n = hks_north_of23n_obs,
            hks_obs_between_25s_30s = hks_between25s30s_obs,
            hks_obs_between_25s_23n = hks_between25s23n_obs,
-           
            capture_rate,
            capture_rate_south_of_30s = capt_rate_south_of30s,
            capture_rate_north_of_23n = capt_rate_north_of23n,
            capture_rate_between_25s_23n = capt_rate_between25s23n,
-           capture_rate_between_25s_30s = capt_rate_between25s30s,
-           ) |>
-    filter(year >= min.yy) |>
-    filter(year <= yy) |>
-    arrange(year) 
+           capture_rate_between_25s_30s = capt_rate_between25s30s) |>
+    filter(year >= min.yy, year <= yy) |>
+    arrange(year)
 
   # Split by area
-  a6.south <-
-    a6 %>%
-    mutate(flag_id = params$country_code) %>%
-    select(year, flag_id, nb_vessel, hks_south_of_30s, hks_obs_south_of_30s, south_of_30s, capture_rate_south_of_30s) %>%
+  a6.south <- a6 |>
+    mutate(flag_id = member) |>
+    select(year, flag_id, nb_vessel, hks_south_of_30s, hks_obs_south_of_30s, south_of_30s, capture_rate_south_of_30s) |>
     mutate(capture_rate_south_of_30s = round(capture_rate_south_of_30s, 4)) |>
     rename(hhooks = hks_south_of_30s, hhooks_obs = hks_obs_south_of_30s, n_birds = south_of_30s,
            capture_rate = capture_rate_south_of_30s)
   
-   a6.mids <-
-    a6 %>%
-    select(year, flag_id, nb_vessel, hks_between_25s_30s, hks_obs_between_25s_30s, between_25s_30s, capture_rate_between_25s_30s) %>%
-    mutate(capture_rate_between_25s_30s = round(capture_rate_between_25s_30s,4)) |>
+  a6.mids <- a6 |>
+    select(year, flag_id, nb_vessel, hks_between_25s_30s, hks_obs_between_25s_30s, between_25s_30s, capture_rate_between_25s_30s) |>
+    mutate(capture_rate_between_25s_30s = round(capture_rate_between_25s_30s, 4)) |>
     rename(hhooks = hks_between_25s_30s, hhooks_obs = hks_obs_between_25s_30s, n_birds = between_25s_30s,
            capture_rate = capture_rate_between_25s_30s)
 
-  a6.midn <-
-    a6 %>%
-    select(year, flag_id, nb_vessel, hks_between_25s_23n, hks_obs_between_25s_23n, between_25s_23n, capture_rate_between_25s_23n) %>%
+  a6.midn <- a6 |>
+    select(year, flag_id, nb_vessel, hks_between_25s_23n, hks_obs_between_25s_23n, between_25s_23n, capture_rate_between_25s_23n) |>
     mutate(capture_rate_between_25s_23n = round(capture_rate_between_25s_23n, 4)) |>
     rename(hhooks = hks_between_25s_23n, hhooks_obs = hks_obs_between_25s_23n, n_birds = between_25s_23n,
            capture_rate = capture_rate_between_25s_23n)
 
-  a6.north <-
-    a6 %>%
-    select(year, flag_id, nb_vessel, hks_north_of_23n, hks_obs_north_of_23n, north_of_23n, capture_rate_north_of_23n) %>%
-    mutate(capture_rate_north_of_23n = round(capture_rate_north_of_23n,4)) |>
+  a6.north <- a6 |>
+    select(year, flag_id, nb_vessel, hks_north_of_23n, hks_obs_north_of_23n, north_of_23n, capture_rate_north_of_23n) |>
+    mutate(capture_rate_north_of_23n = round(capture_rate_north_of_23n, 4)) |>
     rename(hhooks = hks_north_of_23n, hhooks_obs = hks_obs_north_of_23n, n_birds = north_of_23n,
            capture_rate = capture_rate_north_of_23n)
   
-  
-  msg = ' '
+  msg <- ' '
   flextable(a6 |>
               mutate(capture_rate = round(capture_rate, 4)) |>
-              select(year, flag_id, nb_vessel, hhooks, hhooks_obs = hooks_obs, n_birds, capture_rate)
-              ) |> 
-  colformat_num(j = "year", big.mark='') |> 
-  fontsize(size = 8, part = "all")
+              select(year, flag_id, nb_vessel, hhooks, hhooks_obs = hooks_obs, n_birds, capture_rate)) |> 
+    colformat_num(j = "year", big.mark='') |> 
+    fontsize(size = 8, part = "all")
 } else {
-     msg=paste0("There was no reported longline activity in ",params$max_year," for the region or not applicable.")
-    }
-
-
+  msg <- no_data_msg("2018-03", context = "longline activity in the region")
+}
 ```
+`r msg`
 
 ```{r}
 #| label: tbl-sb_s30s
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area south of 30S.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area south of 30S.'
 
-df_name = "a6.south"
-if(exists(df_name) && is.data.frame(get(df_name))){
-  msg='  ';
+if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a6.south) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area south of 30S or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area south of 30S")
 }
 ```
 `r msg`
-
-
 
 ```{r}
 #| label: tbl-sb_25s_30s
 #| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 30S and 25S.'
 
-df_name = "a6.mids"
-if(exists(df_name) && is.data.frame(get(df_name))){
-  msg='  ';
+if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a6.mids) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 30S and 25S or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area between 30S and 25S")
 }
 ```
 `r msg`
 
-
-
 ```{r}
 #| label: tbl-sb_25s_23n
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N.'
 
-df_name = "a6.midn"
-if(exists(df_name) && is.data.frame(get(df_name))){
-  msg='  ';
+if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a6.midn) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area between 25S and 23N or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area between 25S and 23N")
 }
 ```
 `r msg`
 
-
-
 ```{r}
 #| label: tbl-sb_23n
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capoture rate (# seabirds/1000 hooks), by year in the area north of 23N.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area north of 23N.'
 
-df_name = "a6.north"
-if(exists(df_name) && is.data.frame(get(df_name))){
-  msg='  ';
+if (exists("a6.north") && is.data.frame(a6.north) && nrow(a6.north) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a6.north) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("There was no reported longline activity in ",params$max_year," for area north of 23N or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area north of 23N")
 }
 ```
 `r msg`
@@ -417,47 +419,35 @@ if(exists(df_name) && is.data.frame(get(df_name))){
 ```{r}
 #| label: tbl-cmm2018-03y
 
-
 a7 <- read_and_clean(this_yr_folder, member, r_code=3315)
 
-if (nrow(a7) > 0) {
+if (nrow(a7) > 0 && is_applicable("2018-03")) {
   a7 <- a7 |>
     rename(reqs = requirements,
            mitigation = comb_mitigation,
-           
            s30s = south_of30s,
            s30s_pct = south_of30s_pct,
-           
            b25s_30s = between25s30s,
            b25s_30s_pct = between25s30s_pct,
-           
            b25s_23n = between25s23n,
            b25s_23n_pct = between25s23n_pct,
-           
            n23n = north_of23n,
-           n23n_pct = north_of23n_pct
-           ) |>
-    mutate(
-      s30s_pct = round(s30s_pct, 1),
-      b25s_30s_pct = round(b25s_30s_pct, 1),
-      b25s_23n_pct = round(b25s_23n_pct, 1),
-      n23n_pct = round(n23n_pct, 1)
-    )
+           n23n_pct = north_of23n_pct) |>
+    mutate(s30s_pct = round(s30s_pct, 1),
+           b25s_30s_pct = round(b25s_30s_pct, 1),
+           b25s_23n_pct = round(b25s_23n_pct, 1),
+           n23n_pct = round(n23n_pct, 1)) |>
+    mutate(across(6:13, ~ ifelse(is.na(.), 0, .)))
 
-  # Change NA to 0 for sets and %
-  a7 <- a7 %>% mutate(across(6:13, ~ ifelse(is.na(.), 0, .)))
-
-  # Split by area
-  a7.south <- a7 %>% select(year, fleet, reqs, mitigation, s30s, s30s_pct) %>%
+  a7.south <- a7 |> select(year, fleet, reqs, mitigation, s30s, s30s_pct) |>
     rename(sets = s30s, percent = s30s_pct)
-  a7.mids <- a7 %>% select(year, fleet, reqs, mitigation, b25s_30s, b25s_30s_pct) %>%
+  a7.mids <- a7 |> select(year, fleet, reqs, mitigation, b25s_30s, b25s_30s_pct) |>
     rename(sets = b25s_30s, percent = b25s_30s_pct)
-  a7.midn <- a7 %>% select(year, fleet, reqs, mitigation, b25s_23n, b25s_23n_pct) %>%
+  a7.midn <- a7 |> select(year, fleet, reqs, mitigation, b25s_23n, b25s_23n_pct) |>
     rename(sets = b25s_23n, percent = b25s_23n_pct)
-  a7.north <- a7 %>% select(year, fleet, reqs, mitigation, n23n, n23n_pct) %>%
+  a7.north <- a7 |> select(year, fleet, reqs, mitigation, n23n, n23n_pct) |>
     rename(sets = n23n, percent = n23n_pct)
 } else {
-  # Create empty dataframes to avoid errors
   a7.south <- a7.mids <- a7.midn <- a7.north <- data.frame(
     year = numeric(0), fleet = character(0), reqs = character(0),
     mitigation = character(0), sets = numeric(0), percent = numeric(0)
@@ -465,78 +455,69 @@ if (nrow(a7) > 0) {
 }
 ```
 
-
 ```{r}
 #| label: tbl-s30s
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area south of 30S.'
 
-if (nrow(a7.south) > 0) {
-  msg='  ';
+if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a7.south) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("No data were reported in ",params$max_year," for area south of 30S or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area south of 30S")
 }
 ```
 `r msg`
-
 
 ```{r}
 #| label: tbl-30s_25s
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area between 30S and 25S.'
 
-
-if (nrow(a7.mids) > 0) {
-  msg='  ';
+if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a7.mids) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg= paste0("No data were reported in ",params$max_year," for area between 30S and 25S or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area between 30S and 25S")
 }
 ```
 `r msg`
-
 
 ```{r}
 #| label: tbl-25s_23n
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area between 25S and south of 23N.'
 
-
-if (nrow(a7.midn) > 0) {
-    msg='  ';
-    flextable(a7.midn) |>
+if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
+  flextable(a7.midn) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg=paste0("No data were reported in ",params$max_year," for the area between 25S and south of 23N or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area between 25S and south of 23N")
 }
 ```
 `r msg`
 
-
-```{r , echo=FALSE}
+```{r}
 #| label: tbl-n23n
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area north of 23N.'
 
-
-if (nrow(a7.north) > 0) {
-  msg = ' '
+if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
   flextable(a7.north) |>
     colformat_num(j = "year", big.mark='') |>
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("No data were reported in ",params$max_year," for area north of 23N or not applicable.")
+  msg <- no_data_msg("2018-03", context = "area north of 23N")
 }
 ```
 `r msg`
-
-
 
 **Table z**
 
@@ -544,24 +525,21 @@ if (nrow(a7.north) > 0) {
 #| label: tbl-cmm2018-03z
 #| tbl-cap: 'Number of observed seabird captures in longline fisheries in the reporting year, by species and area.'
 
-
 a8 <- read_and_clean(this_yr_folder, member, r_code=3314)
 
-if (nrow(a8) > 0) {
-  msg=' '
-  flextable(a8 |>
-              rename(n_birds = total_number))|>
+if (nrow(a8) > 0 && is_applicable("2018-03")) {
+  msg <- ' '
+  flextable(a8 |> rename(n_birds = total_number)) |>
     colformat_num(j = "year", big.mark='') |>
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
 } else {
-  msg = "No seabird interaction data (Table z) available or not applicable."
+  msg <- no_data_msg("2018-03", context = "seabird interactions")
 }
 ```
 `r msg`
 
 \newpage
-
 
 ### Section B
 
@@ -571,27 +549,25 @@ In accordance with paragraph 1, CCMs shall provide information to the Commission
 
 ```{r}
 #| label: tbl-cmm2006-04
-#| tbl-cap: 'There is currently no agreed definition of "fishing for" stripe marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin.'
+#| tbl-cap: 'There is currently no agreed definition of "fishing for" striped marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin.'
 
 a9 <- read_and_clean(this_yr_folder, member, r_code=2917)
 
-if (nrow(a9) > 0) {
-  msg = '  '
-  flextable(a9 |>
-              mutate(weight_kg  = round(weight_kg, 1))) |>
+if (nrow(a9) > 0 && is_applicable("2006-04")) {
+  msg <- ' '
+  flextable(a9 |> mutate(weight_kg = round(weight_kg, 1))) |>
     set_header_labels(
-    values = list(
-      numvessels = "vessels",
-      daysfishing = "days",
-      numcaught = "num",
-      weight_kg = 'weight_kg')) |>
-  fontsize(size = 8, part = "all")
+      values = list(
+        numvessels = "vessels",
+        daysfishing = "days",
+        numcaught = "num",
+        weight_kg = 'weight_kg')) |>
+    fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("No vessels fished for striped marlin in ",params$max_year," or not applicable.")
+  msg <- no_data_msg("2006-04", context = "vessels fishing for striped marlin")
 }
 ```
 `r msg`
-
 
 \newpage
 #### CMM 2019-03 [North Pacific Albacore], Para 3
@@ -604,24 +580,21 @@ All CCMs shall report annually to the WCPFC Commission all catches of albacore n
 
 a11 <- read_and_clean(this_yr_folder, member, r_code=3602)
 
-if (nrow(a11) > 0) {
-  msg = ' '
+if (nrow(a11) > 0 && is_applicable("2019-03")) {
+  msg <- ' '
   flextable(a11) |>
     set_header_labels(
-    values = list(
-
-      numvessels = "vessels",
-      daysfishing = "days",
-      numcaught = "n",
-      weightcaught_mt = 'wt')) |>
-  fontsize(size = 8, part = "all")
+      values = list(
+        numvessels = "vessels",
+        daysfishing = "days",
+        numcaught = "n",
+        weightcaught_mt = 'wt')) |>
+    fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("There was no fishing effort or catch of albacore north of the equator in ",params$max_year," or not applicable.")
+  msg <- no_data_msg("2019-03", context = "fishing effort or catch of albacore north of the equator")
 }
 ```
 `r msg`
-
-
 
 \newpage
 #### CMM 2023-03 [North Pacific Swordfish], Para 4
@@ -632,21 +605,20 @@ All CCMs shall report annually to the WCPFC Commission all catches of North Paci
 
 *Paragraph 2: The Members, Cooperating Non-Members and participating territories (hereinafter referred to as CCMs) shall take necessary measures to ensure that the level of fishing effort of their fisheries taking more than 200 metric tons per year of North Pacific swordfish in the Area is not increased beyond 2008-2010 average annual levels.*
 
-*Paragraph 3 clarifies that paragraphs 2 and 4 shall not be applied to those fisheries taking less than 200 metric tons of North Pacific swordfish in the Area per year.  However, if the catches of such fisheries exceed 200 metric tons in any given year, the Commission shall adopt appropriate management measure for such fisheries.*
+*Paragraph 3 clarifies that paragraphs 2 and 4 shall not be applied to those fisheries taking less than 200 metric tons of North Pacific swordfish in the Area per year. However, if the catches of such fisheries exceed 200 metric tons in any given year, the Commission shall adopt appropriate management measure for such fisheries.*
 
 ```{r}
 #| label: tbl-cmm2023-03
 #| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific swordfish catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific.'
 
-# Use the exact file path from your directory structure
 a12 <- read_and_clean(this_yr_folder, member, r_code=3513)
 
-if (nrow(a12) > 0) {
-  msg = ' '
+if (nrow(a12) > 0 && is_applicable("2023-03")) {
+  msg <- ' '
   flextable(a12) |>
-  fontsize(size = 8, part = "all")
+    fontsize(size = 8, part = "all")
 } else {
-  msg = paste0("There was no fishing effort nor catch of North Pacific swordfish in ",params$max_year," or not applicable.")
+  msg <- no_data_msg("2023-03", context = "fishing effort or catch of North Pacific swordfish")
 }
 ```
 `r msg`

@@ -15,7 +15,7 @@ execute:
   message: false
   warning: false
 params:
-  flag: 'NU'
+  flag: 'NR'
   year: 2025
   author: "AUTHOR"
 ---
@@ -26,21 +26,63 @@ library(DBI)
 library(odbc)
 library(tidyverse)
 library(flextable)
+library(forcats)
+library(tidyr)
 source("utils.R")
 
-# Define key vars
-country_cd <- tolower(params$flag)
-report_year = params$year
-this_yr_folder = paste0("./data/report_", as.character(report_year), "_", tolower(country_cd), "/") |>
-  tolower()
-# Define years to use for tables and figures
-yrs_long <- (params$year-4):params$year
-yr_range <- paste(min(yrs_long),max(yrs_long), sep="-")
-'%nin%' = function(x,y) !x %in% y            
+# Detect context: standalone render vs. knit_child from parent
+# - Standalone: params$flag exists (set via execute_params)
+# - Child:      country_cd is already defined by the parent
+if (!exists("country_cd") || length(country_cd) == 0 || !nzchar(country_cd)) {
+  country_cd <- tolower(params$flag)
+}
 
+if (!exists("report_year") || length(report_year) == 0) {
+  report_year <- params$year
+}
+
+if (!exists("this_yr_folder") || length(this_yr_folder) == 0 || !nzchar(this_yr_folder)) {
+  this_yr_folder <- paste0("./data/report_", as.character(report_year), "_", country_cd, "/") |>
+    tolower()
+}
+
+# Sanity check — fail loudly if anything is still missing
+stopifnot(
+  length(country_cd)     == 1, nzchar(country_cd),
+  length(report_year)    == 1,
+  length(this_yr_folder) == 1, nzchar(this_yr_folder)
+)
+
+# Define years to use for tables and figures
+yrs_long <- (report_year - 4):report_year
+yr_range <- paste(min(yrs_long), max(yrs_long), sep = "-")
+'%nin%' <- function(x, y) !x %in% y
 ```
 
 ```{r data-prep}
+
+sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue","orange",
+                                  "pink","wheat","purple3","grey40","dodgerblue4","purple4",
+                                  "#66CCFF","salmon4","magenta3","gold"),
+                         nm = c("Albacore","Bigeye tuna","Black marlin","Blue marlin","Blue shark",
+                                "Hammerhead sharks nei","Mako sharks","Oceanic whitetip shark",
+                                "Pacific bluefin tuna","Silky shark","Skipjack tuna",
+                                "Striped marlin","Swordfish","Thresher sharks nei",
+                                "Whale shark","Yellowfin tuna"))
+
+# adjust path as needed
+flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
+  select(country_code, country_name, country_short) |>
+  mutate(country_name = na_if(country_name, "NULL"),
+         country_short = na_if(country_short, "NULL")) |>
+  # use short name when available, fall back to long
+  mutate(name_pretty = coalesce(str_to_title(tolower(str_trim(country_short))), str_to_title(country_name)))
+
+flag_labels <- flag_lookup |>
+  mutate(flag_code_lower = tolower(country_code)) |>
+  select(flag_code_lower, name_pretty) |>
+  deframe()  # from tibble: turns 2-col df into a named vector
+
 # Load all raw data - from t2
 data_3615 <- read_and_clean(this_yr_folder, country_cd, r_code = 3615) |>
       mutate(across(where(is.character), tolower))
@@ -50,6 +92,22 @@ data_3527 <- read_and_clean(this_yr_folder, country_cd, r_code = 3527)|>
 
 data_3614 <- read_and_clean(this_yr_folder, country_cd, r_code = 3614)|>
       mutate(across(where(is.character), tolower))
+
+data_2900 <- read_and_clean(this_yr_folder, country_cd, r_code = 2900)|>
+      mutate(across(where(is.character), tolower)) # PS catch EEZ per country
+
+data_2894<- read_and_clean(this_yr_folder, country_cd, r_code = 2894)|>
+      mutate(across(where(is.character), tolower)) # LL catch EEZ (I think…)
+
+
+if (nrow(data_2900) > 0){
+  data_2900 <- data_2900 |>
+    filter(t2col1 >= report_year - 4) |>
+    filter(t2col1 <= report_year) |>
+    rename(year = t2col1) |>
+    select(-fish_days_aws_only)
+}
+
 
 ika_trips_file = paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
 
@@ -108,6 +166,87 @@ both_exist <- exists('data_ika_trips') && nrow(data_ika_trips) > 0 && exists('da
 local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.csv')
 
 ```
+
+
+## Catch for foreign fleets (EEZ)
+
+
+```{r}
+#| echo: false
+#| results: 'asis'
+#| label: tbl-tbl1s
+#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area") else ""
+
+render_gear_tbl_section3(
+  data = data_3605_ps,
+  data_tbl = data_3605_ps_tbl,
+  gear_name = "purse seine",
+  gear_code = "s",
+  species_labels = ps_species_labels,
+  intro_text = "The annual catches of the **primary species** caught by the {country_name} purse seine fleet are shown in @tbl-tbl1s.
+  
+  *Note:* This includes all catches in the WCPFC Convention Area."
+)
+```
+
+```{r data-eez-all-flags}
+
+if (nrow(data_2900) > 0){
+  
+  # Table - overall per year
+  data_2900_summary <- data_2900 |>
+    group_by(year) |>
+    summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) |>
+    mutate(across(year:fish_days, ~ round(.x, 0)))
+  
+  plot_data1 <- data_2900 |>
+    mutate(tot_mt = replace_na(tot_mt, 0)) |>          
+    mutate(flag = fct_lump_n(flag, n = 5, w = tot_mt, other_level = "Other")) |>
+    group_by(year, flag) |>
+    summarise(tot_mt = sum(tot_mt, na.rm = TRUE), .groups = "drop") |>
+    mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE))
+  
+  # Percentage -  which country fished more in the last 5 years
+  ggplot(plot_data1, aes(x = factor(year), y = tot_mt, fill = flag)) +
+    geom_col(position = "fill") +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_brewer(labels = flag_labels, palette = "Set2") +   
+    labs(x = NULL, y = "Share of catch", fill = "Country") +
+    theme_minimal() + theme(legend.position = "bottom")
+  
+  # Country and sp catch 
+  
+  plot_data2 <- data_2900 |>
+    filter(year == 2025) |>
+    mutate(across(c(skj_mt, bet_mt, yft_mt, oth_mt), \(x) replace_na(x, 0))) |>
+    pivot_longer(c(skj_mt, bet_mt, yft_mt, oth_mt),
+                 names_to = "species", values_to = "mt") |>
+    mutate(species = recode(species,
+                            skj_mt = "Skipjack tuna",
+                            bet_mt = "Bigeye tuna",
+                            yft_mt = "Yellowfin tuna",
+                            oth_mt = "Other")) |>
+    mutate(flag    = fct_reorder(flag, mt, .fun = sum, .desc = TRUE),
+           species = fct_reorder(species, mt, .fun = sum, .desc = TRUE))
+
+  ggplot(plot_data2, aes(x = flag, y = mt, fill = species)) +
+    geom_col() +
+    scale_x_discrete(labels = flag_labels) +  
+    coord_flip() +
+    scale_y_continuous(labels = scales::comma) +
+    scale_fill_manual(values = sp_colours, na.value = "grey80") +
+    labs(x = NULL, y = "Catch (mt)", fill = "Species") +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "bottom",
+          panel.grid.major.x = element_blank())
+  
+  }
+```
+
+
+
+
+
 
 ## Methodology
 
