@@ -11,11 +11,11 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("CK")
+country_codes <- c("NR")
 r_year <- 2025
 report_author <- "Jessica LS"
 rewrite_files <- TRUE
-reports_list <-  c("artisanal")           # options are: c("artisanal", "addendum", "part1")
+additional_sections  <-  c("addendum", "artisanal")  # options: "artisanal", "addendum", both, or character(0) for none
 aceman = FALSE # if TRUE, source only ACEs data from member country, if false, source data from yearbook.
 
 # Step 3: Read/download data ####
@@ -28,19 +28,18 @@ for (country_code in country_codes) {
   yrs_long <- (r_year - 4):r_year
   create_maps(country_code = country_code, 
               r_year = r_year)
-  
-}
+  }
 
 # Step 4: Generate reports ####
 res <- build_reports(country_codes = country_codes,
                      max_year = r_year,
                      aceman = aceman,
                      author = report_author,
-                     reports = reports_list,
+                     additional_sections = additional_sections,
                      sc_session    = "21",
                      ccm_num       = "22",
                      report_date   = format(Sys.Date(), "%d %b %Y"),
                      location      = "Apia, Samoa",
                      session_dates = "9--13 March 2025",
-                     file_template_part_1 = "template_part1.qmd"
-                    )
+                     file_template_part_1 = "template_part1_nr2.qmd"
+)

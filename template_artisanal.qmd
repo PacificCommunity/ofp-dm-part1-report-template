@@ -7,7 +7,7 @@ format:
   #     toc: false
   #     number-sections: true
   #     highlight-style: github
-editor: visual
+editor: source
 toc: false
 embed-resources: true 
 execute: 
@@ -15,7 +15,7 @@ execute:
   message: false
   warning: false
 params:
-  flag: 'NR'
+  flag: 'CK'
   year: 2025
   author: "AUTHOR"
 ---
@@ -26,9 +26,72 @@ library(DBI)
 library(odbc)
 library(tidyverse)
 library(flextable)
-library(forcats)
-library(tidyr)
+library(scatterpie)
+library(mregions2)
+library(countrycode)
 source("utils.R")
+
+sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue","orange",
+                                  "pink","wheat","purple3","grey40","dodgerblue4","purple4",
+                                  "#66CCFF","salmon4","magenta3","gold"),
+                         nm = c("Albacore","Bigeye tuna","Black marlin","Blue marlin","Blue shark",
+                                "Hammerhead sharks nei","Mako sharks","Oceanic whitetip shark",
+                                "Pacific bluefin tuna","Silky shark","Skipjack tuna",
+                                "Striped marlin","Swordfish","Thresher sharks nei",
+                                "Whale shark","Yellowfin tuna"))
+# adjust path as needed
+flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
+  select(country_code, country_name, country_short) |>
+  mutate(country_name = na_if(country_name, "NULL"),
+         country_short = na_if(country_short, "NULL")) |>
+  # use short name when available, fall back to long
+  mutate(name_pretty = coalesce(str_to_title(tolower(str_trim(country_short))), str_to_title(country_name)))
+
+flag_labels <- flag_lookup |>
+  mutate(flag_code_lower = tolower(country_code)) |>
+  select(flag_code_lower, name_pretty) |>
+  deframe()  # from tibble: turns 2-col df into a named vector
+
+# Helper: get a country's 200NM EEZ as an sf object, keyed by ISO-2 code
+get_country_eez <- function(iso2_code) {
+  iso3 <- countrycode(iso2_code, "iso2c", "iso3c", warn = FALSE)
+  
+  if (is.na(iso3)) {
+    stop("Could not resolve ISO-2 code '", iso2_code, "' to ISO-3.")
+  }
+  
+  eez <- mrp_get(
+    "eez",
+    cql_filter = sprintf("iso_ter1 = '%s' AND pol_type = '200NM'", iso3)
+  )
+  
+  if (nrow(eez) == 0) {
+    warning("No EEZ found for '", iso2_code, "' (ISO-3: ", iso3, ").")
+  }
+  
+  eez
+}
+
+# Helper: build a gridded species-composition catch summary for one EEZ
+grid_catch <- function(data, eez_code, cell_size = 1,
+                       species = c("skj", "yft", "bet")) {
+  
+  species_cols <- paste0(species, "_mt")
+  half <- cell_size / 2
+  
+  data |>
+    # filter(eez == eez_code) |>
+    mutate(
+      lat_bin = floor(latd / cell_size) * cell_size + half,
+      lon_bin = floor(lond / cell_size) * cell_size + half
+    ) |>
+    group_by(lon_bin, lat_bin) |>
+    summarise(across(all_of(species_cols), \(x) sum(x, na.rm = TRUE)),
+              .groups = "drop") |>
+    rename_with(\(x) str_remove(x, "_mt$"), all_of(species_cols)) |>
+    mutate(total = rowSums(across(all_of(species)))) |>
+    filter(total > 0)
+}
 
 # Detect context: standalone render vs. knit_child from parent
 # - Standalone: params$flag exists (set via execute_params)
@@ -57,32 +120,12 @@ stopifnot(
 yrs_long <- (report_year - 4):report_year
 yr_range <- paste(min(yrs_long), max(yrs_long), sep = "-")
 '%nin%' <- function(x, y) !x %in% y
+
+country_name <- flag_labels[[country_cd]]
 ```
 
+
 ```{r data-prep}
-
-sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue","orange",
-                                  "pink","wheat","purple3","grey40","dodgerblue4","purple4",
-                                  "#66CCFF","salmon4","magenta3","gold"),
-                         nm = c("Albacore","Bigeye tuna","Black marlin","Blue marlin","Blue shark",
-                                "Hammerhead sharks nei","Mako sharks","Oceanic whitetip shark",
-                                "Pacific bluefin tuna","Silky shark","Skipjack tuna",
-                                "Striped marlin","Swordfish","Thresher sharks nei",
-                                "Whale shark","Yellowfin tuna"))
-
-# adjust path as needed
-flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
-  select(country_code, country_name, country_short) |>
-  mutate(country_name = na_if(country_name, "NULL"),
-         country_short = na_if(country_short, "NULL")) |>
-  # use short name when available, fall back to long
-  mutate(name_pretty = coalesce(str_to_title(tolower(str_trim(country_short))), str_to_title(country_name)))
-
-flag_labels <- flag_lookup |>
-  mutate(flag_code_lower = tolower(country_code)) |>
-  select(flag_code_lower, name_pretty) |>
-  deframe()  # from tibble: turns 2-col df into a named vector
-
 # Load all raw data - from t2
 data_3615 <- read_and_clean(this_yr_folder, country_cd, r_code = 3615) |>
       mutate(across(where(is.character), tolower))
@@ -97,17 +140,48 @@ data_2900 <- read_and_clean(this_yr_folder, country_cd, r_code = 2900)|>
       mutate(across(where(is.character), tolower)) # PS catch EEZ per country
 
 data_2894<- read_and_clean(this_yr_folder, country_cd, r_code = 2894)|>
-      mutate(across(where(is.character), tolower)) # LL catch EEZ (I think…)
+      mutate(across(where(is.character), tolower))# LL catch EEZ (I think…)
 
+data_2904<- read_and_clean(this_yr_folder, country_cd, r_code = 2904)|>
+      mutate(across(where(is.character), tolower)) # PS catch spatial EEZ
+
+data_3375<- read_and_clean(this_yr_folder, country_cd, r_code = 3375)|>
+      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+
+data_3634<- read_and_clean(this_yr_folder, country_cd, r_code = 3634)|>
+      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+
+
+if(nrow(data_2904) > 0){
+  data_2904 <- data_2904 |>
+    rename(year = t2col0) |>
+    filter(year == report_year)
+}
+
+if (nrow(data_3634) > 0){
+  data_3634 <- data_3634 |> 
+  filter(start_year == report_year) |> 
+  filter(gear %in% c("l", "s")) |>
+  mutate(gear = ifelse(gear == "l", "Longline", "Purse Seine")) |> 
+  select(flag = ffv_flagid, gear, nb_vessel) |> 
+  pivot_wider(names_from = gear, values_from = nb_vessel)
+}
 
 if (nrow(data_2900) > 0){
   data_2900 <- data_2900 |>
-    filter(t2col1 >= report_year - 4) |>
-    filter(t2col1 <= report_year) |>
-    rename(year = t2col1) |>
-    select(-fish_days_aws_only)
+    mutate(year = as.numeric(substr(t2col1, 1, 4))) |>
+    filter(year >= report_year - 4) |>
+    filter(year <= report_year) |>
+    select(-fish_days_aws_only, - t2col1)
 }
 
+if (nrow(data_2894) > 0){
+  data_2894 <- data_2894 |>
+    mutate(year = as.numeric(substr(t2col4, 1, 4))) |>
+    filter(year >= report_year - 4) |>
+    filter(year <= report_year) |>
+    select(flag, year, vessels = vessel_name, trips, days, days, alb_mt, bet_mt, yft_mt, oth_mt, tot_mt)
+    }
 
 ika_trips_file = paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
 
@@ -167,27 +241,7 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-
 ## Catch for foreign fleets (EEZ)
-
-
-```{r}
-#| echo: false
-#| results: 'asis'
-#| label: tbl-tbl1s
-#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area") else ""
-
-render_gear_tbl_section3(
-  data = data_3605_ps,
-  data_tbl = data_3605_ps_tbl,
-  gear_name = "purse seine",
-  gear_code = "s",
-  species_labels = ps_species_labels,
-  intro_text = "The annual catches of the **primary species** caught by the {country_name} purse seine fleet are shown in @tbl-tbl1s.
-  
-  *Note:* This includes all catches in the WCPFC Convention Area."
-)
-```
 
 ```{r data-eez-all-flags}
 
@@ -197,26 +251,21 @@ if (nrow(data_2900) > 0){
   data_2900_summary <- data_2900 |>
     group_by(year) |>
     summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE))) |>
-    mutate(across(year:fish_days, ~ round(.x, 0)))
+    ungroup() |>
+    mutate(across(year:fish_days, ~ round(.x, 0)),
+           gear = "Purse seine") |>
+    select(-sea_days)
   
-  plot_data1 <- data_2900 |>
+  plot_data1ps <- data_2900 |>
     mutate(tot_mt = replace_na(tot_mt, 0)) |>          
     mutate(flag = fct_lump_n(flag, n = 5, w = tot_mt, other_level = "Other")) |>
     group_by(year, flag) |>
     summarise(tot_mt = sum(tot_mt, na.rm = TRUE), .groups = "drop") |>
-    mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE))
-  
-  # Percentage -  which country fished more in the last 5 years
-  ggplot(plot_data1, aes(x = factor(year), y = tot_mt, fill = flag)) +
-    geom_col(position = "fill") +
-    scale_y_continuous(labels = scales::percent) +
-    scale_fill_brewer(labels = flag_labels, palette = "Set2") +   
-    labs(x = NULL, y = "Share of catch", fill = "Country") +
-    theme_minimal() + theme(legend.position = "bottom")
+    mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE),
+           gear = "Purse seine")
   
   # Country and sp catch 
-  
-  plot_data2 <- data_2900 |>
+  plot_data2ps <- data_2900 |>
     filter(year == 2025) |>
     mutate(across(c(skj_mt, bet_mt, yft_mt, oth_mt), \(x) replace_na(x, 0))) |>
     pivot_longer(c(skj_mt, bet_mt, yft_mt, oth_mt),
@@ -227,26 +276,353 @@ if (nrow(data_2900) > 0){
                             yft_mt = "Yellowfin tuna",
                             oth_mt = "Other")) |>
     mutate(flag    = fct_reorder(flag, mt, .fun = sum, .desc = TRUE),
-           species = fct_reorder(species, mt, .fun = sum, .desc = TRUE))
+           species = fct_reorder(species, mt, .fun = sum, .desc = TRUE),
+           gear = "Purse seine")
+}
 
-  ggplot(plot_data2, aes(x = flag, y = mt, fill = species)) +
+if (nrow(data_2894) > 0){
+  
+  # Table - overall per year
+  data_2894_summary <- data_2894 |>
+    group_by(year) |>
+    summarise(vessels = n_distinct(vessels), 
+              across(where(is.numeric), ~ sum(.x, na.rm = TRUE))
+              ) |>
+    mutate(across(year:days, ~ round(.x, 0)),
+           gear = "Longline") |>
+    rename(fish_days = days)
+  
+  plot_data1ll <- data_2894 |>
+    mutate(tot_mt = replace_na(tot_mt, 0)) |>          
+    mutate(flag = fct_lump_n(flag, n = 5, w = tot_mt, other_level = "Other")) |>
+    group_by(year, flag) |>
+    summarise(tot_mt = sum(tot_mt, na.rm = TRUE), .groups = "drop") |>
+    mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE),
+           gear = "Longline")
+  
+  # Country and sp catch 
+  plot_data2ll <- data_2894 |>
+    filter(year == report_year) |>
+    mutate(across(c(alb_mt, bet_mt, yft_mt, oth_mt), \(x) replace_na(x, 0))) |>
+    pivot_longer(c(alb_mt, bet_mt, yft_mt, oth_mt),
+                 names_to = "species", values_to = "mt") |>
+    mutate(species = recode(species,
+                            alb_mt = "Albacore tuna",
+                            bet_mt = "Bigeye tuna",
+                            oth_mt = "Other")) |>
+    mutate(flag    = fct_reorder(flag, mt, .fun = sum, .desc = TRUE),
+           species = fct_reorder(species, mt, .fun = sum, .desc = TRUE),
+           gear = "Longline")
+
+}
+
+has_2894 <- exists("data_2894_summary")
+has_2900 <- exists("data_2900_summary")
+
+if (has_2894 && has_2900) {
+  flag_summary <- bind_rows(data_2894_summary, data_2900_summary)
+  plot_data1   <- rbind(plot_data1ll, plot_data1ps)
+  plot_data2   <- rbind(plot_data2ll, plot_data2ps)
+} else if (has_2894) {
+  flag_summary <- data_2894_summary   # longline only
+  plot_data1   <- plot_data1ll
+  plot_data2   <- plot_data2ll
+} else if (has_2900) {
+  flag_summary <- data_2900_summary   # purse seine only
+  plot_data1   <- plot_data1ps
+  plot_data2   <- plot_data2ps
+}else{
+  flag_summary <- data.frame()
+  plot_data1   <- data.frame()
+  plot_data2   <- data.frame()
+}
+
+# remove any rows where fishing did not happen
+if(nrow(flag_summary) > 0){
+  flag_summary <- flag_summary |>
+    filter(fish_days > 0)
+}
+if(nrow(plot_data1) > 0){
+  plot_data1 <- plot_data1 |>
+    filter(tot_mt > 0)
+}
+if(nrow(flag_summary) > 0){
+  plot_data2 <- plot_data2 |>
+    filter(mt > 0)
+}
+
+```
+
+```{r}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: tbl-data-eez-all-flags
+#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ for the last 5 years.") else ""
+
+if (nrow(flag_summary) > 0) {
+  
+  # Define the full set of possible columns and their labels
+  all_mt_cols  <- c("alb_mt", "bet_mt", "yft_mt", "skj_mt", "oth_mt", "tot_mt")
+  all_int_cols <- c("year", "vessels", "trips", "fish_days")
+  
+  all_labels <- list(
+    gear      = "Gear",
+    year      = "Year",
+    vessels   = "Vessels",
+    trips     = "Trips",
+    fish_days = "Days",
+    alb_mt    = "Alb (mt)",
+    bet_mt    = "Bet (mt)",
+    yft_mt    = "Yft (mt)",
+    skj_mt    = "Skj (mt)",
+    oth_mt    = "Others (mt)",
+    tot_mt    = "Total (mt)"
+  )
+  
+  # Filter to only columns that actually exist in this run's data
+  mt_cols     <- intersect(all_mt_cols,  names(flag_summary))
+  int_cols    <- intersect(all_int_cols, names(flag_summary))
+  labels_use  <- all_labels[intersect(names(all_labels), names(flag_summary))]
+  
+  # Build relocate list dynamically — only push columns to the end if they exist
+  relocate_cols <- intersect(c("oth_mt", "tot_mt"), names(flag_summary))
+  
+  ft <- flag_summary |>
+    relocate(all_of(relocate_cols), .after = last_col()) |>
+    mutate(year = as.integer(year)) |>
+    as_grouped_data(groups = "gear") |>
+    flextable() |>
+    set_header_labels(values = labels_use) |>
+    bold(i = ~ !is.na(gear)) |>
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5) |>
+    theme_booktabs() |>
+    align(align = "right", part = "all") |>
+    align(j = "gear", align = "left", part = "all")
+  
+  if (length(mt_cols) > 0) {
+    ft <- ft |> colformat_double(j = mt_cols, digits = 0, na_str = "–")
+  }
+  if (length(int_cols) > 0) {
+    ft <- ft |> colformat_int(j = int_cols)
+  }
+  
+  ft
+}
+```
+
+
+```{r}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: fig-data-eez-all-flags-perc
+#| fig-cap: !expr if(nrow(plot_data1) > 0) glue::glue("Percentage of total catch (all species) in the {country_name} EEZ, by flag during the last 5 years.") else ""
+
+if (nrow(plot_data1) > 0){
+  # Percentage -  which country fished more in the last 5 years
+  ggplot(plot_data1, aes(x = factor(year), y = tot_mt, fill = flag)) +
+    geom_col(position = "fill", colour = "white", linewidth = 0.3) +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_hue(labels = flag_labels, c = 50) +
+    facet_wrap(~ gear) +
+    labs(x = NULL, y = "Share of catch", fill = "Country") +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+  }
+```
+
+```{r}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: fig-data-eez-all-flags-hist
+#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ, by flag during {report_year}.") else ""
+
+if (nrow(plot_data2) > 0){
+   ggplot(plot_data2, aes(x = flag, y = mt, fill = species)) +
     geom_col() +
     scale_x_discrete(labels = flag_labels) +  
     coord_flip() +
     scale_y_continuous(labels = scales::comma) +
     scale_fill_manual(values = sp_colours, na.value = "grey80") +
+    facet_wrap(~ gear) +
     labs(x = NULL, y = "Catch (mt)", fill = "Species") +
     theme_minimal(base_size = 12) +
     theme(legend.position = "bottom",
           panel.grid.major.x = element_blank())
-  
   }
 ```
 
+\newpage
+
+\@fig-data-eez-ps-spatial shows the distribution of purse seine catch, and its species composition within the EEZ and the adjacent area in `r report_year`. This shows that catch is highest in the northern parts of the EEZ, and this pattern is consistent with the results presented in previous Part reports. Skipjack was the species most commonly caught in all spatial cells followed by Yellowfin tuna which also corroborates with the overall `r report_year` catch composition (\@fig-data-eez-all-flags-perc) and results from previous years.
+
+```{r}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: fig-data-eez-ps-spatial
+#| fig-cap: !expr if(nrow(data_2904) > 0) glue::glue("Catch of the three main tuna species by purse  seine  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
 
 
+if (nrow(data_2904) > 0) {
+  
+  eez  <- get_country_eez(country_cd)
+  land <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Species lookup: short code → full name (must match sp_colours keys)
+  species_map <- c(
+    # alb = "Albacore tuna",
+    skj = "Skipjack tuna",
+    yft = "Yellowfin tuna",
+    bet = "Bigeye tuna"
+  )
+  
+  catch_grid <- grid_catch(data_2904,
+                           eez_code  = tolower(country_cd),
+                           cell_size = 1,
+                           species   = names(species_map))
+  
+  max_r <- 0.45
+  catch_grid <- catch_grid |>
+    mutate(radius = max_r * sqrt(total / max(total)))
+  
+  # Build fill values and labels from the lookup
+  fill_values <- setNames(sp_colours[species_map], names(species_map))
+  fill_labels <- setNames(species_map, names(species_map))
+  
+  bbox <- st_bbox(eez)
+  
+  ggplot() +
+    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+    geom_scatterpie(
+      data   = catch_grid,
+      aes(x = lon_bin, y = lat_bin, r = radius),
+      cols   = names(species_map),
+      colour = NA,
+      alpha  = 0.9
+    ) +
+    scale_fill_manual(
+      values = fill_values,
+      labels = fill_labels,
+      name   = "Species"
+    ) +
+    coord_sf(
+      xlim   = c(bbox["xmin"], bbox["xmax"]),
+      ylim   = c(bbox["ymin"], bbox["ymax"]),
+      expand = FALSE
+    ) +
+    labs(x = "Longitude", y = "Latitude") +
+    theme_bw() +
+    theme(legend.position = "bottom",,
+          panel.background = element_rect(fill = "white"))
+}
+
+```
 
 
+```{r}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: fig-data-eez-ll-spatial
+#| fig-cap: !expr if(nrow(data_3375) > 0) glue::glue("Catch of the three main tuna species by longline  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
+
+parse_coord <- function(x, type = c("lat", "lon")) {
+  type <- match.arg(type)
+  
+  # split into the numeric body and the hemisphere letter
+  hem <- str_sub(x, -1)
+  num <- str_sub(x, 1, -2)
+  
+  # last two chars are minutes, the rest is degrees
+  mins <- as.numeric(str_sub(num, -2))
+  degs <- as.numeric(str_sub(num, 1, -3))
+  
+  decimal <- degs + mins / 60
+  
+  # apply sign based on hemisphere
+  sign <- dplyr::case_when(
+    hem %in% c("n", "e") ~  1,
+    hem %in% c("s", "w") ~ -1,
+    TRUE                 ~ NA_real_
+  )
+  
+  decimal * sign
+}
+
+
+if (nrow(data_3375) > 0) {
+  
+  data_3375 <- data_3375 |>
+    mutate(
+    latd = parse_coord(latitude,  "lat"),
+    lond = parse_coord(longitude, "lon")
+  ) |> 
+      select(flag, vessel_name, log_date, latd, lond, species, mt) |> 
+    filter(species %in% c("alb", "skj", "bet", "yft")) |> 
+    pivot_wider(names_from = species, values_from = mt)
+
+  eez  <- get_country_eez(country_cd)
+  land <- ne_countries(scale = "medium", returnclass = "sf")
+  
+  # Species lookup: short code → full name (must match sp_colours keys)
+  species_map <- c(
+    alb = "Albacore",
+    skj = "Skipjack tuna",
+    yft = "Yellowfin tuna",
+    bet = "Bigeye tuna"
+  )
+  
+  colnames(data_3375)[6:9] <- c("yft_mt", "alb_mt", "bet_mt", "skj_mt")
+  
+  catch_grid <- grid_catch(data = data_3375,
+                           eez_code  = tolower(country_cd),
+                           cell_size = 1,
+                           species   = names(species_map))
+  
+  max_r <- 0.45
+  catch_grid <- catch_grid |>
+    mutate(radius = max_r * sqrt(total / max(total)))
+  
+  # Build fill values and labels from the lookup
+  fill_values <- setNames(sp_colours[species_map], names(species_map))
+  fill_labels <- setNames(species_map, names(species_map))
+  
+  bbox <- st_bbox(eez)
+  
+  ggplot() +
+    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+    geom_scatterpie(
+      data   = catch_grid,
+      aes(x = lon_bin, y = lat_bin, r = radius),
+      cols   = names(species_map),
+      colour = NA,
+      alpha  = 0.9
+    ) +
+    scale_fill_manual(
+      values = fill_values,
+      labels = fill_labels,
+      name   = "Species"
+    ) +
+    coord_sf(
+      xlim   = c(bbox["xmin"], bbox["xmax"]),
+      ylim   = c(bbox["ymin"], bbox["ymax"]),
+      expand = FALSE
+    ) +
+    labs(x = "Longitude", y = "Latitude") +
+    theme_bw() +
+    theme(legend.position = "bottom",,
+          panel.background = element_rect(fill = "white"))
+}
+
+```
+
+\newpage
 
 ## Methodology
 

@@ -732,50 +732,43 @@ build_reports <- function(country_codes,
                           max_year,
                           aceman,
                           author, 
-                          sc_session    = "21",
-                          ccm_num       = "24",
-                          report_date   = "4 July 2025",
-                          location      = "Nuku\\textquotesingle alofa, Tonga",
-                          session_dates = "13--21 August 2025",
-                          reports       = c("addendum", "part1", "artisanal"),
-                          quiet_tag     = FALSE,
-                          file_template_part_1 = "template_part1.qmd",
-                          file_template_artisanal = "template_artisanal.qmd"
+                          sc_session          = "21",
+                          ccm_num             = "24",
+                          report_date         = "4 July 2025",
+                          location            = "Nuku\\textquotesingle alofa, Tonga",
+                          session_dates       = "13--21 August 2025",
+                          additional_sections = character(0),
+                          quiet_tag           = FALSE,
+                          file_template_part_1 = "template_part1.qmd"
                           ){
-  
   for (country_code in country_codes){
-    country_code = toupper(country_code)
-    
-    country_folder = paste0("./data/report_", as.character(r_year),"_", tolower(country_code), "/")
-    
-    # Generate preamble BEFORE rendering
-    preamble_path <- generate_preamble(
-      country_code  = country_code,
-      report_year   = max_year,
-      sc_session    = sc_session,
-      ccm_num       = ccm_num,
-      report_date   = report_date,
-      location      = location,
-      session_dates = session_dates,
-      output_dir    = "./preambles"
-    )
-    
-    
-    if ("part1" %in% reports){
+      country_code <- toupper(country_code)
+      
+      # Generate preamble BEFORE rendering
+      preamble_path <- generate_preamble(
+        country_code  = country_code,
+        report_year   = max_year,
+        sc_session    = sc_session,
+        ccm_num       = ccm_num,
+        report_date   = report_date,
+        location      = location,
+        session_dates = session_dates,
+        output_dir    = "./preambles"
+      )
       
       params_part1 <- list(
-        country_code   = country_code,
-        year           = max_year,
-        data_provided  = 'Yes',
-        author         = author,
-        aceman         = aceman
+        country_code        = country_code,
+        year                = max_year,
+        data_provided       = 'Yes',
+        author              = author,
+        aceman              = aceman,
+        additional_sections = paste(additional_sections, collapse = ",")
       )
-
-      # define output filenames
-      output_filename_part1 = paste0("part1_report_", tolower(country_code), "_aceman_", tolower(as.character(aceman)),"_", r_year, ".pdf")
-      # preamble_path <- paste0("./preambles/preamble_", tolower(country_code), ".tex")
       
-      # Render the document with parameters
+      output_filename_part1 <- paste0("part1_report_", tolower(country_code),
+                                      "_aceman_", tolower(as.character(aceman)),
+                                      "_", r_year, ".pdf")
+      
       quarto_render(
         input          = file_template_part_1,
         execute_params = params_part1,
@@ -786,68 +779,12 @@ build_reports <- function(country_codes,
       
       file.rename(
         from = output_filename_part1,
-        to = file.path("./reports", output_filename_part1)
+        to   = file.path("./reports", output_filename_part1)
       )
-      
-    }
+      }
     
-    if ("addendum" %in% reports){
-      
-      # Define parameters for each report
-      params_addendum <- list(
-        country_code = country_code,
-        country_folder = country_folder,
-        max_year = r_year,
-        author = report_author
-      )
-      
-      output_filename_addendum = paste0("addendum_report_", tolower(country_code), "_", r_year, ".docx")
-      
-      # Render the document with parameters
-      quarto_render(
-        input = "template_addendum.qmd",
-        execute_params = params_addendum,
-        output_file = output_filename_addendum,
-        quiet          = quiet_tag
-      )
-      
-      # Move the rendered file to the reports directory
-      file.rename(
-        from = output_filename_addendum,
-        to = file.path("./reports", output_filename_addendum)
-      )
-      
+    return(invisible(country_codes))
     }
-    
-    if ("artisanal" %in% reports){
-      
-      # Define parameters for each report
-      params_art <- list(
-        flag = country_code,
-        year = r_year,
-        author = report_author
-      )
-      
-      output_filename_art = paste0("artisanal_report_", tolower(country_code), "_", r_year, ".pdf")
-      
-      # Render the document with parameters
-      quarto_render(
-        input = file_template_artisanal,
-        execute_params = params_art,
-        output_file = output_filename_art,
-        quarto_args    = c("--metadata", paste0("include-in-header=", preamble_path)),
-        quiet          = quiet_tag
-      )
-      
-      # Move the rendered file to the reports directory
-      file.rename(
-        from = output_filename_art,
-        to = file.path("./reports", output_filename_art)
-      )
-    }
-  }
-  return(list(reports))
-}
 
 # Step 3.5: Pre-generate spatial maps ####
 
