@@ -2,11 +2,9 @@
 format: 
   pdf:
     geometry: "margin=2cm"
-  # docx:
-  #     tbl-cap-location: bottom
-  #     toc: false
-  #     number-sections: true
-  #     highlight-style: github
+    toc: true
+    toc-depth: 3
+    toc-title: "Table of Contents"
 editor: source
 toc: false
 embed-resources: true 
@@ -14,8 +12,10 @@ execute:
   echo: false
   message: false
   warning: false
+  fig-width: 12
+  fig-height: 8
 params:
-  flag: 'CK'
+  flag: 'PG'
   year: 2025
   author: "AUTHOR"
 ---
@@ -33,12 +33,23 @@ source("utils.R")
 
 sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue","orange",
                                   "pink","wheat","purple3","grey40","dodgerblue4","purple4",
-                                  "#66CCFF","salmon4","magenta3","gold"),
+                                  "#66CCFF","salmon4","magenta3","gold", "gray"),
                          nm = c("Albacore","Bigeye tuna","Black marlin","Blue marlin","Blue shark",
                                 "Hammerhead sharks nei","Mako sharks","Oceanic whitetip shark",
                                 "Pacific bluefin tuna","Silky shark","Skipjack tuna",
                                 "Striped marlin","Swordfish","Thresher sharks nei",
-                                "Whale shark","Yellowfin tuna"))
+                                "Whale shark","Yellowfin tuna", "Other"))
+# set theme
+theme_set(
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "bottom",
+    legend.text     = element_text(size = 8),
+    legend.title    = element_text(size = 9),
+    legend.key.size = unit(0.4, "cm")
+  )
+)
+
 # adjust path as needed
 flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
   select(country_code, country_name, country_short) |>
@@ -122,8 +133,8 @@ yr_range <- paste(min(yrs_long), max(yrs_long), sep = "-")
 '%nin%' <- function(x, y) !x %in% y
 
 country_name <- flag_labels[[country_cd]]
-```
 
+```
 
 ```{r data-prep}
 # Load all raw data - from t2
@@ -241,7 +252,30 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-## Catch for foreign fleets (EEZ)
+@tbl-licenses shows the summary of vessels licenced to fish in 
+`r country_name` during `r report_year`. 
+
+
+```{r tbl-licenses}
+#| echo: false
+#| include: true
+#| results: 'asis'
+#| label: tbl-licenses
+#| tbl-cap: !expr if(nrow(data_3634) > 0) glue::glue("Number of bilateral licences issued in {report_year}.") else ""
+
+
+if (nrow(data_3634) > 0){
+  flextable(data_3634 |>
+              mutate(flag = toupper(flag))) |>
+  set_header_labels(flag = "Flag") |>
+  width(j=1, width=1.2) |> 
+  fontsize(size = 8, part = "all") |>
+  fit_to_width(max_width = 6.5)
+}  
+```
+
+
+## Catch and Effort Trends
 
 ```{r data-eez-all-flags}
 
@@ -262,11 +296,12 @@ if (nrow(data_2900) > 0){
     group_by(year, flag) |>
     summarise(tot_mt = sum(tot_mt, na.rm = TRUE), .groups = "drop") |>
     mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE),
-           gear = "Purse seine")
+           gear = "Purse seine") |> 
+    select(year, flag, tot_mt, gear)
   
   # Country and sp catch 
   plot_data2ps <- data_2900 |>
-    filter(year == 2025) |>
+    filter(year == report_year) |>
     mutate(across(c(skj_mt, bet_mt, yft_mt, oth_mt), \(x) replace_na(x, 0))) |>
     pivot_longer(c(skj_mt, bet_mt, yft_mt, oth_mt),
                  names_to = "species", values_to = "mt") |>
@@ -277,7 +312,8 @@ if (nrow(data_2900) > 0){
                             oth_mt = "Other")) |>
     mutate(flag    = fct_reorder(flag, mt, .fun = sum, .desc = TRUE),
            species = fct_reorder(species, mt, .fun = sum, .desc = TRUE),
-           gear = "Purse seine")
+           gear = "Purse seine") |> 
+    select(year, flag, species, mt, gear)
 }
 
 if (nrow(data_2894) > 0){
@@ -298,7 +334,8 @@ if (nrow(data_2894) > 0){
     group_by(year, flag) |>
     summarise(tot_mt = sum(tot_mt, na.rm = TRUE), .groups = "drop") |>
     mutate(flag = fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE),
-           gear = "Longline")
+           gear = "Longline") |> 
+    select(year, flag, tot_mt, gear)
   
   # Country and sp catch 
   plot_data2ll <- data_2894 |>
@@ -307,22 +344,23 @@ if (nrow(data_2894) > 0){
     pivot_longer(c(alb_mt, bet_mt, yft_mt, oth_mt),
                  names_to = "species", values_to = "mt") |>
     mutate(species = recode(species,
-                            alb_mt = "Albacore tuna",
+                            yft_mt = "Yellowfin tuna",
+                            alb_mt = "Albacore",
                             bet_mt = "Bigeye tuna",
                             oth_mt = "Other")) |>
     mutate(flag    = fct_reorder(flag, mt, .fun = sum, .desc = TRUE),
            species = fct_reorder(species, mt, .fun = sum, .desc = TRUE),
-           gear = "Longline")
-
-}
+           gear = "Longline") |>
+   select(year, flag, species, mt, gear)
+  }
 
 has_2894 <- exists("data_2894_summary")
 has_2900 <- exists("data_2900_summary")
 
 if (has_2894 && has_2900) {
   flag_summary <- bind_rows(data_2894_summary, data_2900_summary)
-  plot_data1   <- rbind(plot_data1ll, plot_data1ps)
-  plot_data2   <- rbind(plot_data2ll, plot_data2ps)
+  plot_data1   <- bind_rows(plot_data1ll, plot_data1ps)
+  plot_data2   <- bind_rows(plot_data2ll, plot_data2ps)
 } else if (has_2894) {
   flag_summary <- data_2894_summary   # longline only
   plot_data1   <- plot_data1ll
@@ -346,10 +384,10 @@ if(nrow(plot_data1) > 0){
   plot_data1 <- plot_data1 |>
     filter(tot_mt > 0)
 }
-if(nrow(flag_summary) > 0){
+if(nrow(plot_data2) > 0){
   plot_data2 <- plot_data2 |>
-    filter(mt > 0)
-}
+    filter(mt > 0) 
+  }
 
 ```
 
@@ -358,7 +396,7 @@ if(nrow(flag_summary) > 0){
 #| include: true
 #| results: 'asis'
 #| label: tbl-data-eez-all-flags
-#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ for the last 5 years.") else ""
+#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ per gear (LL = Longline; PS = Purse seine) for the last 5 years.") else ""
 
 if (nrow(flag_summary) > 0) {
   
@@ -391,6 +429,12 @@ if (nrow(flag_summary) > 0) {
   ft <- flag_summary |>
     relocate(all_of(relocate_cols), .after = last_col()) |>
     mutate(year = as.integer(year)) |>
+      # apply sign based on hemisphere
+    mutate(gear = dplyr::case_when(
+      gear %in% c("Longline") ~  "LL",
+      gear %in% c("Purse seine") ~ "PS",
+      TRUE ~ gear
+    )) |>
     as_grouped_data(groups = "gear") |>
     flextable() |>
     set_header_labels(values = labels_use) |>
@@ -412,7 +456,6 @@ if (nrow(flag_summary) > 0) {
 }
 ```
 
-
 ```{r}
 #| echo: false
 #| include: true
@@ -427,9 +470,7 @@ if (nrow(plot_data1) > 0){
     scale_y_continuous(labels = scales::percent) +
     scale_fill_hue(labels = flag_labels, c = 50) +
     facet_wrap(~ gear) +
-    labs(x = NULL, y = "Share of catch", fill = "Country") +
-    theme_minimal() +
-    theme(legend.position = "bottom")
+    labs(x = NULL, y = "Share of catch", fill = "Country")
   }
 ```
 
@@ -438,26 +479,25 @@ if (nrow(plot_data1) > 0){
 #| include: true
 #| results: 'asis'
 #| label: fig-data-eez-all-flags-hist
-#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ, by flag during {report_year}.") else ""
+#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ by flag during {report_year}.") else ""
 
 if (nrow(plot_data2) > 0){
-   ggplot(plot_data2, aes(x = flag, y = mt, fill = species)) +
+  plot_data2 |>
+    mutate(species = forcats::fct_relevel(factor(species), "Other", after = Inf)) |>
+    ggplot(aes(x = flag, y = mt, fill = species)) +
     geom_col() +
     scale_x_discrete(labels = flag_labels) +  
     coord_flip() +
     scale_y_continuous(labels = scales::comma) +
     scale_fill_manual(values = sp_colours, na.value = "grey80") +
     facet_wrap(~ gear) +
-    labs(x = NULL, y = "Catch (mt)", fill = "Species") +
-    theme_minimal(base_size = 12) +
-    theme(legend.position = "bottom",
-          panel.grid.major.x = element_blank())
-  }
+    labs(x = NULL, y = "Catch (mt)", fill = "Species")
+}
 ```
 
 \newpage
 
-\@fig-data-eez-ps-spatial shows the distribution of purse seine catch, and its species composition within the EEZ and the adjacent area in `r report_year`. This shows that catch is highest in the northern parts of the EEZ, and this pattern is consistent with the results presented in previous Part reports. Skipjack was the species most commonly caught in all spatial cells followed by Yellowfin tuna which also corroborates with the overall `r report_year` catch composition (\@fig-data-eez-all-flags-perc) and results from previous years.
+<!-- @fig-data-eez-ps-spatial shows the distribution of purse seine catch, and its species composition within the EEZ and the adjacent area in `r report_year`. -->
 
 ```{r}
 #| echo: false
@@ -624,36 +664,13 @@ if (nrow(data_3375) > 0) {
 
 \newpage
 
-## Methodology
+## Annual catch estimates - artisanal
 
-The steps for preparing the artisanal catch estimates (ACE) for key tuna species are outlined below. The following sections on this document show the catch and effort estimates that are used to prepare the final catch estimates.
-
-It should be noted that the Tails and Ikasavea apps are separate applications collecting a sample of the artisanal fishing activity. Some members only use Ikasavea, others use only Tails and some use both. At this point, we do not have comprehensive surveys in place to scale up how much of the fishing activity is recorded using these ereporting platforms in a reliable and representative manner. Therefore, we are basing the ACE estimates presented here on a combination of reporting catch and effort from these two sources (in case data is stored in both sources, effort and catch values from these two sources are combined) as well as local expert knowledge of the activities at different landing sites.
-
-In the future, we hope to progress the Frame Survey concept to refine the estimates of total effort that are used to scale up the sampled catch estimates reported in the respective applications.
-
-**1.** A summary of number of trips by month and landing site recorded in Tails (if any)
-
-**2.** A summary of number of trips by month and landing site recorded in Ikasavea (if any)
-
-**3.** If data is collected using Ikasavea and TAILS we combine (sum) the values to provide final number of trips based on ereporting platforms
-
-**4.** We compare to "rough" estimates of average monthly landings (trips) per month and landing site provided by members
-
-**5.** The tuna catch by landings site and month is calculated (if data is available in Tails and Ikasavea we combine the data, ie: we sum the catches recorded on these two tools)
-
-**6.** We then multiply the monthly CPUE (catch/trip) by the estimated number of trips, and if those data are missing, we use an average CPUE multiplied by the number of trips
-
-**7.** The artisanal ACE is the sum across all months and landing sites
-
-## Fishing Effort
-
-The tables below present the number of reported **trips** in `r params$year` by month and landing site, as reported in Tails (if any), Ikasavea (if any) and in both platforms together (in case you have data reported in these two sources).
-
-If member provided a spreadsheet with the estimated trips per month at each landing site this will also be presented below. Some landing sites may not have any activity, that is OK. The member-provided estimates of effort by landing site and compared with the Tails (or Ikasavea or both sources combined) reported effort to produce a 'best' estimate of effort.
+@tbl-raised-ace presents the raised and unraised estimates per species for `r report_year`, and @tbl-raised-ace-perc shows the percentage contribution of each species.
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: Monthly-effort
 #| tbl-cap: !expr if(nrow(data_3615) > 0) glue::glue("Number of trips per month and landing site reported in Tails") else ""
@@ -678,6 +695,7 @@ if (!(nrow(data_3615) == 0)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: Monthly-effort-ika
 #| tbl-cap: !expr if(exists('data_ika_trips')) glue::glue("Number of trips per month and landing site reported in Ikasavea") else ""
@@ -693,6 +711,7 @@ if (exists('data_ika_trips')){
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr both_exist
 
@@ -704,6 +723,7 @@ if (both_exist) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| eval: !expr both_exist
 #| results: 'asis'
 #| label: diff_t2_ika
@@ -759,6 +779,7 @@ if (both_exist) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr both_exist
 
@@ -770,6 +791,7 @@ if (both_exist) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: tails_ika_summary
 
@@ -808,6 +830,7 @@ if (both_exist) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr nrow(data_3615) > 0 && file.exists(local_knowl_trips_file)
 
@@ -819,6 +842,7 @@ if (nrow(data_3615) > 0 && file.exists(local_knowl_trips_file)) {
 
 ```{r trips-est-mem}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: mem-trips
 #| tbl-cap: !expr if(nrow(data_3615) > 0) glue::glue("Member reported estimated trips per month per landing site") else ""
@@ -833,10 +857,6 @@ if (file.exists(local_knowl_trips_file)){
 }
 
 ```
-
-### Best estimate of fishing trips
-
-Estimate monthly trips are based on the **max** *value either reported by the member or reported in the ereporting tools Tails and Ikasavea*. In case ereporting data is collected through Tails and Ikasavea tools the combination of trips in both sources will be used as your best estimate monthly trips (tab above).
 
 ```{r prep-ereporting_trips, echo = F}
 
@@ -867,6 +887,7 @@ if (nrow(combined_t2_ika)>0){ # it means tails + ikasavea
 
 ```{r max.trips}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: est-trips-monthly
 #| tbl-cap: !expr if(nrow(ereporting_trips) > 0) glue::glue("Best estimate of trips per month at each landing site") else ""
@@ -919,8 +940,6 @@ flextable(best_estimate_trips)  |>
   fit_to_width(max_width = 6.5)
 
 ```
-
-## Catch Estimates
 
 ```{r prep-catch-data}
 # ── Month number → abbreviated name (keeps columns in calendar order) ─────────
@@ -1097,10 +1116,9 @@ for (sp in species){
 }
 ```
 
-**Unraised** tuna catches reported in ereporting tools are illustrated in the tables below, in kilograms (kgs).
-
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: data_skj
 #| tbl-cap: !expr if ("skj" %in% names(unr_list)) glue::glue("Unraised skipjack catch (kgs) reported in ereporting tools.") else ""
@@ -1119,6 +1137,7 @@ if ("skj" %in% names(unr_list)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: df_yft_total
 #| tbl-cap: !expr if ("yft" %in% names(unr_list)) glue::glue("Unraised yellowfin catch (kgs) reported in ereporting tools.") else ""
@@ -1138,6 +1157,7 @@ if ("yft" %in% names(unr_list)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: df_bet_total
 #| tbl-cap: !expr if ("bet" %in% names(unr_list)) glue::glue("Unraised bigeye catch (kgs) reported in ereporting tools.") else ""
@@ -1156,10 +1176,9 @@ if ("bet" %in% names(unr_list)) {
 
 ```
 
-**Raised** catches are produced using the average catch per trip, raised by the best estimate of trips, to produce a representative estimate of total artisanal tuna catches. It should be **noted** that if there are sites with no catches reported, these are removed from the totals, even if effort was indicated by the member. This should be revisited - and an error message is noted in this document when that occurs.
-
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: raise-skj
 #| tbl-cap: !expr if ("skj" %in% names(raised_list)) glue::glue("Raised skipjack catch (kgs) reported in ereporting tools.") else ""
@@ -1188,6 +1207,7 @@ if ("skj" %in% names(raised_list)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0
 
@@ -1196,7 +1216,7 @@ if (exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0) {
 }
 ```
 
-```{r missing_skj}
+```{r missing_skj, include=FALSE}
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0){
   flextable(missing_unraised_skj |> select(-no_catch)) |> 
@@ -1210,6 +1230,7 @@ if(exists('missing_unraised_skj') && nrow(missing_unraised_skj) > 0){
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: raise-yft
 #| tbl-cap: !expr if ("yft" %in% names(raised_list)) glue::glue("Raised yellowfin catch (kgs) reported in ereporting tools.") else ""
@@ -1237,6 +1258,7 @@ if ("yft" %in% names(raised_list)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0
 
@@ -1245,7 +1267,7 @@ if (exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0) {
 }
 ```
 
-```{r missing_yft}
+```{r missing_yft, include=FALSE}
 
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0){
@@ -1260,6 +1282,7 @@ if(exists('missing_unraised_yft') && nrow(missing_unraised_yft) > 0){
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: 'asis'
 #| label: raise-bet
 #| tbl-cap: !expr if ("bet" %in% names(raised_list)) glue::glue("Raised bigeye catch (kgs) reported in ereporting tools.") else ""
@@ -1288,6 +1311,7 @@ if ("bet" %in% names(raised_list)) {
 
 ```{r}
 #| echo: false
+#| include: false
 #| results: asis
 #| eval: !expr exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0
 
@@ -1296,7 +1320,7 @@ if (exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0) {
 }
 ```
 
-```{r missing_bet}
+```{r missing_bet, include=FALSE}
 # Rows with no catch but some estimated fishing effort
 if(exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0){
   flextable(missing_unraised_bet|> select(-no_catch)) |> 
@@ -1308,12 +1332,9 @@ if(exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0){
 }
 ```
 
-## Final Estimates
 
-Here we take the raised catch estimates for the three key tuna species and sum them across all landing sites and months to produce an annual estimate in metric tonnes (mt).
-
-```{r final.ace}
-#| label: raised.ace
+```{r}
+#| label: tbl-raised-ace
 #| tbl-cap: Raised and unraised annual artisanal catch estimates in mt
 
 ace <- data.frame()
@@ -1359,8 +1380,8 @@ flextable(ace_final) |>
 
 ```
 
-```{r perc.sp}
-#| label: ace.perc
+```{r}
+#| label: tbl-raised-ace-perc
 #| tbl-cap: Percentage of the artisanal tuna ACE associated with each of the key species
 
 ace_final$tot = rowSums(ace_final[,-1])
@@ -1375,3 +1396,5 @@ flextable(ace_final) |>
     fit_to_width(max_width = 6.5)
 
 ```
+
+

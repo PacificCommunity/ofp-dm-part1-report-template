@@ -41,5 +41,5 @@ res <- build_reports(country_codes = country_codes,
                      report_date   = format(Sys.Date(), "%d %b %Y"),
                      location      = "Apia, Samoa",
                      session_dates = "9--13 March 2025",
-                     file_template_part_1 = "template_part1_nr2.qmd"
+                     file_template_part_1 = "template_part1.qmd"
 )

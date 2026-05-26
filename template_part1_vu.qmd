@@ -206,17 +206,142 @@ sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue"
 
 \newpage
 
-# Abstract 
+# Abstract
 
-TO BE INCLUDED
+THIS IS NEW
+
+The major tuna species caught from the foreign fishing vessels in the Vanuatu EEZ in 2024 was dominated by 65% of
+albacore, 21 % of yellowfin, 3% of bigeye and lastly 11% for others species of the total catch. In 2024, there was a
+noticeable increase in the catch compared to 2023 from 4642.984 metric tons of fish recorded to 6991.41metric tonnes of
+fish. This increase in catch can be attributed to a combination of factors, including improved fishing conditions, favorable
+environmental factors, and potentially increased fishing effort.
+In 2014, the total catch recorded was 6,622.21 metric tons (MT). In 2015, the catch slightly decreased to 6,605.78 MT. This
+was followed by an increase in 2016 to 9,918.50 MT, and a further rise in 2017 to 13,232.26 MT. However, in 2018, the
+total catch declined to 7,594.43 MT, before increasing again in 2019 to 8,939.64 MT. Between 2016 and 2017, the
+significant increase in catch was largely due to fishing vessels returning to operate within the Vanuatu Exclusive Economic
+Zone (EEZ). This shift contributed to fluctuations in catch volumes during those years, influenced by factors such as access
+to onshore facilities, availability of markets, and favourable fishing patterns.
+From 2020 to 2022, catch volumes continued to fluctuate. In 2020, the total catch was 7,996 MT. The lowest catch during
+this period occurred in 2021, with only 3,716 MT recorded, mainly due to the severe impacts of the COVID-19 pandemic on
+fishing operations. In 2022, catches rebounded slightly to 7,257 MT, a recovery attributed to the normalization of operations
+following the easing of COVID-19 restrictions. As economic activities resumed and fishing effort increased, catch volumes
+showed improvement.
+In the period 2020 – 2024 the annual catch estimates of the Vanuatu longline fleets in the WCPO showed an increase from
+catches between 2020 to 2021 with a total estimate of 8,809Mt to 10,205Mt and a decrease from 2021 to 2022 with 2022
+catches at 7,838.95Mt. This reduction continued on to 2023 where a record of 6,741.88Mt was recorded, this amount being
+the lowest in the last 5 years and which was due to the reduction in vessel effort since where vessel numbers was lowest in
+this period. In 2024 however, vessel numbers and effort improved and an increase in catch was seen at 7,425.95MT from
+2023 levels.
+Purse seiners on the other hand experienced an increase in catch estimates between the years 2020 to 2021 due to the
+increase in vessel effort and recording a total of 47,292Mt in 2020 and 48,597Mt in 2021. This number further increased in
+2022 to 68,990MT recording the highest in the five years and being attributed to an increase in vessel numbers and effort. In
+2023 however, the catch decreased to 53,907Mt and further reduced to 27,682MT in 2024 as vessel effort reduced. This
+catch was dominated by skipjack making up 84% of the catch followed by Yellowfin at 14% and lastly bigeye at 0.8% of
+the catch in 2024.
+Raised 2024 data shows that catches of the main tuna species for Purse seines reduced evidently from 39,859Mt of skipjack
+in 2020 to 23,397Mt in 2024, the lowest caught for this species. Longline vessels also experienced a decrease in catches of
+Albacore as a main tuna species for this fishery with a catch total of 4,970Mt in 2020 to 2,740Mt in 2024, the lowest
+recorded for the 5 years.
+
+Since 2014, locally based vessel operation had ceased as vessels were based entirely in Fiji and the Solomon Islands,
+however in 2019, locally based vessels moved back to fish in the Vanuatu EEZ where unloading of fish was experienced
+from 6 locally based foreign fishing vessels offloading fish into the Fish processing facility in Port Vila. These operations
+were continued to 2024 when the vessels were recalled for maintenance work before proceeding operations in 2025.
 
 # Background
 
-TO BE INCLUDED
+The main commercial tuna and billfish species caught in the Vanuatu EEZ and by the Vanuatu fleet in the WCPFC consists
+of albacore (Thunnus alalunga), bigeye (Thunnus obesus), skipjack (Katsuwonus pelamis), yellowfin (Thunnus albacares),
+black marlin (Makaira indica), blue marlin (Makaira nigricans), striped marlin (Tetrapturus audax) and swordfish (Xiphias
+gladius).
+
+As part of Vanuatu’s obligation to report the WCPFC CMMS’s for key shark species, data has also been compiled, some of
+which are now covered in the longline fleet tables, these are blue shark (Prionace glauca), silky shark (Carcharhinus
+falciformis), oceanic whitetip shark (Carcharhinus longimanus) and mako shark (Isurus spp.). The main industrial fishing
+methods employed in the Vanuatu EEZ has been dominated by the longline gear outside 24 miles, however a few Artisanal
+fishers are found fishing within the 12 miles around FAD’s catching mainly Skipjack and Yellowfin. Individual fleets
+presented herein cover vessels with high catch and effort data coverage and these are mostly Chinese fleets with a few Fiji
+fleets. Other fleets such as Taiwainese fleets have cease operations over the last few years in the Vanuatu EEZ however, in
+2021 a few Kiribati vessels were seen fishing in the Vanuatu EEZ. Fishing by these fleets is based through bilateral
+agreements and the issuance of Foreign fishing licenses.
+
+The report covers the fishing activities in the Vanuatu EEZ and operations of the Vanuatu flag vessels that were active in the
+WCPFC and other broad ocean areas during the period 2017 to 2024. The report mainly focuses on the fleet structures,
+annual catch estimates and catch/effort distributions. The report also raises areas where new and further effort is required on
+the part of Vanuatu to enhance its role in contributing to the overall conservation and management of highly migratory
+stocks in the WCPFC area. Most of the current presented data were obtained from the OFP-SPC DORADO and Tufman2
+database and which were originally collected and verified by the Vanuatu Fisheries Data Management Unit (VFDMU).
+
+Vanuatu recognizes that there are critical data ‘gaps’ that need attention and focus on. Therefore, with the limitation of
+resources, the department has been working closely with SPC and FFA to collect as much information and data as possible
+to fill in these gaps. The delegation of designated ports recognized as PSMA countries for our Flagged Vessels have been
+established however are yet to be implemented and these will enable us to monitor landings of fish in foreign ports including
+those in Suva, Levuka and Pagopago which are currently the ports mainly being utilized. In 2023 and 2024 a few countries
+like Thailand, have begun sharing landing data as part of their PSMA obligations to Vanuatu and these data are useful in
+verification of catch data provided.
 
 # Flag State Reporting
 
-TO BE INCLUDED
+Vanuatu is currently a member of WCPFC, IATTC, SPRFMO and has ratified the NPFC. The membership of Vanuatu in
+these RFMOs has enabled Vanuatu’s fishing fleet to fish these RFMO’s waters for tuna and other highly migratory fish
+species. The Vanuatu fleet consists of 2 purse seiners and 52 long-liners with licenses to fish in the WCPFC area in 2024.
+The Vanuatu fleet consists of purse seine and longline vessels fishing between the Pacific and Indian Ocean. Fishing inside
+the Exclusive Economic Zones (EEZ) of coastal states had been possible by way of Bilateral Fishing Access (BFA) for both
+longlines and purse seiners. Vanuatu operates a vessel registry, the Vanuatu International Shipping Registry (VISR). The
+VISR has recorded over 90 vessel registrations since 2014, and currently there is a total of 95 vessels on the Vanuatu
+registry and these comprise of 56 Longlines, 14 Refrigerated cargo ship,14 Trawlers, 7 Purse seines, 4 Squid jiggers and 1
+oil bunker. It is a requirement through the Vanuatu Fisheries Act that all Vanuatu fishing vessels acquire an International
+Authorization to Fish Certificate (IATF) in order to operate in the high seas within the Pacific Ocean.
+
+## Catch and Effort Trends
+
+The annual catch and effort estimates have been estimated for the Vanuatu fleet operating under bilateral arrangements and
+the large-scale longline vessels (LSLV) operating in the wider WCPFC Area. The general observation since 2020 was that
+there has been a variation in the annual catch and effort estimates for both the purse seine and the longline fleet.
+The major tuna species for the Vanuatu longline fleet catch was dominated by albacore then bigeye and lastly yellowfin.
+Raised estimates for the longline fleet in 2024 were 2,740.58 MT for albacore, 2,401.69MT for bigeye and 1,266.19MT for
+yellowfin respectively and these catch estimates were determined from logsheet data raised using information on actual
+vessel Activity (VMS data). During the period 2020-2024, the longline fleet recorded its highest total annual catch estimate
+as 10,205.13Mt in 2021 (Table 1(a)). The longline fishery recorded the highest catches for albacore in 2022 being
+3,864.15Mt and the lowest in 2024 as 2,740.58Mt. The highest catch for bigeye was in 2021 with 2,650.49Mt and lowest in
+2020 with 2,182Mt. Yellowfin catches however, showed an increase from 2020 to 2024 levels with the highest recorded in
+2024 with 1,266Mt and the lowest in 2022 and 2023 with 689Mt and 528Mt respectively. Albacore continues to be the
+dominant species in the catch for 2024 followed by bigeye and then yellowfin. Effort for the longline fishery has continued
+to fluctuate in the recent years from 2020-2024 as can be seen in Table 5. This fluctuation in effort is evident through the
+measure of the number of vessels licensed and number of days fished and sets deployed.
+
+The purse seine fleet that operated under bilateral arrangements recorded a decrease in total catch from 2020, 2021 and
+2022 levels with catch records as 47,292Mt, 48,597MT and 68,990Mt respectively. This amount reduced in 2023 to
+53,907Mt and further reduced to 27,682Mt in 2024 (Table 1(b)). The effort in the total number of sets had also increased
+from this period of 2020 to 2022 and reduced and 2024. During this period, the main tuna species in the catch being
+Skipjack also showed an increase in catch from 39,859Mt in 2020 to 39,450Mt in 2021 and 57,952Mt in 2022. In 2023 and
+2024, the catch for Skipjack reduced to 42,579Mt and 23,397Mt. This is also the same for the other two species Yellowfin
+with the catch in 2020 being 6,172Mt and reduced in 2024 to 4,058Mt and for Bigeye also with the highest catch in 2020
+being 1,260MT and lowest catch in 2024 being 227Mt.
+
+The purse seine fleets were mainly operating within the 5 degrees North and 5 degrees South and between 150 degrees East
+and 175 degrees West. The effort in the purse seine fishery is measured as days fishing and searching, Figures 2) b) shows
+the catch distributions of purse seine vessels that operated under the bilateral agreements.
+The longline effort is given as 100s of hooks. The longline efforts are distributed between 40 degrees North and 40 degrees
+South. This implies that both the southern and northern albacore stocks were targeted. However, there was more effort
+experienced in the south i.e., between 10 degrees South and 40 degrees South and this effort has increased from 2020 to
+2021 as effort increased in terms of vessels numbers and days fished and decreased in 2022 and this can be seen Figure 2) a)
+where catch has increased for both the north and south pacific region targeting Albacore.
+
+The catch and effort data coverage for the Vanuatu fleet are high, but the size data coverages are uncertain as most of these
+vessels are landing their catch elsewhere and this would mostly be corroborated by the observers and port samplers in whose
+jurisdictions catch may have been landed or transshipped. The inferences for high, medium, and low scores for the
+catch/effort, and size data coverage, are provided in Appendix II.
+Estimated Annual total catches of non-target, associated and dependent species by the Vanuatu purse seine fleets and longline fleets in 2020-2024 has been sought from the Tufman2 reporting database as shown in Table 3 and 4 and as well as in
+Annex 1 where there is a summary table for all CMM’s concerned. However, due to the Covid-19 pandemic observer
+placements were very low as repatriation took place, however, post covid and in 2024, observer placement on Vanuatu flag
+vessels has immensely improved with Vanuatu meeting its Observer coverage requirement for WCPFC.
+
+Appendix 1 summary table also provides information on the observed species of interest (SSI) collected through observer
+reports for the year 2024 by ROP observers on Purse seiners and by Vanuatu observers on the Vanuatu flag longliners.
+Observer reports continue to be submitted to SPC for processing for all vessels being observed on by Vanuatu’s Observer
+program. 
+
 
 ```{r ps-prep}
 
@@ -577,7 +702,7 @@ render_gear_tbl_section3(
   gear_name = "longline",
   gear_code = "l",
   species_labels = ll_species_labels,
-  intro_text = ""
+  intro_text = "The longline fleet primarily targets **tunas** and **billfish** species."
 )
 ```
 
@@ -661,7 +786,7 @@ render_gear_figs_section3(
   gear_code = "pl",
   species_list = pl_species,
   species_labels = pl_species_labels,
-  intro_text = ""
+  intro_text = "The annual catches show a clear trend over time."
 )
 ```
 
@@ -822,7 +947,7 @@ render_vessel_table(
   ves_data = ves_raw,
   gear_name = "s",
   size_categories = ps_size_fn,
-  intro_text = "@tbl-tbl2-ps shows the purse seine fleet composition by vessel size category (GRT) from the last 5 years."
+  intro_text = "@tbl-tbl2-ps shows the purse seine fleet composition by vessel size category (GRT) from the last 5 years. The majority of vessels consistently fall within the 51–200 GRT range, indicating a strong presence of large-scale operations. "
 )
 ```
 
@@ -864,6 +989,7 @@ Albacore, Bigeye tuna, and Yellowfin tuna , from `r country_name`’s fleet acro
 
 @fig-figmapps highlights key fishing areas in the Western and Central Pacific Ocean, 
 primarily concentrated within and just outside `r country_name`’s Exclusive Economic Zone (EEZ).
+
 
 ```{r}
 #| label: fig-figmapps
@@ -928,6 +1054,7 @@ if (nrow(data_3605) > 0) {
 
 @tbl-tbl3s provides a summary of observed interactions with special interest species by `r country_name`’s purse seine fleet from `r report_year - 4` to `r report_year`.
 
+
 ```{r}
 ssi_s_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0) {
   glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status.")
@@ -989,7 +1116,10 @@ render_ssi_table(
 ```
 
 ```{r}
+# Create non-target purse seine table
+
 if (nrow(data_3605) > 0){
+  # Create table of non-target species for purse seine
   PS_tab <- 
   data_3605 |>  
   filter(gear_code == "s", 
@@ -1085,17 +1215,183 @@ sections <- strsplit(params$additional_sections, ",")[[1]] |>
 
 if ("artisanal" %in% sections) {
   cat("\\newpage\n\n# Coastal State Reporting\n\n")
-  cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+  cat(knitr::knit_child("template_artisanal_vu.qmd", quiet = TRUE))
 }
 ```
 
+
 # Socio-economic factors
+
+Since 2013 the number of Foreign and locally based foreign license has dropped as
+most vessels were moving to the Solomon Islands EEZ and towards the eastern
+pacific where fishing was reported to be very good. Vessels that were offloading
+their catch in the Vanuatu EEZ through transshipment were also reporting low
+catches towards the end of 2013 to early 2014 thus Transshipment in port was not
+as regular as before and towards the end of 2014 Transshipment in port has ceased.
+Locally based operations however ceased after 2014 and was only ignited back in
+2019 under the Sino-Van company which licensed 6 vessels to fish and offload
+their catches in Port Vila both for local sales and export to international markets.
+However, in 2023, the vessels offload of the 6 locally based foreign fishing vessels
+shifted to Fiji as a result of the pontoon being damaged during the twin tropical
+cyclone that hit Vanuatu in March 2023 and in 2024 the vessels went to slipway.
+
+For local artisanal fisherman, fishing in FADs have recently become a priority with
+the reduction increase in fuel prices due to the Covid pandemic as well as the war
+between Ukraine and Russia which affected the global distribution of fuel and in
+turn affected fuel prices locally. This has made it an important asset for more
+Artisanal fisherman who target FAD’s both to catch skipjack for Baitfish and to
+catch yellowfin to sell in the local markets.
+
+The TUFMAN2 database has been fully utilized since July 2016 after the shift from
+TUFMAN 1 which it was only used for licensing up until 2019 when the licensing
+component of the Tufman system was pushed into the FFA-RIMF system. The
+TAILS system has also been trailed out in Vanuatu in 2016 and from 2021 there
+has been a successful rollout to all 6 provinces in Vanuatu and present in 26 islands
+covering 50 landing sites and 32 Area councils. The extension to all other
+remaining 39 Area councils was met in 2022. Fishers including small gleaning
+activities, skiffs and motorized canoes are being registered within the TAILS
+system with the objective of enhancing the capacity to collect data for coastal, deep
+bottom and pelagic fisheries. The RIMF FFA database has been utilized to cater for
+the recording of Landing and Unloading data, transshipment data as well as MCS
+boarding and inspection information. There is plan to include the entry of catch and
+effort data from the non-Tuna RFMOs in the coming year in the RIMF system.
 
 # Onshore Developments
 
+The processing plant (Tuna Fishing Vanuatu Limited) in Port Vila harbor seized
+operations in February 2014 due to movement of the fleet to the Solomon Islands.
+The Chinese fishing Base known as the Sino-Van company is a joint venture to the
+Vanuatu government owned 6 locally based Chinese fishing vessels that were
+licensed in late 2019 and currently fishing the Vanuatu EEZ and offload their catch
+in Port Vila and export their catch to China, USA, Vietnam, Australia and New
+Zealand. Vanuatu has rolled out E reporting on 95% of its Vanuatu flag vessels
+from 2020 to 2021 and in 2022 the coverage increases up to 100%. Through the
+Vessel Day Scheme, Vanuatu plans to implement the ER system on all licensed
+vessels operating within its EEZ in the coming year. Vanuatu has plans to develop
+its onshore activities to further enhance and utilize the current fish landing
+activities taking place. In 2024, the Department of Fisheries was moved from the
+Ministry of Agriculture, Livestock, Fisheries, Forestry and Biosecurity to the newly
+established Ministry of Fisheries, Oceans and Maritime Affairs.
+
 # Future Prospects of Fishery
 
+Vanuatu has maintained its position to limit the number of licenses to 70 Foreign
+License and 40 Locally Based Foreign license however the license fee has been
+increased by 50% of the current fee. Vanuatu has plans to move to vessel day
+scheme (VDS). The Vanuatu Fisheries Department in November last year 2023 has
+soft launch the longline vessel day scheme (VDS) along with stake holder
+consultations regarding the transition to the new system. In 2024, the staff were
+trained on how to implement the Vessel Day Scheme (VDS) activities.
+
 # Research and Statistics
+
+## Estimated data coverage
+
+Coverage of logsheets from foreign fleets fishing in the Vanuatu EEZ extends back
+as far as the 1970s and has been low and variable among years. There has also been
+significant missing data throughout the years thus the difficulty in estimating
+coverage rates for some years. However, with the inclusion of VMS data into the
+Tufman system that is being used to report catches, there has been tremendous
+improvement in estimating logsheet coverage and estimating catch production
+respectively.
+
+Logsheet data for Vanuatu flag vessels is currently being submitted through
+Electronic reporting from a trial that has been in place since 2019 and which has
+extended to 100% of the Vanuatu flag vessels in 2024. ER has proven effective by
+reducing the amount of effort on data entry to data checking and quality control.
+Data coverage is however, still low on the collection of size frequency data as most
+of Vanuatu’s flagged vessels as well as the licensed vessels that fish in the Vanuatu
+EEZ have been unloading their catch in foreign ports in the region such as Fiji,
+Western Samoa and Solomon Islands and internationally such as Taiwan and
+Panama.
+
+Vanuatu is looking into strict measures in terms of estimating catch and effort data,
+since most of our licensed vessels are currently offloading all or part of their
+catches overseas, either to the factory or on the carrier vessel in port. One of the
+major steps for Vanuatu in 2016 was to move to the TUFMAN2 database which
+allows for the sharing of logsheet data between countries to which licensed vessels
+operated. This sharing has allowed access to view Logsheets from vessels who are
+license to operate in the Vanuatu waters with other members sharing the same
+interests. And this is currently being fulfilled since 2017 as logsheet data is being
+shared by countries which has significantly reduced the amount of work load on
+entering data and giving more time to fixing and validating the data.
+Most of the current presented data were obtained from the OFP/SPC database, and
+were originally collected and supplied by Vanuatu and other member countries.
+
+## Status of Tuna Fisheries Data Collection Systems
+
+### Logsheet Data collection and Verification
+
+There have been vast improvements with the collection of logsheet data since it has
+become one of the special licensing conditions; which has forced vessel
+owners to keep up with thesubmission of logsheet data. For the licensed vessels
+fishing inside VU EEZ the logheet coverage based on VMS Data was between
+80%-100% from 2014 to 2023 and in 2024 the coverage is 75.89% and will
+improve once all logsheets are submitted and all outstanding data a r e being
+entered. Whereas for the Vanuatu flag vessels the coverage for Longline for
+2014-2020 is 100% except for 2018 and 2019 the coverage is 98.37% and 99.33%
+respectively which is obtained through reconciliation with VMS data sought from
+the Vanuatu VMS system. For Purse seine vessels, logsheet coverage from both
+2014 and 2024 has been at 100. All Vanuatu fleets in 2024 (longline and purse
+seine) are 100% electronic reporting fulfilling a 100% coverage of all fleets
+reporting using ER.
+
+Assistance from trainings held by SPC on data verification has assisted in allowing
+data verification to be done nationally by officers as a means of improving data
+quality and compliance.
+
+### Observer and Port Sampling Programme
+
+The Vanuatu Observer program established in 2008 and now has 54 regional certified PIRFO
+observers who observe on Purse Seiners, Long Liners and Fish Carriers that are operating in the
+WCPFC area. Since its establishment in 2008, Fisheries Observers have been involved in Longliners
+and Purse seiner vessel operations and later covering fish carrier vessels in the effort to collect more
+information on carrier vessels at sea.
+In 2017, Vanuatu National Observer Programme has managed to put in place its first Emergency
+Action Plan (EAP) and Standard operational Procedures. This is a great improvement to the
+programe. The programme has also purchased safety gears such as 2-way In Reach Communicating
+Device, Personal Locator Device (PLB) and Life vests and has also received few of these equipment
+from the Forum Fisheries Agency (FFA. In 2023 and 2024 recruitement of observers took place
+within the provinces of Vanuatu which now provides a total of 64 active and trained observers in the
+program.
+
+### Unloading and Transshipment
+
+Unloading and Transshipment in Vanuatu port has been by way of locally based foreign vessels
+fishing in Vanuatu EEZ. Since 2009 there has been 100% port sampling for all unloading and
+transshipment activity in Vanuatu EEZ. Transshipment has been constantly carried out within the
+harbor mostly targeting albacore for canning (e.g. Fiji and Solomon) or other species such as sharks
+(mainly fins), Marlins, wahoo, Sword fish and other relevant by-catch including low grade yellow fin
+and big eye. Transshipment is 100% sampled in measurement and estimated capacity weight of each
+fish well; all fish for transshipment are stored frozen in blast freezers. Transshipment often occurs
+once a month until 2014 when there were only 4 transshipments in the Vanuatu port. As of then,
+transshipment activities has since ceased. For Vanuatu-flagged fishing vessels, transshipment by
+longline vessels takes place on the high seas, while 100% of purse seine transshipment occurs at port.
+In Vanuatu, unloading activities slowly occurred in 2017 and 2018 where 2 unloading took place as a
+way of showcasing and promoting Vanuatu’s capacity of having its vessels resume unloading
+activities in Vanuatu. In 2019, vessels resumed landing activities under the joint agreement between
+the Vanuatu government and the SinoVan fishing company which experienced a total of 9 unloading
+that took place by 6 locally based foreign vessels. Landed catch were exported to China, USA, New
+Zealand and Japan with the sales of frozen catch also provided to the local markets. In 2024, all six
+locally based vessels went to slipway, and Vanuatu licensed two additional locally based vessels
+towards the end of the year. It is expected that more of the company vessels will engage in offloading
+their catch in the Port Vila port in the following year developing the local market of Port Vila and
+Santo. Vanuatu-flagged longline vessels offload or unload their catch at designated ports such as
+Kaohsiung, Busan, American Samoa (when under charter), and Suva, while purse seine vessels
+mainly offload in Papua New Guinea. The landed catch is exported to markets in the USA, China, and
+Thailand, with some also sold locally.
+
+### Disposal of Catch
+
+Fresh Tuna previously landed in Vanuatu by Locally Based Foreign vessels were exported by air to
+Japan as well as USA and New Zealand, while other frozen fish including Albacore are exported to
+China and the remaining catch sold in the local markets in Port Vila. The Foreign fleets that have been
+licensed to fish in Vanuatu EEZ unload 100% of their catch (both their fresh and frozen) either, in
+Pago Pago or Fiji in 2019, while in 2024 the 2 licensed locally based vessels engaged in fishing 100%
+offload their catch in Vanuatu port.
+
+## Research Activities
+There was no major research activities carried out in 2024.
 
 <!-- # Addendum -->
 
