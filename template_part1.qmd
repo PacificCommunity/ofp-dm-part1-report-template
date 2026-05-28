@@ -14,6 +14,14 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
+knitr:
+  opts_chunk:
+    out-width: "100%"
 page-layout: full
 edit: source
 params:
@@ -1084,8 +1092,18 @@ sections <- strsplit(params$additional_sections, ",")[[1]] |>
   (\(x) x[x != ""])()   # drop empty strings
 
 if ("artisanal" %in% sections) {
-  cat("\\newpage\n\n# Coastal State Reporting\n\n")
-  cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+  # Check whether artisanal data exists BEFORE knitting the child
+  ika_file        <- paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
+  has_ika         <- file.exists(ika_file)
+  has_tails <- length(list.files(this_yr_folder, pattern = "3615")) > 0
+
+  if (has_ika || has_tails) {
+    cat("\\newpage\n\n# Coastal State Reporting\n\n")
+    cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+    cat("\n\n\\clearpage\n\n")
+  } else {
+    message("No artisanal data for ", country_cd, " - skipping coastal section")
+  }
 }
 ```
 

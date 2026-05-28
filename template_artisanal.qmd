@@ -5,6 +5,11 @@ format:
     toc: true
     toc-depth: 3
     toc-title: "Table of Contents"
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
 editor: source
 toc: false
 embed-resources: true 

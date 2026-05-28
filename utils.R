@@ -788,6 +788,123 @@ build_reports <- function(country_codes,
 
 # Step 3.5: Pre-generate spatial maps ####
 
+# dynamic
+save_spatial_maps_dynamic <- function(data_3608, country_cd, report_year, newmap, output_dir) {
+  
+  gears <- list(
+    ps = list(code = "s",  name = "purse seine", species = c("bet", "skj", "yft")),
+    ll = list(code = "l",  name = "longline",    species = c("bet", "alb", "yft")),
+    pl = list(code = "pl", name = "pole line",   species = c("skj", "yft", "bet"))
+  )
+  
+  year_range  <- c(report_year - 4, report_year)
+  saved_paths <- list()
+  
+  # Tuning knobs for dynamic extent
+  buffer_deg <- 10     # padding around the data, in degrees
+  min_span   <- 20    # minimum width/height (deg) so tight clusters don't over-zoom
+  
+  # Basemap extent — must match the st_crop() applied to newmap upstream
+  basemap_xlim <- c(120, 230)
+  basemap_ylim <- c(-45,  35)
+  
+  for (g in names(gears)) {
+    
+    gear_code_val  <- gears[[g]][["code"]]
+    gear_name_val  <- gears[[g]][["name"]]
+    gear_species   <- gears[[g]][["species"]]
+    
+    gear_data <- data_3608 |> filter(gear_code == gear_code_val)
+    
+    if (nrow(gear_data) == 0) {
+      message("  No data for ", gear_name_val, " - skipping")
+      next
+    }
+    
+    spatial_data <- gear_data |>
+      filter(
+        between(year, year_range[1], year_range[2]),
+        sp_code %in% gear_species
+      ) |>
+      group_by(lat, lon, year, species) |>
+      summarise(catch = sum(catch), .groups = "drop") |>
+      filter(catch > 0)
+    
+    if (nrow(spatial_data) == 0) {
+      message("  No spatial data for ", gear_name_val, " - skipping")
+      next
+    }
+    
+    # --- Dynamic extent based on where the catch actually is ---
+    lon_rng <- range(spatial_data$lon, na.rm = TRUE)
+    lat_rng <- range(spatial_data$lat, na.rm = TRUE)
+    
+    # Expand by buffer
+    lon_rng <- lon_rng + c(-buffer_deg, buffer_deg)
+    lat_rng <- lat_rng + c(-buffer_deg, buffer_deg)
+    
+    # Enforce a minimum span (centered on the data)
+    if (diff(lon_rng) < min_span) {
+      mid     <- mean(lon_rng)
+      lon_rng <- c(mid - min_span / 2, mid + min_span / 2)
+    }
+    if (diff(lat_rng) < min_span) {
+      mid     <- mean(lat_rng)
+      lat_rng <- c(mid - min_span / 2, mid + min_span / 2)
+    }
+    
+    # Clamp to the cropped basemap so we don't ask for area outside newmap
+    lon_rng <- c(max(lon_rng[1], basemap_xlim[1]), min(lon_rng[2], basemap_xlim[2]))
+    lat_rng <- c(max(lat_rng[1], basemap_ylim[1]), min(lat_rng[2], basemap_ylim[2]))
+    
+    # Dynamic axis breaks — roughly 3 ticks across each axis
+    lon_breaks <- pretty(lon_rng, n = 3)
+    lat_breaks <- pretty(lat_rng, n = 3)
+    
+    p <- ggplot() +
+      geom_sf(data = newmap, fill = 'bisque1', colour = 'gray') +
+      geom_tile(data = spatial_data, aes(lon, lat, fill = catch)) +
+      scale_fill_distiller(palette = "Spectral") +
+      scale_x_continuous(breaks = lon_breaks, expand = c(0, 0)) +
+      scale_y_continuous(breaks = lat_breaks, expand = c(0, 0)) +
+      facet_grid(year ~ species) +
+      coord_sf(xlim = lon_rng, ylim = lat_rng, expand = FALSE) +
+      xlab("Longitude") + ylab("Latitude") + labs(fill = "Catch (mt)") +
+      ggtitle(glue::glue("Spatial patterns in catch for the {gear_name_val} fishery")) +
+      theme_bw() +
+      theme(
+        axis.text        = element_text(size = 14),
+        axis.text.x      = element_text(angle = 45, hjust = 1),
+        legend.text      = element_text(size = 14),
+        legend.title     = element_text(size = 14),
+        strip.background = element_rect(fill = 'white'),
+        strip.text       = element_text(size = 14),
+        axis.title       = element_text(size = 16),
+        title            = element_text(size = 16),
+        panel.grid.major = element_line(colour = "grey85", linewidth = 0.3),
+        panel.grid.minor = element_blank()
+      )
+    
+    # Scale output dimensions to the data aspect ratio (clamped to sensible range)
+    asp   <- diff(lon_rng) / diff(lat_rng)
+    out_w <- 9
+    out_h <- max(5, min(12, out_w / asp))
+    
+    out_path <- file.path(
+      output_dir,
+      glue::glue("map_{g}_{country_cd}_{report_year}.png")
+    )
+    
+    ggsave(out_path, plot = p, width = 10, height = 9, dpi = 300, bg = "white")
+    message("  Saved: ", out_path)
+    
+    saved_paths[[g]] <- out_path
+    rm(p, spatial_data, gear_data); gc()
+  }
+  
+  return(saved_paths)
+}
+
 save_spatial_maps <- function(data_3608, country_cd, report_year, newmap, output_dir) {
   
   gears <- list(

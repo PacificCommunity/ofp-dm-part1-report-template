@@ -262,8 +262,6 @@ CCMs shall annually provide to the Commission, in Part 1 of their annual reports
 **Table(s) x (by area)**
 
 ```{r}
-#| label: tbl-cmm2018-03x
-#| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area.'
 
 a6 <- read_and_clean(this_yr_folder, member, r_code=3317)
 
@@ -336,7 +334,14 @@ if (nrow(a6) > 0 && is_applicable("2018-03")) {
     mutate(capture_rate_north_of_23n = round(capture_rate_north_of_23n, 4)) |>
     rename(hhooks = hks_north_of_23n, hhooks_obs = hks_obs_north_of_23n, n_birds = north_of_23n,
            capture_rate = capture_rate_north_of_23n)
-  
+}
+```
+
+```{r}
+#| label: tbl-cmm2018-03x
+#| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area.'
+
+if (exists("a6") && is.data.frame(a6) && nrow(a6) > 0 && is_applicable("2018-03")) {
   msg <- ' '
   flextable(a6 |>
               mutate(capture_rate = round(capture_rate, 4)) |>

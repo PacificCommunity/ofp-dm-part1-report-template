@@ -11,7 +11,7 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("NR")
+country_codes <- c("PG")
 r_year <- 2025
 report_author <- "Jessica LS"
 rewrite_files <- TRUE
@@ -40,6 +40,6 @@ res <- build_reports(country_codes = country_codes,
                      ccm_num       = "22",
                      report_date   = format(Sys.Date(), "%d %b %Y"),
                      location      = "Apia, Samoa",
-                     session_dates = "9--13 March 2025",
+                     session_dates = "11--19 August 2026",
                      file_template_part_1 = "template_part1.qmd"
-)
+                     )
