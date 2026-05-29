@@ -56,7 +56,7 @@ theme_set(
 )
 
 # adjust path as needed
-flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
+flag_lookup <- read_csv("config/flag_names.csv") |>
   select(country_code, country_name, country_short) |>
   mutate(country_name = na_if(country_name, "NULL"),
          country_short = na_if(country_short, "NULL")) |>
