@@ -11,9 +11,8 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("PG")
+country_codes <- c("NR")
 r_year <- 2025
-report_author <- "Jessica LS"
 rewrite_files <- TRUE
 additional_sections  <-  c("addendum", "artisanal")  # options: "artisanal", "addendum", both, or character(0) for none
 aceman = FALSE # if TRUE, source only ACEs data from member country, if false, source data from yearbook.
@@ -41,5 +40,5 @@ res <- build_reports(country_codes = country_codes,
                      report_date   = format(Sys.Date(), "%d %b %Y"),
                      location      = "Apia, Samoa",
                      session_dates = "11--19 August 2026",
-                     file_template_part_1 = "template_part1.qmd"
+                     file_template_part_1 = "template_part1_nr.qmd"
                      )

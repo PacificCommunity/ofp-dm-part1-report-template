@@ -194,15 +194,29 @@ g. fishing gear used
 
 ```{r}
 #| label: tbl-cmm2009-06.1
+#| echo: false
+#| include: true
 
-trans1_file <- str_c(this_yr_folder, 'additional_files/trans1.csv')
-
-if (file.exists(trans1_file) && is_applicable("2009-06")) {
-  a3 <- read.csv(trans1_file)
-  msg <- ''
-  flextable(a3)
+if (is_applicable("2009-06")) {
+  
+  trans1_file <- str_c(this_yr_folder, "additional_files/trans1.csv")
+  trans2_file <- str_c(this_yr_folder, "additional_files/trans1.png")
+  
+  if (file.exists(trans1_file)) {
+    a3 <- read.csv(trans1_file)
+    flextable(a3)
+  }
+  
+  if (file.exists(trans2_file)) {
+    knitr::include_graphics(trans2_file)
+  }
+  
+  if (!file.exists(trans1_file) && !file.exists(trans2_file)) {
+    cat(no_data_msg("2009-06", context = "transhipment quantities"))
+  }
+  
 } else {
-  msg <- no_data_msg("2009-06", context = "transhipment quantities")
+  cat(no_data_msg("2009-06", context = "transhipment quantities"))
 }
 ```
 `r msg`
@@ -218,14 +232,26 @@ e. fishing gear
 ```{r}
 #| label: tbl-cmm2009-06.2
 
-trans2_file <- str_c(this_yr_folder, 'additional_files/trans2.csv')
-
-if (file.exists(trans2_file) && is_applicable("2009-06")) {
-  a4 <- read.csv(trans2_file)
-  msg <- ''
-  flextable(a4)
+if (is_applicable("2009-06")) {
+  
+  trans3_file <- str_c(this_yr_folder, "additional_files/trans2.csv")
+  trans4_file <- str_c(this_yr_folder, "additional_files/trans2.png")
+  
+  if (file.exists(trans3_file)) {
+    a3 <- read.csv(trans3_file)
+    flextable(a3)
+  }
+  
+  if (file.exists(trans4_file)) {
+    knitr::include_graphics(trans4_file)
+  }
+  
+  if (!file.exists(trans3_file) && !file.exists(trans4_file)) {
+    cat(no_data_msg("2009-06", context = "transhipment quantities"))
+  }
+  
 } else {
-  msg <- no_data_msg("2009-06", context = "transhipment counts")
+  cat(no_data_msg("2009-06", context = "transhipment quantities"))
 }
 ```
 `r msg`

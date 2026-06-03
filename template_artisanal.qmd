@@ -20,7 +20,7 @@ execute:
   fig-width: 12
   fig-height: 8
 params:
-  flag: 'PG'
+  flag: 'TO'
   year: 2025
   author: "AUTHOR"
 ---
@@ -257,25 +257,48 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-@tbl-licenses shows the summary of vessels licenced to fish in 
-`r country_name` during `r report_year`. 
+@tbl-fn-vessels shows the summary of vessels that fish in `r country_name` EEZ in the last 5 years. 
 
-
-```{r tbl-licenses}
+```{r}
 #| echo: false
 #| include: true
 #| results: 'asis'
-#| label: tbl-licenses
-#| tbl-cap: !expr if(nrow(data_3634) > 0) glue::glue("Number of bilateral licences issued in {report_year}.") else ""
+#| label: tbl-fn-vessels
+#| tbl-cap: !expr if(nrow(data_3634) > 0) glue::glue("Number of foreign vessels fishing in {country_name} EEZ by flag and year.") else ""
 
 
-if (nrow(data_3634) > 0){
-  flextable(data_3634 |>
-              mutate(flag = toupper(flag))) |>
-  set_header_labels(flag = "Flag") |>
-  width(j=1, width=1.2) |> 
-  fontsize(size = 8, part = "all") |>
-  fit_to_width(max_width = 6.5)
+if (nrow(data_3375) > 0){
+  
+  vess_fn <- data_3375 |> 
+    mutate(year = substr(log_date, 7, 10)) |> 
+    filter(!(flag %in% country_cd)) |>
+    mutate(flag = toupper(flag)) |>
+    group_by(flag, year) |> 
+    summarise(n = n_distinct(vessel_name)) |> 
+    filter(year %in% yrs_long) |> 
+    arrange(desc(year)) |>
+    pivot_wider(names_from = flag, values_from = n) 
+  
+    flag_cols   <- setdiff(names(vess_fn), "year")
+
+  vess_fn <- vess_fn |>
+    mutate(across(all_of(flag_cols), ~replace_na(., 0)))
+
+  flag_labels <- setNames(
+    flag_lookup$name_pretty[match(flag_cols, flag_lookup$country_code)],
+    flag_cols
+  )
+  
+  vess_fn <- vess_fn |> mutate(total = rowSums(across(all_of(flag_cols)), na.rm = TRUE))
+
+  flag_labels <- c(flag_labels, total = "Total")
+
+  flextable(vess_fn) |>
+    set_header_labels(values = flag_labels) |>
+    width(j = 1, width = 1.2) |>
+    fontsize(size = 8, part = "all") |>
+    fit_to_width(max_width = 6.5)
+
 }  
 ```
 
