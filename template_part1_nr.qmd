@@ -3,6 +3,8 @@ date: today
 date-format: "DD MMMM YYYY"
 format: 
   pdf:
+    mainfont: "Times New Roman"
+    sansfont: "Times New Roman"
     tbl-cap-location: bottom
     toc: true
     toc-depth: 3
@@ -14,18 +16,16 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
-    include-in-header:
-      text: |
-        \usepackage{float}
-        \floatplacement{figure}{H}
-        \floatplacement{table}{H}
+knitr:
+  opts_chunk:
+    out-width: "100%"
+    dev: "cairo_pdf"
 page-layout: full
 edit: source
 params:
   country_code: 'NR'          
   year: 2025                  
   data_provided: 'Yes'        
-  author: "AUTHOR"
   aceman: TRUE
   additional_sections: ""
 execute: 
@@ -45,6 +45,9 @@ library(stringr)
 
 source("utils.R")
 
+theme_set(theme_bw(base_family = "Times New Roman"))
+flextable::set_flextable_defaults(font.family = "Times New Roman")
+
 # key params
 country_cd <- tolower(params$country_code)
 report_year = params$year
@@ -56,6 +59,7 @@ this_yr_folder = paste0("./data/report_", as.character(report_year), "_", tolowe
 fmt <- function(x, digits = 0) {
   format(round(x, digits), big.mark = ",", nsmall = digits, scientific = FALSE, trim = TRUE)
 }
+
 ```
 
 \newpage
@@ -174,7 +178,7 @@ country_names <- c(
   mh = "Marshall Islands",
   mp = "Northern Mariana Is.",
   nc = "New Caledonia",
-  nr = "Nauru",
+  nr = "Naoero",
   nu = "Niue",
   pf = "French Polynesia",
   pg = "Papua New Guinea",
@@ -212,27 +216,37 @@ sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue"
 
 # Abstract 
 
-TO BE INCLUDED
+The Naoero Fisheries plays a critical role in supporting food security, economic development, and the livelihoods of the coastal communities.
+
+Effective fisheries management relies on robust monitoring, control and surveillance (MCS) systems to ensure compliance with regulations and promote the sustainable use of marine resources.
+
+MCS integrates data collection, regulatory oversight, and enforcement mechanisms to monitor fishing activities, manage fish stocks, and prevent illegal, unreported and unregulated fishing. 
+
+At the same time, ocean conservation is essential for protecting marine diversity, maintaining ecosystem health, and preserving the ocean’s capacity to support human wellbeing.
+
+Sustainable fishing practices, including selective fishing methods, regulated harvesting, and responsible aquaculture, contribute to balancing economic benefits with environmental protection.
+
+This report highlights the importance of strengthening fisheries management and conservation measures to ensure the long-term sustainability of marine resources for present and future generations.     
 
 # Background
 
-Within it’s Exclusive Economic Zone (EEZ) or waters, Nauru has an offshore purse seine fishery consisting of Distant Water Fishing Nation’s (DWFNs) vessels and an inshore artisanal fishery consisting of small skiffs, canoes and Kayaks that are wholly owned and operated by local fishermen.
+Within it’s Exclusive Economic Zone (EEZ) or waters, Naoero has an offshore purse seine fishery consisting of Distant Water Fishing Nation’s (DWFNs) vessels and an inshore artisanal fishery consisting of small skiffs, canoes and Kayaks that are wholly owned and operated by local fishermen.
+Since the establishment of the Naoero Fisheries and Marine Resources Authority (NFMRA), the DWFNs fleet have been the dominant fleet licensed to operate in Naoero’s Exclusive Economic Zone and in 2025, it is still, the major fleet operating in its waters. 
 
-Since the establishment of the Nauru Fisheries and Marine Resources Authority (NFMRA), the DWFNs fleet have been the dominant fleet licensed to operate in Nauru’s Exclusive Economic Zone and in 2025, it is still, the major fleet operating in Nauru waters.The Distant Water Fishing Nation’s fleet’s main target is the highly migratory tuna species; Skipjack (Katsuwonus Pelamis), Yellowfin (Thunnus Albacares) and Bigeye (Thunnus Obesus). All catches by the fleet are exported mainly to the foreign fish markets or canneries. The bulk of the DWFN vessel sizes are between 1001 – 1500 plus gross tonnage, and all are licensed to fish in Nauru’s EEZ on a Bilateral Agreement, the Multilateral Federated States of Micronesia Arrangement (FSMA) or Treaty (UST).
+The Distant Water Fishing Nation’s fleet’s main target is the highly migratory tuna species; Skipjack (Katsuwonus Pelamis), Yellowfin (Thunnus Albacares) and Bigeye (Thunnus Obesus). All catches by the fleet are exported mainly to the foreign fish markets or canneries. The bulk of the DWFN vessel sizes are between 1001 – 1500 plus gross tonnage, and all are licensed to fish in Naoero’s EEZ on a Bilateral Agreement, the Multilateral Federated States of Micronesia Arrangement (FSMA) or Treaty (UST).
 
-Nauru’s flag vessels are licensed under the FSMA which is managed by the Party to the Nauru Agreement Oﬀice (PNAO). The Arrangement allows the fleet to operate beyond Nauru’s jurisdiction, but, within the PNA members EEZ, and all the catches are distributed to overseas markets.Nauru has an artisanal fishery within its territorial waters; major fishing activities in the fishery are made by local fishermen who owns and operates vessels, i.e., small motorized skiffs, kayaks and locally built canoes.The local fishermen’s main objective is the pelagic species which are generally free-school or FAD aggregated; these catches are principally for their sustenance, bartering, or commercial on a small scale.The licensing of DWFN vessels and flagging of vessels is not only an important source of revenue for Nauru but also employment for the local population through the Nauru Observer Program(NROB).
+Naoero’s flag vessels are licensed under the FSMA which is managed by the Party to the Naoero Agreement Oﬀice (PNAO). The Arrangement allows the fleet to operate beyond Naoero’s jurisdiction, but within the PNA members EEZ and all the fleet’s catches are distributed to overseas markets. Naoero has an artisanal fishery within its territorial waters; major fishing activities in the fishery are made by local fishermen who owns and operates vessels, i.e., small motorized skiffs, kayaks and locally built canoes. The local fishermen’s main objective is the pelagic species which are generally free-school or FAD aggregated; these catches are principally for their sustenance, bartering, or commercial on a small scale. The licensing of DWFN vessels and flagging of vessels is not only an important source of revenue for Naoero but also employment for the local population through the Naoero Observer Program (NROB).
 
-Good science and research and provision of catch and effort data are imperative to managing ofNauru’s tuna resources at a sustainable level. The climate change is now a serious threat that need its impact on the tuna resources to be mitigated, hence best scientific research is very important
+Good science and research and provision of catch and effort data are imperative to managing of Naoero’s tuna resources at a sustainable level. The climate change is now a serious threat that need its impact on the tuna resources to be mitigated, hence best scientific research is very important
 
 # Flag State Reporting
 
-`r country_name` has been a Flag State since 2018, initially flagged two vessels naming the vessels; ‘Naoero Star’ and ‘Naoero Sun’. 
+Naoero has been a Flag State since 2018, initially it flagged two vessels appropriately naming the vessels; ‘Naoero Star’ and ‘Naoero Sun’.
 
-Since then, `r country_name` had expanded its fleet for the past seven years from two to an average of twenty vessels with the majority being purse seiners and a few support vessels. 
+Since then, Naoero had expanded its fleet for the past seven years from two to an average of twenty vessels with the majority being purse seiners and a few support vessels.
 
-The fleet are licensed under the multilateral FSM Arrangement (FSMA) which allows the vessels to fish not only in `r country_name`’s EEZ but also beyond its own, but, within the jurisdiction of members to the Parties to the `r country_name` Agreement’s EEZ.
-
-The fleet’s primary target are the highly migratory tuna species: Skipjack (Katsuwonus Pelamis), Yellowfin (Thunnus Albacares) and Bigeye (Thunnus Obesus); the fleet’s catches are distributed throughout the foreign fish markets and canneries. 
+The fleet are licensed under the multilateral FSM Arrangement (FSMA) which allows the vessels to fish not only in Naoero’s EEZ but also beyond its own, but, within the jurisdiction of members to the Parties to the Naoero Agreement’s EEZ.
+The fleet’s primary target are the highly migratory tuna species: Skipjack (SKJ), Yellowfin (YFT) and Bigeye (BET); the fleet’s catches are distributed throughout the foreign fish markets and canneries.
 
 
 ```{r ps-prep}
@@ -297,35 +311,22 @@ if (nrow(data_3605) == 0){
 }
 
 # shape for tables
-if (nrow(data_3605_ps) > 0){
-  data_3605_ps_tbl <- data_3605_ps|>
-  pivot_wider(names_from = year, values_from = catch) |>
-  mutate(across(2:5, ~replace_na(.,0))) |>
-  arrange(sp_code) |>
-  rename(Species = sp_code) |>
-  janitor::adorn_totals("row") |>
-  select(Species, sort(tidyselect::peek_vars()))
-}
-
-if (nrow(data_3605_ll) > 0){
-  data_3605_ll_tbl <- data_3605_ll |>
-    pivot_wider(names_from = year, values_from = catch) |>
-    mutate(across(where(is.numeric), ~replace_na(.,0))) |>
+shape_catch_tbl <- function(data) {
+  data |>
+    pivot_wider(names_from = year, values_from = catch, values_fill = 0) |>
+    mutate(across(where(is.numeric), ~replace_na(., 0))) |>  # only needed if catch itself can be NA
     arrange(sp_code) |>
     rename(Species = sp_code) |>
     janitor::adorn_totals("row") |>
     select(Species, sort(tidyselect::peek_vars()))
 }
 
-if (nrow(data_3605_pl) > 0){
-  data_3605_pl_tbl <- data_3605_pl |>
-    pivot_wider(names_from = year, values_from = catch) |>
-    mutate(across(where(is.numeric), ~replace_na(.,0))) |>
-    arrange(sp_code) |>
-    rename(Species = sp_code) |>
-    janitor::adorn_totals("row") |>
-    select(Species, sort(tidyselect::peek_vars()))
-}
+if (nrow(data_3605_ps) > 0) data_3605_ps_tbl <- shape_catch_tbl(data_3605_ps)
+if (nrow(data_3605_ll) > 0) data_3605_ll_tbl <- shape_catch_tbl(data_3605_ll)
+if (nrow(data_3605_pl) > 0) data_3605_pl_tbl <- shape_catch_tbl(data_3605_pl)
+
+# effort - number of hooks per year for the national fleet
+data_3597 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3597) 
 
 ```
 
@@ -353,59 +354,102 @@ render_gear_tbl_section3 <- function(data, data_tbl, gear_name, gear_code, speci
   ft <- flextable(data_tbl) |>
     labelizor(labels = species_labels, part = "all") |>
     set_table_properties(width = 0.7, align = "center") |> 
+    bold(j = ncol(data_tbl), part = "body") |>
     width(j = 1, width = 2)
   return(ft)
 }
 
 # Function to render gear-specific figures in section 3 with header and plot
-render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list, species_labels, intro_text = NULL) {
-  
+render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
+                                      species_labels, intro_text = NULL,
+                                      effort_df = data_3597) {
+
   # Check if data exists
   if (nrow(data) == 0) {
     return(invisible(NULL))
   }
-  
-  # Print header
-  # Modified from original
-  # cat(glue::glue("## Historical annual catch estimates for the national {gear_name} fleet\n\n"))
-  
+
   # Print intro text if provided (supports markdown)
   if (!is.null(intro_text)) {
     cat(glue::glue(intro_text), "\n\n")
   }
-  
-  # Prepare data for plotting
+
+  # ── Prepare data for plotting ──────────────────────────────────────────────
   data_fig <- data |>
-    select(sp_code, year, catch)
-  
+    group_by(sp_code, year) |>
+    summarise(catch = sum(catch, na.rm = TRUE), .groups = "drop")
+
   ref_df <- expand_grid(year = as.numeric(yrs_long), sp_code = species_list)
-  
-  plot_data <- left_join(ref_df, data_fig, by = c("year", "sp_code")) |> 
-    mutate(across(everything(), ~replace_na(.x, 0))) |>
-    # Use species_labels to map sp_code to full names
-    mutate(Species = recode(sp_code, !!!species_labels))
-  
-  # Create and print the plot
-  p <- ggplot(plot_data, aes(x = year, y = catch, colour = Species)) + 
-    geom_line(linewidth = 1.5) + 
-    geom_point(size = 5) +
-    scale_colour_manual(values = sp_colours) +
-    scale_x_continuous(breaks = seq(min(plot_data$year), max(plot_data$year), 3)) + 
-    scale_y_continuous(labels = comma) +
-    xlab(element_blank()) + 
-    ylab("Catch (mt)") + 
+
+  plot_data <- left_join(ref_df, data_fig, by = c("year", "sp_code")) |>
+    mutate(
+      catch   = replace_na(catch, 0),
+      Species = factor(recode(sp_code, !!!species_labels),
+                       levels = unname(species_labels[species_list]))
+    )
+
+  # ── Base plot (shared by all gears) ────────────────────────────────────────
+  p <- ggplot(plot_data, aes(x = year, y = catch, fill = Species)) +
+    geom_col(position = "stack") +
+    scale_fill_manual(values = sp_colours) +
+    scale_x_continuous(breaks = seq(min(plot_data$year), max(plot_data$year), 1)) +
+    labs(x = NULL, y = "Catch (mt)") +
     theme_bw() +
     theme(
-      axis.title = element_text(size = 16), 
-      axis.text = element_text(size = 16),
-      legend.position = "bottom", 
+      axis.title   = element_text(size = 16),
+      axis.text    = element_text(size = 16),
+      axis.text.x  = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom",
       legend.title = element_blank(),
-      legend.text = element_text(size = 13)
+      legend.text  = element_text(size = 13)
     )
-  
+
+  # ── Longline: overlay effort (hooks) on a secondary axis ──────────────────
+  if (gear_code == "l") {
+    
+    # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
+     effort_annual <- effort_df |>
+      filter(flag_id == country_cd) |>
+      filter(year %in% plot_data$year) |>          # align with plotted years
+      group_by(year) |>
+      summarise(effort = sum(hooks_total_logsheet, na.rm = TRUE), .groups = "drop")
+
+    max_catch  <- max(tapply(plot_data$catch, plot_data$year, sum))
+    max_effort <- max(effort_annual$effort, 0)
+
+    if (nrow(effort_annual) > 0 && max_effort > 0 && max_catch > 0) {
+
+      scale_factor <- max_catch / max_effort
+
+      p <- p +
+        geom_line(data = effort_annual,
+                  aes(x = year, y = effort * scale_factor),
+                  inherit.aes = FALSE, colour = "darkorange",
+                  linewidth = 1.2, linetype = "dashed") +
+        geom_point(data = effort_annual,
+                   aes(x = year, y = effort * scale_factor),
+                   inherit.aes = FALSE, colour = "darkorange", size = 3) +
+        scale_y_continuous(
+          labels = comma,
+          sec.axis = sec_axis(~ . / scale_factor,
+                              name = "Effort (hooks)", labels = comma)
+        ) +
+        theme(
+          axis.title.y.right = element_text(colour = "darkorange"),
+          axis.text.y.right  = element_text(colour = "darkorange")
+        )
+    } else {
+      message("No usable effort data for gear '", gear_code,
+              "' — rendering catch only.")
+      p <- p + scale_y_continuous(labels = comma)
+    }
+
+  } else {
+    p <- p + scale_y_continuous(labels = comma)
+  }
+
   print(p)
-  
-  return(invisible(NULL))
+  invisible(NULL)
 }
 
 # Function to render vessel table for a specific gear
@@ -545,14 +589,14 @@ render_ssi_table <- function(data, gear_code, gear_name, intro_text = NULL) {
 ```{r}
 #| echo: false
 
-yearly_total <- data_3605_ps |>
+yearly_total <- data_3605 |>
   group_by(year) |>
   summarise(sum = sum(catch), .groups = "drop")
 
-total_5yr <- sum(data_3605_ps$catch)
+total_5yr <- sum(data_3605$catch)
 avg_total <- mean(yearly_total$sum, na.rm = TRUE)
 
-avg_by_sp <- data_3605_ps |>
+avg_by_sp <- data_3605 |>
   group_by(sp_code, year) |>
   summarise(sum = sum(catch), .groups = "drop") |>
   group_by(sp_code) |>
@@ -563,14 +607,14 @@ avg_yft <- avg_by_sp$m[avg_by_sp$sp_code == "yft"]
 avg_bet <- avg_by_sp$m[avg_by_sp$sp_code == "bet"]
 ```
 
-`r country_name`'s Flag vessels for the past 5 years (@tbl-tbl1s) had caught a total of `r fmt(total_5yr)` mt of tuna at an average of `r fmt(avg_total)` mt per year. The average breakdown of catches by species are; SKJ at `r fmt(avg_skj)` mt, YFT at `r fmt(avg_yft)` mt, and BET at `r fmt(avg_bet)` mt per year.
 
+`r country_name`'s Flag vessels for the past 5 years (@tbl-tbl1s) had caught a total of `r fmt(total_5yr)` mt of tuna at an average of `r fmt(avg_total)` mt per year. The average breakdown of catches by species are; SKJ at `r fmt(avg_skj)` mt, YFT at `r fmt(avg_yft)` mt, and BET at `r fmt(avg_bet)` mt per year.
 
 ```{r}
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1s
-#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area") else ""
+#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_ps,
@@ -586,7 +630,7 @@ render_gear_tbl_section3(
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1l
-#| tbl-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Annual catch estimates for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}") else ""
+#| tbl-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Annual catch estimates for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_ll,
@@ -594,7 +638,7 @@ render_gear_tbl_section3(
   gear_name = "longline",
   gear_code = "l",
   species_labels = ll_species_labels,
-  intro_text = "The longline fleet primarily targets **tunas** and **billfish** species."
+  intro_text = ""
 )
 ```
 
@@ -602,7 +646,7 @@ render_gear_tbl_section3(
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1pl
-#| tbl-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Annual catch estimates for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}") else ""
+#| tbl-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Annual catch estimates for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_pl,
@@ -621,7 +665,7 @@ render_gear_tbl_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1l
-#| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area") else ""
+#| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3597 (hooks).") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -632,7 +676,7 @@ render_gear_figs_section3(
   gear_code = "l",
   species_list = ll_species,
   species_labels = ll_species_labels,
-  intro_text = "The annual catches show a clear trend over time."
+  intro_text = ""
 )
 ```
 
@@ -643,7 +687,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1s
-#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area") else ""
+#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -656,7 +700,7 @@ render_gear_figs_section3(
   gear_code = "s",
   species_list = ps_species,
   species_labels = ps_species_labels,
-  intro_text = "."
+  intro_text = ""
 )
 ```
 
@@ -667,7 +711,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1pl
-#| fig-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Historical annual catch estimates for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area") else ""
+#| fig-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -678,7 +722,7 @@ render_gear_figs_section3(
   gear_code = "pl",
   species_list = pl_species,
   species_labels = pl_species_labels,
-  intro_text = "The annual catches show a clear trend over time."
+  intro_text = ""
 )
 ```
 
@@ -693,59 +737,75 @@ if (nrow(data_3605) > 0) {
 }
 ```
 
-@fig-fig2 displays the total number of active vessels in `r country_name`’s national fleet from `r report_year - 4` to `r report_year`.
+@fig-fig2 displays the total number of active vessels in `r country_name`’s national fleet from `r report_year - 4` to `r report_year` per size category. The purse seine fleet composition by vessel size category (GRT) from the last 5 years is also presented in @tbl-tbl2-ps. The majority of vessels consistently fall within the 500+ GRT range, indicating a strong presence of large-scale operations.
 
 ```{r}
 #| label: fig-fig2
 #| fig-pos: 'H'
 #| eval: !expr nrow(data_3605) > 0
-#| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area") else ""
+#| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
 
 if (nrow(data_3605) > 0){
-  # Plot of vessel numbers for only Longline, Purse seine and Pole Line, aggregated over size class
-ves_calcs <- 
-  data_3605 |>  
-  filter(year %in% yrs_long, gear_code %in% c("s", "l", "pl")) |>  # ✅ Include only LL and PS
-  select(flag, year, gear_code, vessels_sml, vessels_med, vessels_lge, vessels_hge) |> 
-  distinct() |> 
-  mutate(Vessels = rowSums(across(starts_with("vessels_")), na.rm = TRUE)) |> 
-  group_by(year, gear_code) |> 
-  summarise(Vessels = sum(Vessels), .groups = "drop") |>
-  mutate(gear = case_when(gear_code  == "s" ~ "Purse seine",
-                               gear_code == "l" ~ "Longline",
-                          gear_code == "pl" ~ "Pole line"))
-
-ggplot(ves_calcs, aes(x = year, y = Vessels, colour = gear)) +
-  geom_line(linewidth = 1.5) + 
-  geom_point(size = 5) + 
-  theme_bw() +
-  scale_colour_manual(values = c("Purse seine" = "lightblue", "Longline" = "steelblue", 
-                                 "Pole line" = "#23415a")) +
-  scale_x_continuous(breaks = seq(min(ves_calcs$year), max(ves_calcs$year), 3)) +
-  xlab(NULL) + ylab("Number of vessels in fleet") +
-  theme(
-    axis.title = element_text(size = 16), 
-    axis.text = element_text(size = 16),
-    legend.position = "bottom", 
-    legend.title = element_blank(),
-    legend.text = element_text(size = 13)
+    # Plot of vessel numbers for only Longline, Purse seine and Pole Line, aggregated over size class
+    vessel_colours <- c(
+    "0 - 50"    = "#A1DAB4",
+    "51 - 200"  = "#41B6C4",
+    "201 - 500" = "#2C7FB8",
+    "500+"      = "#253494"
   )
-  }
-```
-
-```{r}
-#| echo: false
-#| results: asis
-#| eval: !expr nrow(data_3605) > 0
-
-if (nrow(data_3605) > 0) {
-  cat("\\newpage\n\n")
-  cat("## Number of active vessels by gear and size category over recent years\n\n")
+  
+   ves_raw <- 
+    data_3605 |>  
+    filter(year %in% yrs_long, gear_code %in% c("s", "l", "pl")) |> 
+    select(flag, year, gear_code, vessels_sml, vessels_med, vessels_lge, vessels_hge) |> 
+    distinct() |>
+    mutate(gear = case_when(
+      gear_code == "s" ~ "Purse seine",
+      gear_code == "l" ~ "Longline",
+      gear_code == "pl" ~ "Pole line"
+    ))
+  
+  vessel_plot <- ves_raw |>
+    pivot_longer(
+      cols = c(vessels_sml, vessels_med, vessels_lge, vessels_hge),
+      names_to = "vessel_class",
+      values_to = "count"
+    ) |>
+    mutate(vessel_class = recode(vessel_class,
+                                 "vessels_sml" = "0 - 50",
+                                 "vessels_med" = "51 - 200",
+                                 "vessels_lge" = "201 - 500",
+                                 "vessels_hge" = "500+"
+    )) |>
+    mutate(vessel_class = factor(vessel_class, levels = c("0 - 50", "51 - 200", "201 - 500", "500+")))
+  
+  p_vessels <- ggplot(vessel_plot, aes(x = year, y = count, fill = vessel_class)) +
+    geom_col(position = "stack") +
+    scale_fill_manual(values = vessel_colours) +
+    scale_x_continuous(breaks = seq(min(vessel_plot$year), max(vessel_plot$year), 1)) +
+    scale_y_continuous(breaks = scales::pretty_breaks()) +
+    labs(x = NULL, y = "Vessels", fill = "Size category (GRT)") +
+    theme_bw() +
+    facet_wrap(~gear) +
+    theme(
+    axis.title   = element_text(size = 16),
+    axis.text    = element_text(size = 16),
+    axis.text.x  = element_text(angle = 45, hjust = 1),
+    strip.text   = element_text(size = 16),
+    legend.position = "bottom",
+    legend.title = element_text(size = 13),
+    legend.text  = element_text(size = 13)
+  )
+  
+  print(p_vessels)
+} else {
+  ves_raw <- tibble()
 }
 ```
+
 
 ```{r}
 
@@ -804,7 +864,7 @@ pl_size_fn <- function(data) {
 
 ```{r}
 ll_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "l")) > 0) {
-  glue::glue("Number of {country_name} longline vessels, by size category, active in the WCPFC Convention Area, over {yr_range}")
+  glue::glue("Number of {country_name} longline vessels, by size category, active in the WCPFC Convention Area, over {yr_range}. Source - Tufman 2, report 3605.")
 } else NULL
 ```
 
@@ -824,7 +884,7 @@ render_vessel_table(
 
 ```{r}
 ps_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code %in% c("s", "ps"))) > 0) {
-  glue::glue("Number of {country_name} purse seine vessels, by size category, active in the WCPFC Convention Area over {yr_range}")
+  glue::glue("Number of {country_name} purse seine vessels, by size category, active in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.")
 } else NULL
 ```
 
@@ -839,28 +899,7 @@ render_vessel_table(
   ves_data = ves_raw,
   gear_name = "s",
   size_categories = ps_size_fn,
-  intro_text = "@tbl-tbl2-ps shows the purse seine fleet composition by vessel size category (GRT) from the last 5 years. The majority of vessels consistently fall within the 500+ GRT range, indicating a strong presence of large-scale operations. "
-)
-```
-
-```{r}
-pl_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "pl")) > 0) {
-  glue::glue("Number of {country_name} pole line vessels, by size category, active in the WCPFC Convention Area, over {yr_range}")
-} else NULL
-```
-
-```{r}
-#| label: tbl-tbl2-pl
-#| eval: !expr "!is.null(pl_caption)"
-#| tbl-cap: !expr pl_caption
-#| echo: false
-#| results: 'asis'
-
-render_vessel_table(
-  ves_data = ves_raw,
-  gear_name = "pl",
-  size_categories = pl_size_fn,
-  intro_text = ""
+  intro_text =  ""
 )
 ```
 
@@ -877,15 +916,11 @@ if (nrow(data_3605) > 0) {
 
 In this section we present the spatial distribution of catch (in metric tonnes) by species, 
 Albacore, Bigeye tuna, and Yellowfin tuna , from `r country_name`’s fleet across the period `r report_year - 4`-
-`r report_year`.
-
-@fig-figmapps highlights key fishing areas in the Western and Central Pacific Ocean, 
-primarily concentrated within and just outside `r country_name`’s Exclusive Economic Zone (EEZ).
-
+`r report_year`, primarily concentrated within and just outside `r country_name`’s Exclusive Economic Zone (EEZ).
 
 ```{r}
 #| label: fig-figmapps
-#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery.")
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery. Source - Tufman 2, report 3608.")
 #| fig-pos: "H"
 #| echo: false
 #| fig-width: 12
@@ -898,7 +933,7 @@ if (file.exists(map_ps))
 
 ```{r}
 #| label: fig-figmapl
-#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery.")
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery. Source - Tufman 2, report 3608.")
 #| fig-pos: "H"
 #| echo: false
 #| fig-width: 12
@@ -911,7 +946,7 @@ if (file.exists(map_ll)) knitr::include_graphics(map_ll)
 ```{r}
 #| label: fig-figmappl
 #| eval: !expr "nrow(data_3608) > 0"
-#| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "pl") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} pole line fishery.") else ""
+#| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "pl") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} pole line fishery. Source - Tufman 2, report 3608.") else ""
 #| fig-width: 12
 #| fig-height: 8
 #| fig-align: "center"
@@ -940,17 +975,15 @@ render_spatial_map(
 if (nrow(data_3605) > 0) {
   cat("\\newpage\n\n")
   cat("## Captures of species of special interest (SSIs)\n\n")
-  cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns.")
+  cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. ")
 }
 ```
 
-@tbl-tbl3s provides a summary of observed interactions with special interest species by `r country_name`’s purse seine fleet from `r report_year - 4` to `r report_year`. Across all years, rays were the most commonly recorded group, with
-frequent interactions involving giant manta and mobula.
-
+@tbl-tbl3s provides a summary of observed interactions with special interest species by `r country_name`’s purse seine fleet from `r report_year - 4` to `r report_year`. In case of missing years in the table below, this indicates that no interactions with target species were reported during those years. Over all years, silky sharks were the most recorded species.
 
 ```{r}
 ssi_s_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status.")
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status. Source - Tufman 2, report 2953.")
 } else NULL
 ```
 
@@ -970,7 +1003,7 @@ render_ssi_table(
 
 ```{r}
 ssi_l_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "l")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} longline fleet, in the WCPFC Convention Area, for years {yr_range}")} else NULL
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} longline fleet, in the WCPFC Convention Area, for years {yr_range}. Source - Tufman 2, report 2953.")} else NULL
 
 ```
 
@@ -990,7 +1023,7 @@ render_ssi_table(
 
 ```{r}
 ssi_pl_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "pl")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} pole line fleet, in the WCPFC Convention Area, for years {yr_range}")} else NULL
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} pole line fleet, in the WCPFC Convention Area, for years {yr_range}. Source - Tufman 2, report 2953.")} else NULL
 
 ```
 
@@ -1009,10 +1042,7 @@ render_ssi_table(
 ```
 
 ```{r}
-# Create non-target purse seine table
-
 if (nrow(data_3605) > 0){
-  # Create table of non-target species for purse seine
   PS_tab <- 
   data_3605 |>  
   filter(gear_code == "s", 
@@ -1038,14 +1068,12 @@ if (nrow(data_3605) > 0){
   PS_tab <- data.frame()
   LL_tab <- data.frame()
 }
-
-#todo: present species name instead of codes
 ```
 
 ```{r}
 #| label: tbl-tbl4s
 #| eval: !expr "nrow(data_3605) > 0"
-#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} purse seine fleet, in the WCPFC Convention Area over {yr_range}")
+#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} purse seine fleet, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.")
 #| echo: false
 #| results: 'asis'
 
@@ -1057,8 +1085,7 @@ if (nrow(PS_tab) > 0) {
   
  cat(glue::glue(
     "@tbl-tbl4s provides a summary of observed interactions with non-target ",
-    "species by {country_name}'s purse seine fleet from {report_year - 4} to {report_year}. ",
-    "Across all years, silky shark was the most commonly recorded species.\n\n"
+    "species by {country_name}'s purse seine fleet from {report_year - 4} to {report_year}. In case of missing years in the table below, this indicates that no interactions with non-target species were reported during those years. Over all years, rays were the most recorded group, with frequent interactions involving giant manta and mobula. \n\n"
   ))
   
   flextable(PS_tab |>
@@ -1076,7 +1103,7 @@ if (nrow(PS_tab) > 0) {
 ```{r}
 #| label: tbl-tbl4l
 #| eval: !expr "nrow(data_3605) > 0"
-#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} longline fleet, in the WCPFC Convention Area over {yr_range}")
+#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} longline fleet, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605")
 #| echo: false
 #| results: 'asis'
 
@@ -1110,19 +1137,29 @@ sections <- strsplit(params$additional_sections, ",")[[1]] |>
   (\(x) x[x != ""])()   # drop empty strings
 
 if ("artisanal" %in% sections) {
-  cat("\\newpage\n\n# Coastal State Reporting\n\n")
-  cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+  # Check whether artisanal data exists BEFORE knitting the child
+  ika_file        <- paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
+  has_ika         <- file.exists(ika_file)
+  has_tails <- length(list.files(this_yr_folder, pattern = "3615")) > 0
+
+  if (has_ika || has_tails) {
+    cat("\\newpage\n\n# Coastal State Reporting\n\n")
+    cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+    cat("\n\n\\clearpage\n\n")
+  } else {
+    message("No artisanal data for ", country_cd, " - skipping coastal section")
+  }
 }
 ```
 
 
 # Socio-economic factors
 
-The **Offshore fishing licensing** of Distant Water Fishing Nation vessels on Bilateral Agreements and Multilateral Arrangements or Treaty, the Flag State vessels with the Vessel Day Scheme (VDS) are the major revenue generators for Nauru’s Fishery which also contributes 14.5% of the non-aid national budget of Nauru’s Gross National Income (GNI). 
+The **Offshore fishing licensing** of Distant Water Fishing Nation vessels on Bilateral Agreements and Multilateral Arrangements or Treaty, the Flag State vessels with the Vessel Day Scheme (VDS) are the major revenue generators for Naoero’s Fishery which also contributes 14.5% of the non-aid national budget of Naoero’s Gross National Income (GNI). 
 
 The **Artisanal Fishery** remains the sole primary source of food nourishment for the local community and small-scale income producer for the local fishermen.
 
-**Nauru’s Observer Program** (NROB) is a significant development made from the offshore fishery; it provides job opportunities for Nauru’s population. It also assists the regional fisheries management organisations (RFMOs) with their efforts in managing the vast Western and Central Pacific Ocean’s (WCPO) highly migratory tuna stock.
+**Naoero’s Observer Program** (NROB) is a significant development made from the offshore fishery; it provides job opportunities for Naoero’s population. It also assists the regional fisheries management organisations (RFMOs) with their efforts in managing the vast Western and Central Pacific Ocean’s (WCPO) highly migratory tuna stock.
 
 The program employs a total of 45 PIRFO-trained and Certified Observers.  
 
@@ -1138,23 +1175,23 @@ In 2025 the program had:
 Training:
 
 - February 2025, 2 Observers attended Observer training in Fiji that was facilitated by SPC.
-- In-country 3-day MSC training – USP, Nauru.
+- In-country 3-day MSC training – USP, Naoero.
 
 
 # Research and Statistics
 
-A sustainable tuna stock for the future generation is very important to Nauru and to achieve this, good scientific data and appropriate research is needed to allow EEZ custodians implement best management decisions to ensure the highly migratory tuna stock remains sustainable and healthy.
+A sustainable tuna stock for the future generation is very important to Naoero and to achieve this, good scientific data and appropriate research is needed to allow EEZ custodians implement best management decisions to ensure the highly migratory tuna stock remains sustainable and healthy.
 
-The Nauru Observer Program (NROB) not only provides employment to the local community, but also collects important data and biological tissue specimens for sampling by SPC scientists to extensively analyze and provide best management actions to the regional fishery management organizations, i.e., Western and Central Pacific Fishery Commission, Forum Fisheries Agency and the Party to the Nauru Agreement Office implement measures that will keep the tuna stocks sustainable and to also evaluate the impact of the evolving global “climate change” threat. 
+The Naoero Observer Program (NROB) not only provides employment to the local community, but also collects important data and biological tissue specimens for sampling by SPC scientists to extensively analyze and provide best management actions to the regional fishery management organizations, i.e., Western and Central Pacific Fishery Commission, Forum Fisheries Agency and the Party to the Naoero Agreement Office implement measures that will keep the tuna stocks sustainable and to also evaluate the impact of the evolving global “climate change” threat. 
 
-Nauru also supports and acknowledges the important roles of the RFMOs i.e., FFA, WCPFC, PNAO, and the SPC for their continuous support in providing expert effective management advices throughout 2025.
+Naoero also supports and acknowledges the important roles of the RFMOs i.e., FFA, WCPFC, PNAO, and the SPC for their continuous support in providing expert effective management advices throughout 2025.
 
-The Nauru Observer Program did a total of 88 observer trips on 3 fish carriers and 85 purse seiners to provide scientific information for SPC, FFA and the WCPFC in 2025. 
+The Naoero Observer Program did a total of 88 observer trips on 3 fish carriers and 85 purse seiners to provide scientific information for SPC, FFA and the WCPFC in 2025. 
 
 - National	- 	9 3 Fish Carriers, 6 PS
 -	PNA 		  - 	79 77 FSMA PS, 2 Treaty PS
 
-Nauru Fishery and Marine Resources Authority’s priority is to continue the up-skilling of its human resources through various regional capacity-building workshops, attachments, and trainings that are provided by the Secretariat of the Pacific Community, the Forum Fisheries Agency, the Western and Central Pacific Fisheries Commission and the Parties to the Nauru Agreement Office.
+Naoero Fishery and Marine Resources Authority’s priority is to continue the up-skilling of its human resources through various regional capacity-building workshops, attachments, and trainings that are provided by the Secretariat of the Pacific Community, the Forum Fisheries Agency, the Western and Central Pacific Fisheries Commission and the Parties to the Naoero Agreement Office.
 
 <!-- # Addendum -->
 

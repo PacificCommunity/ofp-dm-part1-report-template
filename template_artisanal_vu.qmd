@@ -20,10 +20,25 @@ execute:
   fig-width: 12
   fig-height: 8
 params:
-  flag: 'PG'
+  flag: 'KI'
   year: 2025
   author: "AUTHOR"
 ---
+
+The Vanuatu Exclusive Economic Zone (EEZ) is approximately 690,000 square kilometres and
+includes over 80 islands and an area of archipelagic waters. Commercial tuna fishing commenced in
+Vanuatu in 1957 with the establishment of the Japanese South Pacific Fishing Company Limited
+(SPFC) longline transhipment base at Palekula, Espiritu Santo Island. The base, consisting of a wharf and cold storage facilities, was substantially upgraded in 1974. After handling annual landings of between 4-15,000 tonnes since 1969, SPFC closed its operations in the late 1980s and the facility was turned over to the Government of the Republic of Vanuatu. US purse-seiners, licensed under the US Treaty fished on four occasions in Vanuatu waters in1999 with very small catches and again in 2020 with one vessel undergoing one trip. 
+
+In the Vanuatu EEZ fishing has been through Bilateral Fishing Agreements (BFA) particularly with
+Fiji and Solomon Island based companies. These catch proportions were similar to the historical
+tuna catch compositions. The recent tuna fishery in Vanuatu has generally seen a rapid expansion
+of fishing effort since 2006 but slowing decreased from 2013 and then rose again from 2016 to 2017
+where it then decreased in 2018, increased in 2019, decreases again in 2020, further decreased in
+2021 and then increased in 2022 and again decreases in 2023 and again increased in 2024. It is
+noted that high catches were usually obtained with high effort.
+
+This section reports on fishing activity in your EEZ conducted by foreign countries (Distant Water Fishing Nations).
 
 ```{r}
 # Load necessary libraries
@@ -55,8 +70,13 @@ theme_set(
   )
 )
 
+# Create a vector of the key species to plot for each gear
+ps_species <- c("skj", "yft", "bet", "alb", "pbf")
+ll_species <- c("skj", "yft", "bet", "alb", "pbf", "blm", "bum", "mls", "swo")
+pl_species <- c("skj", "yft", "bet", "alb", "pbf")
+
 # adjust path as needed
-flag_lookup <- read_csv("../ofp-dm-part1-report-template/config/flag_names.csv") |>
+flag_lookup <- read_csv("config/flag_names.csv") |>
   select(country_code, country_name, country_short) |>
   mutate(country_name = na_if(country_name, "NULL"),
          country_short = na_if(country_short, "NULL")) |>
@@ -139,6 +159,30 @@ yr_range <- paste(min(yrs_long), max(yrs_long), sep = "-")
 
 country_name <- flag_labels[[country_cd]]
 
+
+parse_coord <- function(x, type = c("lat", "lon")) {
+  type <- match.arg(type)
+  
+  # split into the numeric body and the hemisphere letter
+  hem <- str_sub(x, -1)
+  num <- str_sub(x, 1, -2)
+  
+  # last two chars are minutes, the rest is degrees
+  mins <- as.numeric(str_sub(num, -2))
+  degs <- as.numeric(str_sub(num, 1, -3))
+  
+  decimal <- degs + mins / 60
+  
+  # apply sign based on hemisphere
+  sign <- dplyr::case_when(
+    hem %in% c("n", "e") ~  1,
+    hem %in% c("s", "w") ~ -1,
+    TRUE                 ~ NA_real_
+  )
+  
+  decimal * sign
+}
+
 ```
 
 ```{r data-prep}
@@ -153,34 +197,33 @@ data_3614 <- read_and_clean(this_yr_folder, country_cd, r_code = 3614)|>
       mutate(across(where(is.character), tolower))
 
 data_2900 <- read_and_clean(this_yr_folder, country_cd, r_code = 2900)|>
-      mutate(across(where(is.character), tolower)) # PS catch EEZ per country
+      mutate(across(where(is.character), tolower)) |>
+  filter(!(flag == country_cd))  # PS catch EEZ per country
 
 data_2894<- read_and_clean(this_yr_folder, country_cd, r_code = 2894)|>
-      mutate(across(where(is.character), tolower))# LL catch EEZ (I think…)
+      mutate(across(where(is.character), tolower))|>
+      filter(!(flag == country_cd))# LL catch EEZ (I think…)
 
 data_2904<- read_and_clean(this_yr_folder, country_cd, r_code = 2904)|>
-      mutate(across(where(is.character), tolower)) # PS catch spatial EEZ
+      mutate(across(where(is.character), tolower)) |>
+      filter(!(flag == country_cd))  # PS catch spatial EEZ
 
 data_3375<- read_and_clean(this_yr_folder, country_cd, r_code = 3375)|>
-      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+      mutate(across(where(is.character), tolower))|>
+      filter(!(flag == country_cd)) # LL catch spatial EEZ
 
-data_3634<- read_and_clean(this_yr_folder, country_cd, r_code = 3634)|>
-      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+# FIX FOR TO
+if(nrow(data_3375) > 0 && country_cd == "to"){
+  # there are some issues with WS vessels positions - they are wrongly assigning catches in TO EEZ
+  data_3375 <- data_3375 |> 
+    filter(!(flag == "ws"))
+}
 
 
 if(nrow(data_2904) > 0){
   data_2904 <- data_2904 |>
     rename(year = t2col0) |>
-    filter(year == report_year)
-}
-
-if (nrow(data_3634) > 0){
-  data_3634 <- data_3634 |> 
-  filter(start_year == report_year) |> 
-  filter(gear %in% c("l", "s")) |>
-  mutate(gear = ifelse(gear == "l", "Longline", "Purse Seine")) |> 
-  select(flag = ffv_flagid, gear, nb_vessel) |> 
-  pivot_wider(names_from = gear, values_from = nb_vessel)
+    filter(year == report_year) 
 }
 
 if (nrow(data_2900) > 0){
@@ -197,7 +240,16 @@ if (nrow(data_2894) > 0){
     filter(year >= report_year - 4) |>
     filter(year <= report_year) |>
     select(flag, year, vessels = vessel_name, trips, days, days, alb_mt, bet_mt, yft_mt, oth_mt, tot_mt)
-    }
+}
+
+# FIX FOR NR
+if(nrow(data_2894) > 0 && country_cd == "nr"){
+  # some LL catch showing for NR but these must be errors in reported positions
+  if (sum(data_2894$tot_mt) < 4) {
+    data_2894 <- data.frame()
+  }
+  
+}
 
 ika_trips_file = paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
 
@@ -257,82 +309,16 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-The Vanuatu Exclusive Economic Zone (EEZ) is approximately 690,000 square kilometres and
-includes over 80 islands and an area of archipelagic waters. Commercial tuna fishing commenced in
-Vanuatu in 1957 with the establishment of the Japanese South Pacific Fishing Company Limited
-(SPFC) longline transhipment base at Palekula, Espiritu Santo Island. The base, consisting of a wharf
-and cold storage facilities, was substantially upgraded in 1974. After handling annual landings of
-between 4-15,000 tonnes since 1969, SPFC closed its operations in the late 1980s and the facility was
-turned over to the Government of the Republic of Vanuatu. US purse-seiners, licensed under the US
-Treaty fished on four occasions in Vanuatu waters in1999 with very small catches and again in 2020
-with one vessel undergoing one trip. @tbl-licenses shows the summary of vessels licenced to fish in 
-`r country_name` during `r report_year`. 
+## Fishing Licenses
 
+**NOTE:** Here, members should report the Number of Licenses issued for fishing in their EEZ by vessel gear type in the last 5 years. *This information should be sourced from IFIMS.*
 
-```{r tbl-licenses}
-#| echo: false
-#| include: true
-#| results: 'asis'
-#| label: tbl-licenses
-#| tbl-cap: !expr if(nrow(data_3634) > 0) glue::glue("Number of bilateral licences issued in {report_year}.") else ""
-
-
-if (nrow(data_3634) > 0){
-  flextable(data_3634 |>
-              mutate(flag = toupper(flag))) |>
-  set_header_labels(flag = "Flag") |>
-  width(j=1, width=1.2) |> 
-  fontsize(size = 8, part = "all") |>
-  fit_to_width(max_width = 6.5)
-}  
-```
-
-In the Vanuatu EEZ fishing has been through Bilateral Fishing Agreements (BFA) particularly with Fiji
-and Solomon Island based companies. These catch proportions were similar to the historical tuna catch
-compositions. The recent tuna fishery in Vanuatu has generally seen a rapid expansion of fishing effort
-since 2006 but slowing decreased from 2013 and then rose again from 2016 to 2017 where it then
-decreased in 2018, increased in 2019, decreases again in 2020, further decreased in 2021 and then
-increased in 2022 and again decreases in 2023 and again increased in 2024.
-It is noted that high catches were usually obtained with high effort.
 
 ## Catch and Effort Trends
 
-During the period 2015 to 2019, the total annual catch for all the foreign fleets in Vanuatu EEZ had
-fluctuated. Starting in 2013, the catch level was 8,181.823mt, but there is an upturn from 8,181Mt in to
-6,600mt in 2014 and 2015. However, there was an increase to 9,918Mt in 2016 and further increase in
-2017 to 13,232.261mt. In 2018, there was a subsequent decrease to 7,594.427Mt, followed by a slight
-increase to 8,939Mt in 2019. This was followed by another slight decline in 2020 to 7,976.273MT and a
-subsequent decrease to 3,716.595MT in 2021. In 2022 the catch levels rebounded to 7,257Mt and again
-decreases in 2023 to 4,642MT and again rebounded to 6,991.411MT in 2024. The reduction in catch
-from 2013-2015 was a result of the effort decline that took place for that period as the vessels shifted
-their operations to Solomon Islands. The catch was largely attributed to the Chinese fleet which
-recorded over 70% of the total catch in the previous years. Fishing effort continued to decrease from
-2014 to 2015 from 65 vessels to 49 vessels but increased to 74 vessels in 2016 and again to 75 in 2019
-but reduced from 71 vessels in 2020 to 66 in 2021, 57 in 2022, 48 in 2023 and 66 in 2024. The
-reduction in the last few years before Covid 19 hit was due to the shift towards the eastern pacific where
-fishing was believed to be very good and after 2015 vessels started coming back to fish in the VU EEZ.
-However, in the year 2019 to 2021, the reduction was witnessed as a result of the Covid19 pandemic
-that hit late 2019 and affected vessel operations from 2020 to 2021. In 2022 there was a further rise in
-catch level as fishing effort increased and fishing activity returned to pre- pandemic levels after the
-COVID-19 outbreak. In 2023 there was a reduction in catch due to reduction in fishing effort and in
-2024 the catch rebounded again with a total catch of 6,991.411MT and will expect to increase once all
-logsheets have been submitted and entered. Unraised and provisional estimates for these licensed fleets
-in 2024 were 4,536.194t, 1491.167Mt and 181.09Mt for albacore, yellowfin and bigeye respectively
-and these catch estimates were determined from logsheets data. The annual estimated tuna catch
-15
-composition by weight for 2024, was again dominated by albacore (66%), yellowfin (21%) , minor
-bigeye (3%) and 10% other tuna and tuna-like species.
-In 2024, catch rates however, increased compared to 2023 levels due to the increase in effort which is
-recorded as the number of fishing vessels fishing as well as the number of hooks used and trips taken.
-Logsheet coverage for 2024 is averaged at 75.89%. Thus, catch figures as seen in Table 6 are sure to
-improve slightly when logsheet coverage increases to 100%. The annual longline estimated tuna catch
-composition by weight for 2024, was again dominated by albacore (66%), yellowfin (21%), minor
-bigeye 3% and other tuna and tuna-like species 10%). These catch proportions were similar to the
-historical tuna catch compositions. The recent tuna fishery in Vanuatu has seen a general increase in
-both fishing effort and catch estimates respectively in 2024.
-Data regarding the fishing operations of the Vanuatu fleet have been provided by the various members
-in whose jurisdictions the vessels may have operated, and also by various established fishing agents in
-Vanuatu.
+During the period 2015 to 2019, the total annual catch for all the foreign fleets in Vanuatu EEZ had fluctuated. Starting in 2013, the catch level was 8,181.823mt, but there is an upturn from 8,181Mt in to 6,600mt in 2014 and 2015. However, there was an increase to 9,918Mt in 2016 and further increase in 2017 to 13,232.261mt. In 2018, there was a subsequent decrease to 7,594.427Mt, followed by a slight increase to 8,939Mt in 2019. This was followed by another slight decline in 2020 to 7,976.273MT and a subsequent decrease to 3,716.595MT in 2021. In 2022 the catch levels rebounded to 7,257Mt and again decreases in 2023 to 4,642MT and again rebounded to 6,991.411MT in 2024. The reduction in catch from 2013-2015 was a result of the effort decline that took place for that period as the vessels shifted their operations to Solomon Islands. The catch was largely attributed to the Chinese fleet which recorded over 70% of the total catch in the previous years. Fishing effort continued to decrease from 2014 to 2015 from 65 vessels to 49 vessels but increased to 74 vessels in 2016 and again to 75 in 2019 but reduced from 71 vessels in 2020 to 66 in 2021, 57 in 2022, 48 in 2023 and 66 in 2024. The reduction in the last few years before Covid 19 hit was due to the shift towards the eastern pacific where fishing was believed to be very good and after 2015 vessels started coming back to fish in the VU EEZ. However, in the year 2019 to 2021, the reduction was witnessed as a result of the Covid19 pandemic that hit late 2019 and affected vessel operations from 2020 to 2021. In 2022 there was a further rise in catch level as fishing effort increased and fishing activity returned to pre- pandemic levels after the COVID-19 outbreak. In 2023 there was a reduction in catch due to reduction in fishing effort and in 2024 the catch rebounded again with a total catch of 6,991.411MT and will expect to increase once all logsheets have been submitted and entered. Unraised and provisional estimates for these licensed fleets in 2024 were 4,536.194t, 1491.167Mt and 181.09Mt for albacore, yellowfin and bigeye respectively and these catch estimates were determined from logsheets data. The annual estimated tuna catch composition by weight for 2024, was again dominated by albacore (66%), yellowfin (21%) , minor bigeye (3%) and 10% other tuna and tuna-like species. In 2024, catch rates however, increased compared to 2023 levels due to the increase in effort which is recorded as the number of fishing vessels fishing as well as the number of hooks used and trips taken. Logsheet coverage for 2024 is averaged at 75.89%. Thus, catch figures as seen in Table 6 are sure to improve slightly when logsheet coverage increases to 100%. The annual longline estimated tuna catch composition by weight for 2024, was again dominated by albacore (66%), yellowfin (21%), minor bigeye 3% and other tuna and tuna-like species 10%). These catch proportions were similar to the historical tuna catch compositions. The recent tuna fishery in Vanuatu has seen a general increase in both fishing effort and catch estimates respectively in 2024.
+
+Data regarding the fishing operations of the Vanuatu fleet have been provided by the various members in whose jurisdictions the vessels may have operated, and also by various established fishing agents in Vanuatu.
 
 ```{r data-eez-all-flags}
 
@@ -440,10 +426,20 @@ if(nrow(flag_summary) > 0){
 if(nrow(plot_data1) > 0){
   plot_data1 <- plot_data1 |>
     filter(tot_mt > 0)
-}
+  
+  if(country_cd == 'to'){
+    plot_data1 <- plot_data1 |>
+      filter(!(flag == "ws"))
+    }
+  }
 if(nrow(plot_data2) > 0){
   plot_data2 <- plot_data2 |>
     filter(mt > 0) 
+  
+  if(country_cd == 'to'){
+    plot_data2 <- plot_data2 |>
+      filter(!(flag == "ws"))
+    }
   }
 
 ```
@@ -453,7 +449,7 @@ if(nrow(plot_data2) > 0){
 #| include: true
 #| results: 'asis'
 #| label: tbl-data-eez-all-flags
-#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ per gear (LL = Longline; PS = Purse seine) for the last 5 years.") else ""
+#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ per gear (LL = Longline; PS = Purse seine) for the last 5 years. Source - Tufman 2, reports 2900 and 2894.") else ""
 
 if (nrow(flag_summary) > 0) {
   
@@ -518,17 +514,32 @@ if (nrow(flag_summary) > 0) {
 #| include: true
 #| results: 'asis'
 #| label: fig-data-eez-all-flags-perc
-#| fig-cap: !expr if(nrow(plot_data1) > 0) glue::glue("Percentage of total catch (all species) in the {country_name} EEZ, by flag during the last 5 years.") else ""
+#| fig-cap: !expr if(nrow(plot_data1) > 0) glue::glue("Percentage of total catch (all species) in the {country_name} EEZ, by flag during the last 5 years. Source - Tufman 2, reports 2900 and 2894.") else ""
 
-if (nrow(plot_data1) > 0){
-  # Percentage -  which country fished more in the last 5 years
+if (nrow(plot_data1) > 0) {
+
+  plot_data1 <- plot_data1 |> 
+    mutate(flag = toupper(flag),
+           flag = forcats::fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE)
+    )
+
+
+  flags <- sort(unique(plot_data1$flag))
+
+  flag_labels <- setNames(stringr::str_to_title(flag_lookup$name_pretty),
+                        flag_lookup$country_code)
+  flag_labels <- c(flag_labels, OTHER = "Other")
+  
+  # fall back to the code itself for anything not in the lookup (e.g. OTHER)
+  flag_labels[is.na(flag_labels)] <- names(flag_labels)[is.na(flag_labels)]
+
   ggplot(plot_data1, aes(x = factor(year), y = tot_mt, fill = flag)) +
     geom_col(position = "fill", colour = "white", linewidth = 0.3) +
     scale_y_continuous(labels = scales::percent) +
     scale_fill_hue(labels = flag_labels, c = 50) +
     facet_wrap(~ gear) +
     labs(x = NULL, y = "Share of catch", fill = "Country")
-  }
+}
 ```
 
 ```{r}
@@ -536,19 +547,34 @@ if (nrow(plot_data1) > 0){
 #| include: true
 #| results: 'asis'
 #| label: fig-data-eez-all-flags-hist
-#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ by flag during {report_year}.") else ""
+#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ by flag during {report_year}. Source - Tufman 2, reports 2900 and 2894.") else ""
 
-if (nrow(plot_data2) > 0){
+if (nrow(plot_data2) > 0) {
+
+  # labels built from the full lookup, so every flag in any plot is covered
+  flag_labels <- setNames(stringr::str_to_title(flag_lookup$name_pretty),
+                        flag_lookup$country_code)
+  # quick guard: any species missing from the colour palette?
+  missing_sp <- setdiff(unique(plot_data2$species), names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ", paste(missing_sp, collapse = ", "))
+  }
+
   plot_data2 |>
-    mutate(species = forcats::fct_relevel(factor(species), "Other", after = Inf)) |>
-    ggplot(aes(x = flag, y = mt, fill = species)) +
-    geom_col() +
-    scale_x_discrete(labels = flag_labels) +  
-    coord_flip() +
-    scale_y_continuous(labels = scales::comma) +
+    mutate(
+      flag    = toupper(flag),
+      # order flags by total catch (ascending = biggest at top after flip)
+      flag    = forcats::fct_reorder(flag, mt, .fun = sum),
+      # push "Other" to the end of the legend
+      species = forcats::fct_relevel(factor(species), "Other", after = Inf)
+    ) |>
+    ggplot(aes(x = mt, y = flag, fill = species)) +
+    geom_col(position = position_stack(reverse = TRUE)) +
+    scale_y_discrete(labels = flag_labels) +
+    scale_x_continuous(labels = scales::comma) +
     scale_fill_manual(values = sp_colours, na.value = "grey80") +
     facet_wrap(~ gear) +
-    labs(x = NULL, y = "Catch (mt)", fill = "Species")
+    labs(x = "Catch (mt)", y = NULL, fill = "Species")
 }
 ```
 
@@ -560,168 +586,334 @@ if (nrow(plot_data2) > 0){
 #| echo: false
 #| include: true
 #| results: 'asis'
+#| fig-width: 10
+#| fig-height: 8
 #| label: fig-data-eez-ps-spatial
-#| fig-cap: !expr if(nrow(data_2904) > 0) glue::glue("Catch of the three main tuna species by purse  seine  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
-
-
+#| fig-pos: 'H'
+#| fig-cap: !expr if(nrow(data_2904) > 0) glue::glue("Catch of the three main tuna species by purse  seine  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}. Source - Tufman 2, report 2904.") else ""
 if (nrow(data_2904) > 0) {
-  
-  eez  <- get_country_eez(country_cd)
-  land <- ne_countries(scale = "medium", returnclass = "sf")
-  
-  # Species lookup: short code → full name (must match sp_colours keys)
+
+  # ── EEZ: shift to 0-360 longitude space so EEZs crossing the dateline
+  #    (FJ, TV, KI, ...) get a sensible bbox, then dissolve the two
+  #    antimeridian halves so geom_sf doesn't draw a seam at 180.
+  #    IMPORTANT: drop the CRS *before* st_union(). With a CRS attached,
+  #    st_union() under s2 (the default in a fresh render) is spherical
+  #    and normalises longitudes back to [-180, 180], silently undoing
+  #    the shift — it only works interactively if s2 happens to be
+  #    disabled in the session. With no CRS the union is planar and the
+  #    0-360 coordinates survive. st_shift_longitude() is the only step
+  #    that needs the CRS, so it runs first. All no-ops for EEZs that
+  #    don't cross the dateline.
+  eez <- get_country_eez(country_cd) |>
+    st_make_valid() |>
+    st_shift_longitude() |>
+    st_set_crs(NA) |>
+    st_union() |>
+    st_make_valid()
+
+  bbox <- st_bbox(eez)
+
+  # ── Land: shift, crop to the (padded) map extent, then drop the CRS
+  #    to match the EEZ layer. The CRS-less layers also make coord_sf
+  #    honour scale_x_continuous breaks past 180 — with a geographic CRS
+  #    it routes breaks through st_graticule(), which normalises to
+  #    [-180, 180] and silently drops anything >= 180 (the missing
+  #    x-label problem).
+  land <- suppressWarnings(
+    ne_countries(scale = "medium", returnclass = "sf") |>
+      st_make_valid() |>
+      st_shift_longitude() |>
+      st_crop(bbox + c(-2, -2, 2, 2)) |>
+      st_set_crs(NA)
+  )
+
+  # ── Species lookup: short code → full name (must match sp_colours keys)
   species_map <- c(
     # alb = "Albacore tuna",
     skj = "Skipjack tuna",
     yft = "Yellowfin tuna",
     bet = "Bigeye tuna"
   )
-  
+
+  # warn loudly (build log) if the palette is missing a species
+  missing_sp <- setdiff(species_map, names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ",
+            paste(missing_sp, collapse = ", "))
+  }
+
   catch_grid <- grid_catch(data_2904,
                            eez_code  = tolower(country_cd),
                            cell_size = 1,
                            species   = names(species_map))
-  
-  max_r <- 0.45
+
+  # Align pie longitudes with the 0-360 convention (no-op if already 0-360)
   catch_grid <- catch_grid |>
-    mutate(radius = max_r * sqrt(total / max(total)))
-  
-  # Build fill values and labels from the lookup
-  fill_values <- setNames(sp_colours[species_map], names(species_map))
-  fill_labels <- setNames(species_map, names(species_map))
-  
-  bbox <- st_bbox(eez)
-  
-  ggplot() +
-    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
-    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
-    geom_scatterpie(
-      data   = catch_grid,
-      aes(x = lon_bin, y = lat_bin, r = radius),
-      cols   = names(species_map),
-      colour = NA,
-      alpha  = 0.9
-    ) +
-    scale_fill_manual(
-      values = fill_values,
-      labels = fill_labels,
-      name   = "Species"
-    ) +
-    coord_sf(
-      xlim   = c(bbox["xmin"], bbox["xmax"]),
-      ylim   = c(bbox["ymin"], bbox["ymax"]),
-      expand = FALSE
-    ) +
-    labs(x = "Longitude", y = "Latitude") +
-    theme_bw() +
-    theme(legend.position = "bottom",,
-          panel.background = element_rect(fill = "white"))
+    mutate(lon_bin = ifelse(lon_bin < 0, lon_bin + 360, lon_bin)) |>
+    filter(total > 0)
+
+  # only draw if there is anything to draw (grid_catch can return zero
+  # usable cells even when data_2904 has rows)
+  if (nrow(catch_grid) > 0) {
+
+    max_r <- 0.45
+    catch_grid <- catch_grid |>
+      mutate(radius = max_r * sqrt(total / max(total)))
+
+    # sanity check: pies should fall within the map extent; if not, the
+    # longitude conventions of grid_catch and the shifted EEZ disagree
+    out_of_extent <- catch_grid |>
+      filter(lon_bin < bbox["xmin"] - 2 | lon_bin > bbox["xmax"] + 2 |
+             lat_bin < bbox["ymin"] - 2 | lat_bin > bbox["ymax"] + 2)
+    if (nrow(out_of_extent) > 0) {
+      warning(country_cd, ": ", nrow(out_of_extent),
+              " grid cell(s) fall outside the EEZ map extent and will not be visible.")
+    }
+
+    # ── Fill values and labels from the lookup
+    fill_values <- setNames(sp_colours[species_map], names(species_map))
+    fill_labels <- setNames(species_map, names(species_map))
+
+    # ── Axis breaks: ~8 longitude labels whatever the EEZ width, labelled
+    #    conventionally either side of the dateline; latitude labels are
+    #    needed explicitly now that the CRS (and its graticule) is gone.
+    x_span <- as.numeric(bbox["xmax"] - bbox["xmin"])
+    step   <- max(1, round(x_span / 8))
+    xbr    <- seq(floor(bbox["xmin"]), ceiling(bbox["xmax"]), by = step)
+    lon_lab <- function(x) {
+      x <- x %% 360
+      ifelse(x == 180, "180\u00B0",
+             ifelse(x > 180, paste0(360 - x, "\u00B0W"),
+                    paste0(x, "\u00B0E")))
+    }
+    lat_lab <- function(y) {
+      ifelse(y < 0, paste0(abs(y), "\u00B0S"),
+             ifelse(y > 0, paste0(y, "\u00B0N"), "0\u00B0"))
+    }
+
+    # ── Aspect ratio: with no CRS, coord_sf assumes projected coordinates
+    #    (1 deg lon = 1 deg lat on screen). Correct for longitude
+    #    convergence at the EEZ's mid-latitude so shapes aren't stretched
+    #    E-W — matters for the higher-latitude PICTs (CK, PF, NU, ...).
+    mid_lat <- mean(c(bbox["ymin"], bbox["ymax"]))
+    y_span  <- as.numeric(bbox["ymax"] - bbox["ymin"])
+    asp     <- (y_span / x_span) / cos(mid_lat * pi / 180)
+
+    p <- ggplot() +
+      geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+      geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+      geom_scatterpie(
+        data   = catch_grid,
+        aes(x = lon_bin, y = lat_bin, r = radius),
+        cols   = names(species_map),
+        colour = NA,
+        alpha  = 0.9
+      ) +
+      scale_fill_manual(
+        values = fill_values,
+        labels = fill_labels,
+        name   = "Species"
+      ) +
+      scale_x_continuous(breaks = xbr, labels = lon_lab) +
+      scale_y_continuous(labels = lat_lab) +
+      coord_sf(
+        xlim   = c(bbox["xmin"], bbox["xmax"]),
+        ylim   = c(bbox["ymin"], bbox["ymax"]),
+        expand = FALSE
+      ) +
+      labs(x = "Longitude", y = "Latitude") +
+      theme_bw() +
+      theme(legend.position = "bottom",
+            aspect.ratio = asp,
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+            axis.text.y = element_text(size = 10),
+            panel.background = element_rect(fill = "white"))
+
+    print(p)
+
+  } else {
+    message(country_cd, ": no positive-catch grid cells — spatial figure skipped.")
+  }
 }
-
 ```
-
 
 ```{r}
 #| echo: false
 #| include: true
 #| results: 'asis'
+#| fig-width: 8
+#| fig-height: 9
+#| out-width: "90%"
+#| fig-pos: 'H'
 #| label: fig-data-eez-ll-spatial
-#| fig-cap: !expr if(nrow(data_3375) > 0) glue::glue("Catch of the three main tuna species by longline  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
+#| fig-cap: !expr if(nrow(data_3375) > 0) glue::glue("Catch of the three main tuna species by longline  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}. Source - Tufman 2, report 3375.") else ""
+if (nrow(data_3375) > 0 && nrow(data_2894) > 0) {
 
-parse_coord <- function(x, type = c("lat", "lon")) {
-  type <- match.arg(type)
-  
-  # split into the numeric body and the hemisphere letter
-  hem <- str_sub(x, -1)
-  num <- str_sub(x, 1, -2)
-  
-  # last two chars are minutes, the rest is degrees
-  mins <- as.numeric(str_sub(num, -2))
-  degs <- as.numeric(str_sub(num, 1, -3))
-  
-  decimal <- degs + mins / 60
-  
-  # apply sign based on hemisphere
-  sign <- dplyr::case_when(
-    hem %in% c("n", "e") ~  1,
-    hem %in% c("s", "w") ~ -1,
-    TRUE                 ~ NA_real_
-  )
-  
-  decimal * sign
-}
-
-
-if (nrow(data_3375) > 0) {
-  
-  data_3375 <- data_3375 |>
-    mutate(
-    latd = parse_coord(latitude,  "lat"),
-    lond = parse_coord(longitude, "lon")
-  ) |> 
-      select(flag, vessel_name, log_date, latd, lond, species, mt) |> 
-    filter(species %in% c("alb", "skj", "bet", "yft")) |> 
-    pivot_wider(names_from = species, values_from = mt)
-
-  eez  <- get_country_eez(country_cd)
-  land <- ne_countries(scale = "medium", returnclass = "sf")
-  
-  # Species lookup: short code → full name (must match sp_colours keys)
+  # ── Species lookup: short code → full name (must match sp_colours keys)
   species_map <- c(
     alb = "Albacore",
     skj = "Skipjack tuna",
     yft = "Yellowfin tuna",
     bet = "Bigeye tuna"
   )
-  
-  colnames(data_3375)[6:9] <- c("yft_mt", "alb_mt", "bet_mt", "skj_mt")
-  
+
+  # warn loudly (build log) if the palette is missing a species
+  missing_sp <- setdiff(species_map, names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ",
+            paste(missing_sp, collapse = ", "))
+  }
+
+  data_3375 <- data_3375 |>
+    mutate(
+      latd = parse_coord(latitude,  "lat"),
+      lond = parse_coord(longitude, "lon")
+    ) |>
+    select(flag, vessel_name, log_date, latd, lond, species, mt) |>
+    filter(species %in% names(species_map)) |>
+    pivot_wider(names_from = species, values_from = mt) |>
+    # current year
+    mutate(year = substr(log_date, 7, 10)) |>
+    filter(year %in% report_year) |>
+    # name-based rename: pivot_wider orders columns by first appearance in
+    # the data, NOT in a fixed order, so a positional colnames()[6:9] <- ...
+    # can silently mislabel species. any_of() also tolerates a species
+    # having no rows at all for this country/year.
+    rename_with(\(x) paste0(x, "_mt"), any_of(names(species_map)))
+
+  # ── EEZ: shift to 0-360 longitude space so EEZs crossing the dateline
+  #    (FJ, TV, KI, ...) get a sensible bbox, then dissolve the two
+  #    antimeridian halves so geom_sf doesn't draw a seam at 180.
+  #    IMPORTANT: drop the CRS *before* st_union(). With a CRS attached,
+  #    st_union() under s2 (the default in a fresh render) is spherical
+  #    and normalises longitudes back to [-180, 180], silently undoing
+  #    the shift — it only works interactively if s2 happens to be
+  #    disabled in the session. With no CRS the union is planar and the
+  #    0-360 coordinates survive. st_shift_longitude() is the only step
+  #    that needs the CRS, so it runs first. All no-ops for EEZs that
+  #    don't cross the dateline.
+  eez <- get_country_eez(country_cd) |>
+    st_make_valid() |>
+    st_shift_longitude() |>
+    st_set_crs(NA) |>
+    st_union() |>
+    st_make_valid()
+
+  bbox <- st_bbox(eez)
+
+  # ── Land: shift, crop to the (padded) map extent, then drop the CRS
+  #    to match the EEZ layer. The CRS-less layers also make coord_sf
+  #    honour scale_x_continuous breaks past 180 — with a geographic CRS
+  #    it routes breaks through st_graticule(), which normalises to
+  #    [-180, 180] and silently drops anything >= 180 (the missing
+  #    x-label problem).
+  land <- suppressWarnings(
+    ne_countries(scale = "medium", returnclass = "sf") |>
+      st_make_valid() |>
+      st_shift_longitude() |>
+      st_crop(bbox + c(-2, -2, 2, 2)) |>
+      st_set_crs(NA)
+  )
+
   catch_grid <- grid_catch(data = data_3375,
                            eez_code  = tolower(country_cd),
                            cell_size = 1,
                            species   = names(species_map))
-  
-  max_r <- 0.45
-  catch_grid <- catch_grid |>
-    mutate(radius = max_r * sqrt(total / max(total)))
-  
-  # Build fill values and labels from the lookup
-  fill_values <- setNames(sp_colours[species_map], names(species_map))
-  fill_labels <- setNames(species_map, names(species_map))
-  
-  bbox <- st_bbox(eez)
-  
-  ggplot() +
-    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
-    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
-    geom_scatterpie(
-      data   = catch_grid,
-      aes(x = lon_bin, y = lat_bin, r = radius),
-      cols   = names(species_map),
-      colour = NA,
-      alpha  = 0.9
-    ) +
-    scale_fill_manual(
-      values = fill_values,
-      labels = fill_labels,
-      name   = "Species"
-    ) +
-    coord_sf(
-      xlim   = c(bbox["xmin"], bbox["xmax"]),
-      ylim   = c(bbox["ymin"], bbox["ymax"]),
-      expand = FALSE
-    ) +
-    labs(x = "Longitude", y = "Latitude") +
-    theme_bw() +
-    theme(legend.position = "bottom",,
-          panel.background = element_rect(fill = "white"))
-}
 
+  # Align pie longitudes with the 0-360 convention (no-op if already 0-360)
+  catch_grid <- catch_grid |>
+    mutate(lon_bin = ifelse(lon_bin < 0, lon_bin + 360, lon_bin)) |>
+    filter(total > 0)
+
+  # only draw if there is anything to draw (grid_catch can return zero
+  # usable cells even when data_3375 has rows)
+  if (nrow(catch_grid) > 0) {
+
+    max_r <- 0.45
+    catch_grid <- catch_grid |>
+      mutate(radius = max_r * sqrt(total / max(total)))
+
+    # sanity check: pies should fall within the map extent; if not, the
+    # longitude conventions of grid_catch and the shifted EEZ disagree
+    out_of_extent <- catch_grid |>
+      filter(lon_bin < bbox["xmin"] - 2 | lon_bin > bbox["xmax"] + 2 |
+             lat_bin < bbox["ymin"] - 2 | lat_bin > bbox["ymax"] + 2)
+    if (nrow(out_of_extent) > 0) {
+      warning(country_cd, ": ", nrow(out_of_extent),
+              " grid cell(s) fall outside the EEZ map extent and will not be visible.")
+    }
+
+    # ── Fill values and labels from the lookup
+    fill_values <- setNames(sp_colours[species_map], names(species_map))
+    fill_labels <- setNames(species_map, names(species_map))
+
+    # ── Axis breaks: ~8 longitude labels whatever the EEZ width, labelled
+    #    conventionally either side of the dateline; latitude labels are
+    #    needed explicitly now that the CRS (and its graticule) is gone.
+    x_span <- as.numeric(bbox["xmax"] - bbox["xmin"])
+    step   <- max(1, round(x_span / 8))
+    xbr    <- seq(floor(bbox["xmin"]), ceiling(bbox["xmax"]), by = step)
+    lon_lab <- function(x) {
+      x <- x %% 360
+      ifelse(x == 180, "180\u00B0",
+             ifelse(x > 180, paste0(360 - x, "\u00B0W"),
+                    paste0(x, "\u00B0E")))
+    }
+    lat_lab <- function(y) {
+      ifelse(y < 0, paste0(abs(y), "\u00B0S"),
+             ifelse(y > 0, paste0(y, "\u00B0N"), "0\u00B0"))
+    }
+
+    # ── Aspect ratio: with no CRS, coord_sf assumes projected coordinates
+    #    (1 deg lon = 1 deg lat on screen). Correct for longitude
+    #    convergence at the EEZ's mid-latitude so shapes aren't stretched
+    #    E-W — matters for the higher-latitude PICTs (CK, PF, NU, ...).
+    mid_lat <- mean(c(bbox["ymin"], bbox["ymax"]))
+    y_span  <- as.numeric(bbox["ymax"] - bbox["ymin"])
+    asp     <- (y_span / x_span) / cos(mid_lat * pi / 180)
+
+    p <- ggplot() +
+      geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+      geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+      geom_scatterpie(
+        data   = catch_grid,
+        aes(x = lon_bin, y = lat_bin, r = radius),
+        cols   = names(species_map),
+        colour = NA,
+        alpha  = 0.9
+      ) +
+      scale_fill_manual(
+        values = fill_values,
+        labels = fill_labels,
+        name   = "Species"
+      ) +
+      scale_x_continuous(breaks = xbr, labels = lon_lab) +
+      scale_y_continuous(labels = lat_lab) +
+      coord_sf(
+        xlim   = c(bbox["xmin"], bbox["xmax"]),
+        ylim   = c(bbox["ymin"], bbox["ymax"]),
+        expand = FALSE
+      ) +
+      labs(x = "Longitude", y = "Latitude") +
+      theme_bw() +
+      theme(legend.position = "bottom",
+            aspect.ratio = asp,
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+            axis.text.y = element_text(size = 10),
+            panel.background = element_rect(fill = "white"))
+
+    print(p)
+
+  } else {
+    message(country_cd, ": no positive-catch grid cells — longline spatial figure skipped.")
+  }
+}
 ```
 
 \newpage
 
 ## Annual catch estimates - artisanal
+
 
 Although `r country_name` is not a flag state, this section presents annual catch estimates derived from artisanal fishery data. To improve the estimate of annual production, catch landings recorded in *TAILS* are raised using estimated fishing activity --- the number of boats and canoes estimated to fish daily at each landing site. @tbl-raised-ace presents the raised and unraised estimates per species for 2025, and @tbl-raised-ace-perc shows the percentage contribution of each species.
 
@@ -915,10 +1107,6 @@ if (file.exists(local_knowl_trips_file)){
 
 ```
 
-<!-- ### Best estimate of fishing trips -->
-
-<!-- Estimate monthly trips are based on the **max** *value either reported by the member or reported in the ereporting tools Tails and Ikasavea*. In case ereporting data is collected through Tails and Ikasavea tools the combination of trips in both sources will be used as your best estimate monthly trips (tab above). -->
-
 ```{r prep-ereporting_trips, echo = F}
 
 # check logic to be applied for ereporting: tails, ikasavea or tails + ikasavea?
@@ -1001,8 +1189,6 @@ flextable(best_estimate_trips)  |>
   fit_to_width(max_width = 6.5)
 
 ```
-
-<!-- ## Catch Estimates -->
 
 ```{r prep-catch-data}
 # ── Month number → abbreviated name (keeps columns in calendar order) ─────────
@@ -1179,8 +1365,6 @@ for (sp in species){
 }
 ```
 
-<!-- **Unraised** tuna catches reported in ereporting tools are illustrated in the tables below, in kilograms (kgs). -->
-
 ```{r}
 #| echo: false
 #| include: false
@@ -1240,8 +1424,6 @@ if ("bet" %in% names(unr_list)) {
     }
 
 ```
-
-<!-- **Raised** catches are produced using the average catch per trip, raised by the best estimate of trips, to produce a representative estimate of total artisanal tuna catches. It should be **noted** that if there are sites with no catches reported, these are removed from the totals, even if effort was indicated by the member. This should be revisited - and an error message is noted in this document when that occurs. -->
 
 ```{r}
 #| echo: false
@@ -1399,9 +1581,6 @@ if(exists('missing_unraised_bet') && nrow(missing_unraised_bet) > 0){
 }
 ```
 
-<!-- ## Final Estimates -->
-
-<!-- Here we take the raised catch estimates for the three key tuna species and sum them across all landing sites and months to produce an annual estimate in metric tonnes (mt). -->
 
 ```{r}
 #| label: tbl-raised-ace
