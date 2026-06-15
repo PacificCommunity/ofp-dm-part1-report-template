@@ -20,10 +20,12 @@ execute:
   fig-width: 12
   fig-height: 8
 params:
-  flag: 'TO'
+  flag: 'KI'
   year: 2025
   author: "AUTHOR"
 ---
+
+This section reports on fishing activity in your EEZ conducted by foreign countries (Distant Water Fishing Nations).
 
 ```{r}
 # Load necessary libraries
@@ -54,6 +56,11 @@ theme_set(
     legend.key.size = unit(0.4, "cm")
   )
 )
+
+# Create a vector of the key species to plot for each gear
+ps_species <- c("skj", "yft", "bet", "alb", "pbf")
+ll_species <- c("skj", "yft", "bet", "alb", "pbf", "blm", "bum", "mls", "swo")
+pl_species <- c("skj", "yft", "bet", "alb", "pbf")
 
 # adjust path as needed
 flag_lookup <- read_csv("config/flag_names.csv") |>
@@ -139,6 +146,30 @@ yr_range <- paste(min(yrs_long), max(yrs_long), sep = "-")
 
 country_name <- flag_labels[[country_cd]]
 
+
+parse_coord <- function(x, type = c("lat", "lon")) {
+  type <- match.arg(type)
+  
+  # split into the numeric body and the hemisphere letter
+  hem <- str_sub(x, -1)
+  num <- str_sub(x, 1, -2)
+  
+  # last two chars are minutes, the rest is degrees
+  mins <- as.numeric(str_sub(num, -2))
+  degs <- as.numeric(str_sub(num, 1, -3))
+  
+  decimal <- degs + mins / 60
+  
+  # apply sign based on hemisphere
+  sign <- dplyr::case_when(
+    hem %in% c("n", "e") ~  1,
+    hem %in% c("s", "w") ~ -1,
+    TRUE                 ~ NA_real_
+  )
+  
+  decimal * sign
+}
+
 ```
 
 ```{r data-prep}
@@ -153,34 +184,33 @@ data_3614 <- read_and_clean(this_yr_folder, country_cd, r_code = 3614)|>
       mutate(across(where(is.character), tolower))
 
 data_2900 <- read_and_clean(this_yr_folder, country_cd, r_code = 2900)|>
-      mutate(across(where(is.character), tolower)) # PS catch EEZ per country
+      mutate(across(where(is.character), tolower)) |>
+  filter(!(flag == country_cd))  # PS catch EEZ per country
 
 data_2894<- read_and_clean(this_yr_folder, country_cd, r_code = 2894)|>
-      mutate(across(where(is.character), tolower))# LL catch EEZ (I think…)
+      mutate(across(where(is.character), tolower))|>
+      filter(!(flag == country_cd))# LL catch EEZ (I think…)
 
 data_2904<- read_and_clean(this_yr_folder, country_cd, r_code = 2904)|>
-      mutate(across(where(is.character), tolower)) # PS catch spatial EEZ
+      mutate(across(where(is.character), tolower)) |>
+      filter(!(flag == country_cd))  # PS catch spatial EEZ
 
 data_3375<- read_and_clean(this_yr_folder, country_cd, r_code = 3375)|>
-      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+      mutate(across(where(is.character), tolower))|>
+      filter(!(flag == country_cd)) # LL catch spatial EEZ
 
-data_3634<- read_and_clean(this_yr_folder, country_cd, r_code = 3634)|>
-      mutate(across(where(is.character), tolower)) # LL catch spatial EEZ
+# FIX FOR TO
+if(nrow(data_3375) > 0 && country_cd == "to"){
+  # there are some issues with WS vessels positions - they are wrongly assigning catches in TO EEZ
+  data_3375 <- data_3375 |> 
+    filter(!(flag == "ws"))
+}
 
 
 if(nrow(data_2904) > 0){
   data_2904 <- data_2904 |>
     rename(year = t2col0) |>
-    filter(year == report_year)
-}
-
-if (nrow(data_3634) > 0){
-  data_3634 <- data_3634 |> 
-  filter(start_year == report_year) |> 
-  filter(gear %in% c("l", "s")) |>
-  mutate(gear = ifelse(gear == "l", "Longline", "Purse Seine")) |> 
-  select(flag = ffv_flagid, gear, nb_vessel) |> 
-  pivot_wider(names_from = gear, values_from = nb_vessel)
+    filter(year == report_year) 
 }
 
 if (nrow(data_2900) > 0){
@@ -197,7 +227,16 @@ if (nrow(data_2894) > 0){
     filter(year >= report_year - 4) |>
     filter(year <= report_year) |>
     select(flag, year, vessels = vessel_name, trips, days, days, alb_mt, bet_mt, yft_mt, oth_mt, tot_mt)
-    }
+}
+
+# FIX FOR NR
+if(nrow(data_2894) > 0 && country_cd == "nr"){
+  # some LL catch showing for NR but these must be errors in reported positions
+  if (sum(data_2894$tot_mt) < 4) {
+    data_2894 <- data.frame()
+  }
+  
+}
 
 ika_trips_file = paste0(this_yr_folder, "ikasavea/", country_cd, "_trips_landing_site.csv")
 
@@ -257,50 +296,9 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ```
 
-@tbl-fn-vessels shows the summary of vessels that fish in `r country_name` EEZ in the last 5 years. 
+## Fishing Licenses
 
-```{r}
-#| echo: false
-#| include: true
-#| results: 'asis'
-#| label: tbl-fn-vessels
-#| tbl-cap: !expr if(nrow(data_3634) > 0) glue::glue("Number of foreign vessels fishing in {country_name} EEZ by flag and year.") else ""
-
-
-if (nrow(data_3375) > 0){
-  
-  vess_fn <- data_3375 |> 
-    mutate(year = substr(log_date, 7, 10)) |> 
-    filter(!(flag %in% country_cd)) |>
-    mutate(flag = toupper(flag)) |>
-    group_by(flag, year) |> 
-    summarise(n = n_distinct(vessel_name)) |> 
-    filter(year %in% yrs_long) |> 
-    arrange(desc(year)) |>
-    pivot_wider(names_from = flag, values_from = n) 
-  
-    flag_cols   <- setdiff(names(vess_fn), "year")
-
-  vess_fn <- vess_fn |>
-    mutate(across(all_of(flag_cols), ~replace_na(., 0)))
-
-  flag_labels <- setNames(
-    flag_lookup$name_pretty[match(flag_cols, flag_lookup$country_code)],
-    flag_cols
-  )
-  
-  vess_fn <- vess_fn |> mutate(total = rowSums(across(all_of(flag_cols)), na.rm = TRUE))
-
-  flag_labels <- c(flag_labels, total = "Total")
-
-  flextable(vess_fn) |>
-    set_header_labels(values = flag_labels) |>
-    width(j = 1, width = 1.2) |>
-    fontsize(size = 8, part = "all") |>
-    fit_to_width(max_width = 6.5)
-
-}  
-```
+**NOTE:** Here, members should report the Number of Licenses issued for fishing in their EEZ by vessel gear type in the last 5 years. *This information should be sourced from IFIMS.*
 
 
 ## Catch and Effort Trends
@@ -411,10 +409,20 @@ if(nrow(flag_summary) > 0){
 if(nrow(plot_data1) > 0){
   plot_data1 <- plot_data1 |>
     filter(tot_mt > 0)
-}
+  
+  if(country_cd == 'to'){
+    plot_data1 <- plot_data1 |>
+      filter(!(flag == "ws"))
+    }
+  }
 if(nrow(plot_data2) > 0){
   plot_data2 <- plot_data2 |>
     filter(mt > 0) 
+  
+  if(country_cd == 'to'){
+    plot_data2 <- plot_data2 |>
+      filter(!(flag == "ws"))
+    }
   }
 
 ```
@@ -424,7 +432,7 @@ if(nrow(plot_data2) > 0){
 #| include: true
 #| results: 'asis'
 #| label: tbl-data-eez-all-flags
-#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ per gear (LL = Longline; PS = Purse seine) for the last 5 years.") else ""
+#| tbl-cap: !expr if(nrow(flag_summary) > 0) glue::glue("Annual catches in {country_name} EEZ per gear (LL = Longline; PS = Purse seine) for the last 5 years. Source - Tufman 2, reports 2900 and 2894.") else ""
 
 if (nrow(flag_summary) > 0) {
   
@@ -489,17 +497,32 @@ if (nrow(flag_summary) > 0) {
 #| include: true
 #| results: 'asis'
 #| label: fig-data-eez-all-flags-perc
-#| fig-cap: !expr if(nrow(plot_data1) > 0) glue::glue("Percentage of total catch (all species) in the {country_name} EEZ, by flag during the last 5 years.") else ""
+#| fig-cap: !expr if(nrow(plot_data1) > 0) glue::glue("Percentage of total catch (all species) in the {country_name} EEZ, by flag during the last 5 years. Source - Tufman 2, reports 2900 and 2894.") else ""
 
-if (nrow(plot_data1) > 0){
-  # Percentage -  which country fished more in the last 5 years
+if (nrow(plot_data1) > 0) {
+
+  plot_data1 <- plot_data1 |> 
+    mutate(flag = toupper(flag),
+           flag = forcats::fct_reorder(flag, tot_mt, .fun = sum, .desc = TRUE)
+    )
+
+
+  flags <- sort(unique(plot_data1$flag))
+
+  flag_labels <- setNames(stringr::str_to_title(flag_lookup$name_pretty),
+                        flag_lookup$country_code)
+  flag_labels <- c(flag_labels, OTHER = "Other")
+  
+  # fall back to the code itself for anything not in the lookup (e.g. OTHER)
+  flag_labels[is.na(flag_labels)] <- names(flag_labels)[is.na(flag_labels)]
+
   ggplot(plot_data1, aes(x = factor(year), y = tot_mt, fill = flag)) +
     geom_col(position = "fill", colour = "white", linewidth = 0.3) +
     scale_y_continuous(labels = scales::percent) +
     scale_fill_hue(labels = flag_labels, c = 50) +
     facet_wrap(~ gear) +
     labs(x = NULL, y = "Share of catch", fill = "Country")
-  }
+}
 ```
 
 ```{r}
@@ -507,194 +530,372 @@ if (nrow(plot_data1) > 0){
 #| include: true
 #| results: 'asis'
 #| label: fig-data-eez-all-flags-hist
-#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ by flag during {report_year}.") else ""
+#| fig-cap: !expr if(nrow(plot_data2) > 0) glue::glue("Annual catch of tuna in the {country_name} EEZ by flag during {report_year}. Source - Tufman 2, reports 2900 and 2894.") else ""
 
-if (nrow(plot_data2) > 0){
+if (nrow(plot_data2) > 0) {
+
+  # labels built from the full lookup, so every flag in any plot is covered
+  flag_labels <- setNames(stringr::str_to_title(flag_lookup$name_pretty),
+                        flag_lookup$country_code)
+  # quick guard: any species missing from the colour palette?
+  missing_sp <- setdiff(unique(plot_data2$species), names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ", paste(missing_sp, collapse = ", "))
+  }
+
   plot_data2 |>
-    mutate(species = forcats::fct_relevel(factor(species), "Other", after = Inf)) |>
-    ggplot(aes(x = flag, y = mt, fill = species)) +
-    geom_col() +
-    scale_x_discrete(labels = flag_labels) +  
-    coord_flip() +
-    scale_y_continuous(labels = scales::comma) +
+    mutate(
+      flag    = toupper(flag),
+      # order flags by total catch (ascending = biggest at top after flip)
+      flag    = forcats::fct_reorder(flag, mt, .fun = sum),
+      # push "Other" to the end of the legend
+      species = forcats::fct_relevel(factor(species), "Other", after = Inf)
+    ) |>
+    ggplot(aes(x = mt, y = flag, fill = species)) +
+    geom_col(position = position_stack(reverse = TRUE)) +
+    scale_y_discrete(labels = flag_labels) +
+    scale_x_continuous(labels = scales::comma) +
     scale_fill_manual(values = sp_colours, na.value = "grey80") +
     facet_wrap(~ gear) +
-    labs(x = NULL, y = "Catch (mt)", fill = "Species")
+    labs(x = "Catch (mt)", y = NULL, fill = "Species")
 }
 ```
 
 \newpage
 
-<!-- @fig-data-eez-ps-spatial shows the distribution of purse seine catch, and its species composition within the EEZ and the adjacent area in `r report_year`. -->
-
 ```{r}
 #| echo: false
 #| include: true
 #| results: 'asis'
+#| fig-width: 10
+#| fig-height: 8
 #| label: fig-data-eez-ps-spatial
-#| fig-cap: !expr if(nrow(data_2904) > 0) glue::glue("Catch of the three main tuna species by purse  seine  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
-
-
+#| fig-pos: 'H'
+#| fig-cap: !expr if(nrow(data_2904) > 0) glue::glue("Catch of the three main tuna species by purse  seine  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}. Source - Tufman 2, report 2904.") else ""
 if (nrow(data_2904) > 0) {
-  
-  eez  <- get_country_eez(country_cd)
-  land <- ne_countries(scale = "medium", returnclass = "sf")
-  
-  # Species lookup: short code → full name (must match sp_colours keys)
+
+  # ── EEZ: shift to 0-360 longitude space so EEZs crossing the dateline
+  #    (FJ, TV, KI, ...) get a sensible bbox, then dissolve the two
+  #    antimeridian halves so geom_sf doesn't draw a seam at 180.
+  #    IMPORTANT: drop the CRS *before* st_union(). With a CRS attached,
+  #    st_union() under s2 (the default in a fresh render) is spherical
+  #    and normalises longitudes back to [-180, 180], silently undoing
+  #    the shift — it only works interactively if s2 happens to be
+  #    disabled in the session. With no CRS the union is planar and the
+  #    0-360 coordinates survive. st_shift_longitude() is the only step
+  #    that needs the CRS, so it runs first. All no-ops for EEZs that
+  #    don't cross the dateline.
+  eez <- get_country_eez(country_cd) |>
+    st_make_valid() |>
+    st_shift_longitude() |>
+    st_set_crs(NA) |>
+    st_union() |>
+    st_make_valid()
+
+  bbox <- st_bbox(eez)
+
+  # ── Land: shift, crop to the (padded) map extent, then drop the CRS
+  #    to match the EEZ layer. The CRS-less layers also make coord_sf
+  #    honour scale_x_continuous breaks past 180 — with a geographic CRS
+  #    it routes breaks through st_graticule(), which normalises to
+  #    [-180, 180] and silently drops anything >= 180 (the missing
+  #    x-label problem).
+  land <- suppressWarnings(
+    ne_countries(scale = "medium", returnclass = "sf") |>
+      st_make_valid() |>
+      st_shift_longitude() |>
+      st_crop(bbox + c(-2, -2, 2, 2)) |>
+      st_set_crs(NA)
+  )
+
+  # ── Species lookup: short code → full name (must match sp_colours keys)
   species_map <- c(
     # alb = "Albacore tuna",
     skj = "Skipjack tuna",
     yft = "Yellowfin tuna",
     bet = "Bigeye tuna"
   )
-  
+
+  # warn loudly (build log) if the palette is missing a species
+  missing_sp <- setdiff(species_map, names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ",
+            paste(missing_sp, collapse = ", "))
+  }
+
   catch_grid <- grid_catch(data_2904,
                            eez_code  = tolower(country_cd),
                            cell_size = 1,
                            species   = names(species_map))
-  
-  max_r <- 0.45
+
+  # Align pie longitudes with the 0-360 convention (no-op if already 0-360)
   catch_grid <- catch_grid |>
-    mutate(radius = max_r * sqrt(total / max(total)))
-  
-  # Build fill values and labels from the lookup
-  fill_values <- setNames(sp_colours[species_map], names(species_map))
-  fill_labels <- setNames(species_map, names(species_map))
-  
-  bbox <- st_bbox(eez)
-  
-  ggplot() +
-    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
-    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
-    geom_scatterpie(
-      data   = catch_grid,
-      aes(x = lon_bin, y = lat_bin, r = radius),
-      cols   = names(species_map),
-      colour = NA,
-      alpha  = 0.9
-    ) +
-    scale_fill_manual(
-      values = fill_values,
-      labels = fill_labels,
-      name   = "Species"
-    ) +
-    coord_sf(
-      xlim   = c(bbox["xmin"], bbox["xmax"]),
-      ylim   = c(bbox["ymin"], bbox["ymax"]),
-      expand = FALSE
-    ) +
-    labs(x = "Longitude", y = "Latitude") +
-    theme_bw() +
-    theme(legend.position = "bottom",,
-          panel.background = element_rect(fill = "white"))
+    mutate(lon_bin = ifelse(lon_bin < 0, lon_bin + 360, lon_bin)) |>
+    filter(total > 0)
+
+  # only draw if there is anything to draw (grid_catch can return zero
+  # usable cells even when data_2904 has rows)
+  if (nrow(catch_grid) > 0) {
+
+    max_r <- 0.45
+    catch_grid <- catch_grid |>
+      mutate(radius = max_r * sqrt(total / max(total)))
+
+    # sanity check: pies should fall within the map extent; if not, the
+    # longitude conventions of grid_catch and the shifted EEZ disagree
+    out_of_extent <- catch_grid |>
+      filter(lon_bin < bbox["xmin"] - 2 | lon_bin > bbox["xmax"] + 2 |
+             lat_bin < bbox["ymin"] - 2 | lat_bin > bbox["ymax"] + 2)
+    if (nrow(out_of_extent) > 0) {
+      warning(country_cd, ": ", nrow(out_of_extent),
+              " grid cell(s) fall outside the EEZ map extent and will not be visible.")
+    }
+
+    # ── Fill values and labels from the lookup
+    fill_values <- setNames(sp_colours[species_map], names(species_map))
+    fill_labels <- setNames(species_map, names(species_map))
+
+    # ── Axis breaks: ~8 longitude labels whatever the EEZ width, labelled
+    #    conventionally either side of the dateline; latitude labels are
+    #    needed explicitly now that the CRS (and its graticule) is gone.
+    x_span <- as.numeric(bbox["xmax"] - bbox["xmin"])
+    step   <- max(1, round(x_span / 8))
+    xbr    <- seq(floor(bbox["xmin"]), ceiling(bbox["xmax"]), by = step)
+    lon_lab <- function(x) {
+      x <- x %% 360
+      ifelse(x == 180, "180\u00B0",
+             ifelse(x > 180, paste0(360 - x, "\u00B0W"),
+                    paste0(x, "\u00B0E")))
+    }
+    lat_lab <- function(y) {
+      ifelse(y < 0, paste0(abs(y), "\u00B0S"),
+             ifelse(y > 0, paste0(y, "\u00B0N"), "0\u00B0"))
+    }
+
+    # ── Aspect ratio: with no CRS, coord_sf assumes projected coordinates
+    #    (1 deg lon = 1 deg lat on screen). Correct for longitude
+    #    convergence at the EEZ's mid-latitude so shapes aren't stretched
+    #    E-W — matters for the higher-latitude PICTs (CK, PF, NU, ...).
+    mid_lat <- mean(c(bbox["ymin"], bbox["ymax"]))
+    y_span  <- as.numeric(bbox["ymax"] - bbox["ymin"])
+    asp     <- (y_span / x_span) / cos(mid_lat * pi / 180)
+
+    p <- ggplot() +
+      geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+      geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+      geom_scatterpie(
+        data   = catch_grid,
+        aes(x = lon_bin, y = lat_bin, r = radius),
+        cols   = names(species_map),
+        colour = NA,
+        alpha  = 0.9
+      ) +
+      scale_fill_manual(
+        values = fill_values,
+        labels = fill_labels,
+        name   = "Species"
+      ) +
+      scale_x_continuous(breaks = xbr, labels = lon_lab) +
+      scale_y_continuous(labels = lat_lab) +
+      coord_sf(
+        xlim   = c(bbox["xmin"], bbox["xmax"]),
+        ylim   = c(bbox["ymin"], bbox["ymax"]),
+        expand = FALSE
+      ) +
+      labs(x = "Longitude", y = "Latitude") +
+      theme_bw() +
+      theme(legend.position = "bottom",
+            aspect.ratio = asp,
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+            axis.text.y = element_text(size = 10),
+            panel.background = element_rect(fill = "white"))
+
+    print(p)
+
+  } else {
+    message(country_cd, ": no positive-catch grid cells — spatial figure skipped.")
+  }
 }
-
 ```
-
 
 ```{r}
 #| echo: false
 #| include: true
 #| results: 'asis'
+#| fig-width: 8
+#| fig-height: 9
+#| out-width: "90%"
+#| fig-pos: 'H'
 #| label: fig-data-eez-ll-spatial
-#| fig-cap: !expr if(nrow(data_3375) > 0) glue::glue("Catch of the three main tuna species by longline  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}.") else ""
+#| fig-cap: !expr if(nrow(data_3375) > 0) glue::glue("Catch of the three main tuna species by longline  vessels  fishing  in  the  {country_name}  EEZ,  in  each  1x1  degree  cell  in  the EEZ and  the immediate surrounding area during {report_year}. Source - Tufman 2, report 3375.") else ""
+if (nrow(data_3375) > 0 && nrow(data_2894) > 0) {
 
-parse_coord <- function(x, type = c("lat", "lon")) {
-  type <- match.arg(type)
-  
-  # split into the numeric body and the hemisphere letter
-  hem <- str_sub(x, -1)
-  num <- str_sub(x, 1, -2)
-  
-  # last two chars are minutes, the rest is degrees
-  mins <- as.numeric(str_sub(num, -2))
-  degs <- as.numeric(str_sub(num, 1, -3))
-  
-  decimal <- degs + mins / 60
-  
-  # apply sign based on hemisphere
-  sign <- dplyr::case_when(
-    hem %in% c("n", "e") ~  1,
-    hem %in% c("s", "w") ~ -1,
-    TRUE                 ~ NA_real_
-  )
-  
-  decimal * sign
-}
-
-
-if (nrow(data_3375) > 0) {
-  
-  data_3375 <- data_3375 |>
-    mutate(
-    latd = parse_coord(latitude,  "lat"),
-    lond = parse_coord(longitude, "lon")
-  ) |> 
-      select(flag, vessel_name, log_date, latd, lond, species, mt) |> 
-    filter(species %in% c("alb", "skj", "bet", "yft")) |> 
-    pivot_wider(names_from = species, values_from = mt)
-
-  eez  <- get_country_eez(country_cd)
-  land <- ne_countries(scale = "medium", returnclass = "sf")
-  
-  # Species lookup: short code → full name (must match sp_colours keys)
+  # ── Species lookup: short code → full name (must match sp_colours keys)
   species_map <- c(
     alb = "Albacore",
     skj = "Skipjack tuna",
     yft = "Yellowfin tuna",
     bet = "Bigeye tuna"
   )
-  
-  colnames(data_3375)[6:9] <- c("yft_mt", "alb_mt", "bet_mt", "skj_mt")
-  
+
+  # warn loudly (build log) if the palette is missing a species
+  missing_sp <- setdiff(species_map, names(sp_colours))
+  if (length(missing_sp) > 0) {
+    warning("Species missing from sp_colours: ",
+            paste(missing_sp, collapse = ", "))
+  }
+
+  data_3375 <- data_3375 |>
+    mutate(
+      latd = parse_coord(latitude,  "lat"),
+      lond = parse_coord(longitude, "lon")
+    ) |>
+    select(flag, vessel_name, log_date, latd, lond, species, mt) |>
+    filter(species %in% names(species_map)) |>
+    pivot_wider(names_from = species, values_from = mt) |>
+    # current year
+    mutate(year = substr(log_date, 7, 10)) |>
+    filter(year %in% report_year) |>
+    # name-based rename: pivot_wider orders columns by first appearance in
+    # the data, NOT in a fixed order, so a positional colnames()[6:9] <- ...
+    # can silently mislabel species. any_of() also tolerates a species
+    # having no rows at all for this country/year.
+    rename_with(\(x) paste0(x, "_mt"), any_of(names(species_map)))
+
+  # ── EEZ: shift to 0-360 longitude space so EEZs crossing the dateline
+  #    (FJ, TV, KI, ...) get a sensible bbox, then dissolve the two
+  #    antimeridian halves so geom_sf doesn't draw a seam at 180.
+  #    IMPORTANT: drop the CRS *before* st_union(). With a CRS attached,
+  #    st_union() under s2 (the default in a fresh render) is spherical
+  #    and normalises longitudes back to [-180, 180], silently undoing
+  #    the shift — it only works interactively if s2 happens to be
+  #    disabled in the session. With no CRS the union is planar and the
+  #    0-360 coordinates survive. st_shift_longitude() is the only step
+  #    that needs the CRS, so it runs first. All no-ops for EEZs that
+  #    don't cross the dateline.
+  eez <- get_country_eez(country_cd) |>
+    st_make_valid() |>
+    st_shift_longitude() |>
+    st_set_crs(NA) |>
+    st_union() |>
+    st_make_valid()
+
+  bbox <- st_bbox(eez)
+
+  # ── Land: shift, crop to the (padded) map extent, then drop the CRS
+  #    to match the EEZ layer. The CRS-less layers also make coord_sf
+  #    honour scale_x_continuous breaks past 180 — with a geographic CRS
+  #    it routes breaks through st_graticule(), which normalises to
+  #    [-180, 180] and silently drops anything >= 180 (the missing
+  #    x-label problem).
+  land <- suppressWarnings(
+    ne_countries(scale = "medium", returnclass = "sf") |>
+      st_make_valid() |>
+      st_shift_longitude() |>
+      st_crop(bbox + c(-2, -2, 2, 2)) |>
+      st_set_crs(NA)
+  )
+
   catch_grid <- grid_catch(data = data_3375,
                            eez_code  = tolower(country_cd),
                            cell_size = 1,
                            species   = names(species_map))
-  
-  max_r <- 0.45
-  catch_grid <- catch_grid |>
-    mutate(radius = max_r * sqrt(total / max(total)))
-  
-  # Build fill values and labels from the lookup
-  fill_values <- setNames(sp_colours[species_map], names(species_map))
-  fill_labels <- setNames(species_map, names(species_map))
-  
-  bbox <- st_bbox(eez)
-  
-  ggplot() +
-    geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
-    geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
-    geom_scatterpie(
-      data   = catch_grid,
-      aes(x = lon_bin, y = lat_bin, r = radius),
-      cols   = names(species_map),
-      colour = NA,
-      alpha  = 0.9
-    ) +
-    scale_fill_manual(
-      values = fill_values,
-      labels = fill_labels,
-      name   = "Species"
-    ) +
-    coord_sf(
-      xlim   = c(bbox["xmin"], bbox["xmax"]),
-      ylim   = c(bbox["ymin"], bbox["ymax"]),
-      expand = FALSE
-    ) +
-    labs(x = "Longitude", y = "Latitude") +
-    theme_bw() +
-    theme(legend.position = "bottom",,
-          panel.background = element_rect(fill = "white"))
-}
 
+  # Align pie longitudes with the 0-360 convention (no-op if already 0-360)
+  catch_grid <- catch_grid |>
+    mutate(lon_bin = ifelse(lon_bin < 0, lon_bin + 360, lon_bin)) |>
+    filter(total > 0)
+
+  # only draw if there is anything to draw (grid_catch can return zero
+  # usable cells even when data_3375 has rows)
+  if (nrow(catch_grid) > 0) {
+
+    max_r <- 0.45
+    catch_grid <- catch_grid |>
+      mutate(radius = max_r * sqrt(total / max(total)))
+
+    # sanity check: pies should fall within the map extent; if not, the
+    # longitude conventions of grid_catch and the shifted EEZ disagree
+    out_of_extent <- catch_grid |>
+      filter(lon_bin < bbox["xmin"] - 2 | lon_bin > bbox["xmax"] + 2 |
+             lat_bin < bbox["ymin"] - 2 | lat_bin > bbox["ymax"] + 2)
+    if (nrow(out_of_extent) > 0) {
+      warning(country_cd, ": ", nrow(out_of_extent),
+              " grid cell(s) fall outside the EEZ map extent and will not be visible.")
+    }
+
+    # ── Fill values and labels from the lookup
+    fill_values <- setNames(sp_colours[species_map], names(species_map))
+    fill_labels <- setNames(species_map, names(species_map))
+
+    # ── Axis breaks: ~8 longitude labels whatever the EEZ width, labelled
+    #    conventionally either side of the dateline; latitude labels are
+    #    needed explicitly now that the CRS (and its graticule) is gone.
+    x_span <- as.numeric(bbox["xmax"] - bbox["xmin"])
+    step   <- max(1, round(x_span / 8))
+    xbr    <- seq(floor(bbox["xmin"]), ceiling(bbox["xmax"]), by = step)
+    lon_lab <- function(x) {
+      x <- x %% 360
+      ifelse(x == 180, "180\u00B0",
+             ifelse(x > 180, paste0(360 - x, "\u00B0W"),
+                    paste0(x, "\u00B0E")))
+    }
+    lat_lab <- function(y) {
+      ifelse(y < 0, paste0(abs(y), "\u00B0S"),
+             ifelse(y > 0, paste0(y, "\u00B0N"), "0\u00B0"))
+    }
+
+    # ── Aspect ratio: with no CRS, coord_sf assumes projected coordinates
+    #    (1 deg lon = 1 deg lat on screen). Correct for longitude
+    #    convergence at the EEZ's mid-latitude so shapes aren't stretched
+    #    E-W — matters for the higher-latitude PICTs (CK, PF, NU, ...).
+    mid_lat <- mean(c(bbox["ymin"], bbox["ymax"]))
+    y_span  <- as.numeric(bbox["ymax"] - bbox["ymin"])
+    asp     <- (y_span / x_span) / cos(mid_lat * pi / 180)
+
+    p <- ggplot() +
+      geom_sf(data = land, fill = "grey90", colour = "grey60", linewidth = 0.2) +
+      geom_sf(data = eez,  fill = "grey50", colour = "black", alpha = 0.4) +
+      geom_scatterpie(
+        data   = catch_grid,
+        aes(x = lon_bin, y = lat_bin, r = radius),
+        cols   = names(species_map),
+        colour = NA,
+        alpha  = 0.9
+      ) +
+      scale_fill_manual(
+        values = fill_values,
+        labels = fill_labels,
+        name   = "Species"
+      ) +
+      scale_x_continuous(breaks = xbr, labels = lon_lab) +
+      scale_y_continuous(labels = lat_lab) +
+      coord_sf(
+        xlim   = c(bbox["xmin"], bbox["xmax"]),
+        ylim   = c(bbox["ymin"], bbox["ymax"]),
+        expand = FALSE
+      ) +
+      labs(x = "Longitude", y = "Latitude") +
+      theme_bw() +
+      theme(legend.position = "bottom",
+            aspect.ratio = asp,
+            axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+            axis.text.y = element_text(size = 10),
+            panel.background = element_rect(fill = "white"))
+
+    print(p)
+
+  } else {
+    message(country_cd, ": no positive-catch grid cells — longline spatial figure skipped.")
+  }
+}
 ```
 
 \newpage
 
 ## Annual catch estimates - artisanal
 
-@tbl-raised-ace presents the raised and unraised estimates per species for `r report_year`, and @tbl-raised-ace-perc shows the percentage contribution of each species.
+@tbl-raised-ace presents the raised and unraised estimates per species for `r report_year`, and @tbl-raised-ace-perc shows the percentage contribution of each species. Data is sourced from Tails and Ikasavea (landing surveys). Raised estimates are calculated based on the local knowledge of average monthly trips per landing sites.
 
 ```{r}
 #| echo: false

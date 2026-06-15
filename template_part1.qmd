@@ -3,6 +3,8 @@ date: today
 date-format: "DD MMMM YYYY"
 format: 
   pdf:
+    mainfont: "Times New Roman"
+    sansfont: "Times New Roman"
     tbl-cap-location: bottom
     toc: true
     toc-depth: 3
@@ -14,21 +16,16 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
-    include-in-header:
-      text: |
-        \usepackage{float}
-        \floatplacement{figure}{H}
-        \floatplacement{table}{H}
 knitr:
   opts_chunk:
     out-width: "100%"
+    dev: "cairo_pdf"
 page-layout: full
 edit: source
 params:
-  country_code: 'TO'          
+  country_code: 'NR'          
   year: 2025                  
   data_provided: 'Yes'        
-  author: "AUTHOR"
   aceman: TRUE
   additional_sections: ""
 execute: 
@@ -47,6 +44,9 @@ library(sf)
 library(stringr)
 
 source("utils.R")
+
+theme_set(theme_bw(base_family = "Times New Roman"))
+flextable::set_flextable_defaults(font.family = "Times New Roman")
 
 # key params
 country_cd <- tolower(params$country_code)
@@ -178,7 +178,7 @@ country_names <- c(
   mh = "Marshall Islands",
   mp = "Northern Mariana Is.",
   nc = "New Caledonia",
-  nr = "Nauru",
+  nr = "Naoero",
   nu = "Niue",
   pf = "French Polynesia",
   pg = "Papua New Guinea",
@@ -288,35 +288,22 @@ if (nrow(data_3605) == 0){
 }
 
 # shape for tables
-if (nrow(data_3605_ps) > 0){
-  data_3605_ps_tbl <- data_3605_ps|>
-  pivot_wider(names_from = year, values_from = catch) |>
-  mutate(across(2:5, ~replace_na(.,0))) |>
-  arrange(sp_code) |>
-  rename(Species = sp_code) |>
-  janitor::adorn_totals("row") |>
-  select(Species, sort(tidyselect::peek_vars()))
-}
-
-if (nrow(data_3605_ll) > 0){
-  data_3605_ll_tbl <- data_3605_ll |>
-    pivot_wider(names_from = year, values_from = catch) |>
-    mutate(across(where(is.numeric), ~replace_na(.,0))) |>
+shape_catch_tbl <- function(data) {
+  data |>
+    pivot_wider(names_from = year, values_from = catch, values_fill = 0) |>
+    mutate(across(where(is.numeric), ~replace_na(., 0))) |>  # only needed if catch itself can be NA
     arrange(sp_code) |>
     rename(Species = sp_code) |>
     janitor::adorn_totals("row") |>
     select(Species, sort(tidyselect::peek_vars()))
 }
 
-if (nrow(data_3605_pl) > 0){
-  data_3605_pl_tbl <- data_3605_pl |>
-    pivot_wider(names_from = year, values_from = catch) |>
-    mutate(across(where(is.numeric), ~replace_na(.,0))) |>
-    arrange(sp_code) |>
-    rename(Species = sp_code) |>
-    janitor::adorn_totals("row") |>
-    select(Species, sort(tidyselect::peek_vars()))
-}
+if (nrow(data_3605_ps) > 0) data_3605_ps_tbl <- shape_catch_tbl(data_3605_ps)
+if (nrow(data_3605_ll) > 0) data_3605_ll_tbl <- shape_catch_tbl(data_3605_ll)
+if (nrow(data_3605_pl) > 0) data_3605_pl_tbl <- shape_catch_tbl(data_3605_pl)
+
+# effort - number of hooks per year for the national fleet
+data_3597 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3597) 
 
 ```
 
@@ -344,78 +331,102 @@ render_gear_tbl_section3 <- function(data, data_tbl, gear_name, gear_code, speci
   ft <- flextable(data_tbl) |>
     labelizor(labels = species_labels, part = "all") |>
     set_table_properties(width = 0.7, align = "center") |> 
+    bold(j = ncol(data_tbl), part = "body") |>
     width(j = 1, width = 2)
   return(ft)
 }
 
 # Function to render gear-specific figures in section 3 with header and plot
-render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list, species_labels, intro_text = NULL, 
-                                      effort_df = data_3608) {
-  
+render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
+                                      species_labels, intro_text = NULL,
+                                      effort_df = data_3597) {
+
   # Check if data exists
   if (nrow(data) == 0) {
     return(invisible(NULL))
   }
-  if (nrow(effort_df) == 0){
-    return(invisible(NULL))
-  }
-  # calculate effort (hooks)
-  effort_annual <- data_3608 |>
-    filter(gear_code == gear_code) |>
-    group_by(year, gear_code) |>
-    summarise(effort = sum(hooks, na.rm = TRUE))
-  
+
   # Print intro text if provided (supports markdown)
   if (!is.null(intro_text)) {
     cat(glue::glue(intro_text), "\n\n")
   }
-  
-  # Prepare data for plotting
+
+  # ── Prepare data for plotting ──────────────────────────────────────────────
   data_fig <- data |>
-    select(sp_code, year, catch)
-  
+    group_by(sp_code, year) |>
+    summarise(catch = sum(catch, na.rm = TRUE), .groups = "drop")
+
   ref_df <- expand_grid(year = as.numeric(yrs_long), sp_code = species_list)
-  
-  plot_data <- left_join(ref_df, data_fig, by = c("year", "sp_code")) |> 
-    mutate(across(everything(), ~replace_na(.x, 0))) |>
-    # Use species_labels to map sp_code to full names
-    mutate(Species = recode(sp_code, !!!species_labels))
-  
-  # Create and print the plot
-  # scaling factor to map effort onto the catch axis
-  scale_factor <- max(plot_data |> group_by(year) |> summarise(t = sum(catch)) |> pull(t)) /
-    max(effort_annual$effort)
-  
-  p <- ggplot(plot_data, aes(x = year, y = catch, fill = Species)) + 
-    geom_col(position = "stack") + 
-    geom_line(data = effort_annual, aes(x = year, y = effort * scale_factor),
-              inherit.aes = FALSE, colour = "darkorange",
-              linewidth = 1.2, linetype = "dashed") +
-    geom_point(data = effort_annual, aes(x = year, y = effort * scale_factor),
-               inherit.aes = FALSE, colour = "darkorange", size = 3) +
+
+  plot_data <- left_join(ref_df, data_fig, by = c("year", "sp_code")) |>
+    mutate(
+      catch   = replace_na(catch, 0),
+      Species = factor(recode(sp_code, !!!species_labels),
+                       levels = unname(species_labels[species_list]))
+    )
+
+  # ── Base plot (shared by all gears) ────────────────────────────────────────
+  p <- ggplot(plot_data, aes(x = year, y = catch, fill = Species)) +
+    geom_col(position = "stack") +
     scale_fill_manual(values = sp_colours) +
     scale_x_continuous(breaks = seq(min(plot_data$year), max(plot_data$year), 1)) +
-    scale_y_continuous(
-      labels = comma,
-      sec.axis = sec_axis(~ . / scale_factor, name = "Effort (hooks)", labels = comma)
-    ) +
-    xlab(element_blank()) +
-    ylab("Catch (mt)") +
+    labs(x = NULL, y = "Catch (mt)") +
     theme_bw() +
     theme(
-      axis.title = element_text(size = 16),
-      axis.text = element_text(size = 16),
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      axis.title.y.right = element_text(colour = "darkorange"),
-      axis.text.y.right  = element_text(colour = "darkorange"),
+      axis.title   = element_text(size = 16),
+      axis.text    = element_text(size = 16),
+      axis.text.x  = element_text(angle = 45, hjust = 1),
       legend.position = "bottom",
       legend.title = element_blank(),
-      legend.text = element_text(size = 13)
+      legend.text  = element_text(size = 13)
     )
-  
+
+  # ── Longline: overlay effort (hooks) on a secondary axis ──────────────────
+  if (gear_code == "l") {
+    
+    # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
+     effort_annual <- effort_df |>
+      filter(flag_id == country_cd) |>
+      filter(year %in% plot_data$year) |>          # align with plotted years
+      group_by(year) |>
+      summarise(effort = sum(hooks_total_logsheet, na.rm = TRUE), .groups = "drop")
+
+    max_catch  <- max(tapply(plot_data$catch, plot_data$year, sum))
+    max_effort <- max(effort_annual$effort, 0)
+
+    if (nrow(effort_annual) > 0 && max_effort > 0 && max_catch > 0) {
+
+      scale_factor <- max_catch / max_effort
+
+      p <- p +
+        geom_line(data = effort_annual,
+                  aes(x = year, y = effort * scale_factor),
+                  inherit.aes = FALSE, colour = "darkorange",
+                  linewidth = 1.2, linetype = "dashed") +
+        geom_point(data = effort_annual,
+                   aes(x = year, y = effort * scale_factor),
+                   inherit.aes = FALSE, colour = "darkorange", size = 3) +
+        scale_y_continuous(
+          labels = comma,
+          sec.axis = sec_axis(~ . / scale_factor,
+                              name = "Effort (hooks)", labels = comma)
+        ) +
+        theme(
+          axis.title.y.right = element_text(colour = "darkorange"),
+          axis.text.y.right  = element_text(colour = "darkorange")
+        )
+    } else {
+      message("No usable effort data for gear '", gear_code,
+              "' — rendering catch only.")
+      p <- p + scale_y_continuous(labels = comma)
+    }
+
+  } else {
+    p <- p + scale_y_continuous(labels = comma)
+  }
+
   print(p)
-  
-  return(invisible(NULL))
+  invisible(NULL)
 }
 
 # Function to render vessel table for a specific gear
@@ -573,14 +584,14 @@ avg_yft <- avg_by_sp$m[avg_by_sp$sp_code == "yft"]
 avg_bet <- avg_by_sp$m[avg_by_sp$sp_code == "bet"]
 ```
 
-`r country_name`'s Flag vessels for the past 5 years had caught a total of `r fmt(total_5yr)` mt of tuna at an average of `r fmt(avg_total)` mt per year. The average breakdown of catches by species are; SKJ at `r fmt(avg_skj)` mt, YFT at `r fmt(avg_yft)` mt, and BET at `r fmt(avg_bet)` mt per year.
+`r country_name`'s Flag vessels for the past 5 years (@tbl-tbl1s) had caught a total of `r fmt(total_5yr)` mt of tuna at an average of `r fmt(avg_total)` mt per year. The average breakdown of catches by species are; SKJ at `r fmt(avg_skj)` mt, YFT at `r fmt(avg_yft)` mt, and BET at `r fmt(avg_bet)` mt per year.
 
 
 ```{r}
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1s
-#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area") else ""
+#| tbl-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Annual catch estimates for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_ps,
@@ -596,7 +607,7 @@ render_gear_tbl_section3(
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1l
-#| tbl-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Annual catch estimates for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}") else ""
+#| tbl-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Annual catch estimates for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_ll,
@@ -612,7 +623,7 @@ render_gear_tbl_section3(
 #| echo: false
 #| results: 'asis'
 #| label: tbl-tbl1pl
-#| tbl-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Annual catch estimates for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}") else ""
+#| tbl-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Annual catch estimates for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.") else ""
 
 render_gear_tbl_section3(
   data = data_3605_pl,
@@ -631,7 +642,7 @@ render_gear_tbl_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1l
-#| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}") else ""
+#| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3597 (hooks).") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -653,7 +664,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1s
-#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}") else ""
+#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -666,7 +677,7 @@ render_gear_figs_section3(
   gear_code = "s",
   species_list = ps_species,
   species_labels = ps_species_labels,
-  intro_text = "."
+  intro_text = ""
 )
 ```
 
@@ -677,7 +688,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1pl
-#| fig-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}") else ""
+#| fig-cap: !expr if(nrow(data_3605_pl) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} pole line fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -709,19 +720,30 @@ if (nrow(data_3605) > 0) {
 #| label: fig-fig2
 #| fig-pos: 'H'
 #| eval: !expr nrow(data_3605) > 0
-#| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area") else ""
+#| fig-cap: !expr if(nrow(data_3605) > 0) glue::glue("Historical annual vessel numbers for the {country_name} fleet, by gear, for the WCPFC Convention Area. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
 
 if (nrow(data_3605) > 0){
     # Plot of vessel numbers for only Longline, Purse seine and Pole Line, aggregated over size class
-  vessel_colours <- c(
-    "0 - 50"  = "lightblue",
-    "51 - 200" = "mediumblue",
-    "201 - 500"  = "darkblue",
-    "500+"  = "black"
+    vessel_colours <- c(
+    "0 - 50"    = "#A1DAB4",
+    "51 - 200"  = "#41B6C4",
+    "201 - 500" = "#2C7FB8",
+    "500+"      = "#253494"
   )
+  
+   ves_raw <- 
+    data_3605 |>  
+    filter(year %in% yrs_long, gear_code %in% c("s", "l", "pl")) |> 
+    select(flag, year, gear_code, vessels_sml, vessels_med, vessels_lge, vessels_hge) |> 
+    distinct() |>
+    mutate(gear = case_when(
+      gear_code == "s" ~ "Purse seine",
+      gear_code == "l" ~ "Longline",
+      gear_code == "pl" ~ "Pole line"
+    ))
   
   vessel_plot <- ves_raw |>
     pivot_longer(
@@ -746,18 +768,117 @@ if (nrow(data_3605) > 0){
     theme_bw() +
     facet_wrap(~gear) +
     theme(
-      axis.title   = element_text(size = 16),
-      axis.text    = element_text(size = 16),
-      axis.text.x  = element_text(angle = 45, hjust = 1),
-      legend.position = "bottom",
-      legend.title = element_text(size = 13),
-      legend.text  = element_text(size = 13)
-    )
+    axis.title   = element_text(size = 16),
+    axis.text    = element_text(size = 16),
+    axis.text.x  = element_text(angle = 45, hjust = 1),
+    strip.text   = element_text(size = 16),
+    legend.position = "bottom",
+    legend.title = element_text(size = 13),
+    legend.text  = element_text(size = 13)
+  )
   
   print(p_vessels)
-  }
+} else {
+  ves_raw <- tibble()
+}
 ```
 
+
+```{r}
+
+#| echo: false
+
+# Prepare vessel data once
+if(nrow(data_3605) > 0){
+  ves_raw <- 
+    data_3605 |>  
+    filter(year %in% yrs_long, gear_code %in% c("s", "l", "pl")) |> 
+    select(flag, year, gear_code, vessels_sml, vessels_med, vessels_lge, vessels_hge) |> 
+    distinct() |>
+    mutate(gear = case_when(
+      gear_code == "s" ~ "Purse seine",
+      gear_code == "l" ~ "Longline",
+      gear_code == "pl" ~ "Pole line"
+    ))
+} else {
+  ves_raw <- tibble()
+}
+
+# Define size category functions for each gear type
+ll_size_fn <- function(data) {
+  data |>
+  summarise(
+    '0 - 50' = sum(vessels_sml),
+    '51 - 200' = sum(vessels_med),
+    '201 - 500' = sum(vessels_lge),
+    '500+' = sum(vessels_hge),
+    .groups = "drop"
+  )
+}
+
+ps_size_fn <- function(data) {
+  data |>
+  summarise(
+    '0 - 50' = sum(vessels_sml),
+    '51 - 200' = sum(vessels_med),
+    '201 - 500' = sum(vessels_lge),
+    '500+' = sum(vessels_hge),
+    .groups = "drop"
+  )
+}
+
+pl_size_fn <- function(data) {
+  data |>
+  summarise(
+    '0 - 50' = sum(vessels_sml),
+    '51 - 150' = sum(vessels_med),
+    '150+' = sum(vessels_lge + vessels_hge),
+    .groups = "drop"
+  )
+}
+
+```
+
+```{r}
+ll_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code == "l")) > 0) {
+  glue::glue("Number of {country_name} longline vessels, by size category, active in the WCPFC Convention Area, over {yr_range}. Source - Tufman 2, report 3605.")
+} else NULL
+```
+
+```{r}
+#| label: tbl-tbl2-longline
+#| eval: !expr "!is.null(ll_caption)"
+#| tbl-cap: !expr ll_caption
+#| echo: false
+#| results: 'asis'
+render_vessel_table(
+  ves_data = ves_raw,
+  gear_name = "l",
+  size_categories_fn = ll_size_fn,
+  intro_text = ""
+)
+```
+
+```{r}
+ps_caption <- if(nrow(ves_raw) > 0 && "gear_code" %in% names(ves_raw) && nrow(ves_raw |> filter(gear_code %in% c("s", "ps"))) > 0) {
+  glue::glue("Number of {country_name} purse seine vessels, by size category, active in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.")
+} else NULL
+```
+
+```{r}
+#| label: tbl-tbl2-ps
+#| eval: !expr "!is.null(ps_caption)"
+#| tbl-cap: !expr ps_caption
+#| echo: false
+#| results: 'asis'
+
+render_vessel_table(
+  ves_data = ves_raw,
+  gear_name = "s",
+  size_categories = ps_size_fn,
+  intro_text =  ""
+)
+```
 
 ```{r}
 #| echo: false
@@ -776,7 +897,7 @@ Albacore, Bigeye tuna, and Yellowfin tuna , from `r country_name`’s fleet acro
 
 ```{r}
 #| label: fig-figmapps
-#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery.")
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} purse seine fishery. Source - Tufman 2, report 3608.")
 #| fig-pos: "H"
 #| echo: false
 #| fig-width: 12
@@ -789,7 +910,7 @@ if (file.exists(map_ps))
 
 ```{r}
 #| label: fig-figmapl
-#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery.")
+#| fig-cap: !expr glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} longline fishery. Source - Tufman 2, report 3608.")
 #| fig-pos: "H"
 #| echo: false
 #| fig-width: 12
@@ -802,7 +923,7 @@ if (file.exists(map_ll)) knitr::include_graphics(map_ll)
 ```{r}
 #| label: fig-figmappl
 #| eval: !expr "nrow(data_3608) > 0"
-#| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "pl") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} pole line fishery.") else ""
+#| fig-cap: !expr if(nrow(data_3608 |> filter(gear_code == "pl") > 0)) glue::glue("Map showing the distribution of target species catch (mt) for the {country_name} pole line fishery. Source - Tufman 2, report 3608.") else ""
 #| fig-width: 12
 #| fig-height: 8
 #| fig-align: "center"
@@ -831,15 +952,15 @@ render_spatial_map(
 if (nrow(data_3605) > 0) {
   cat("\\newpage\n\n")
   cat("## Captures of species of special interest (SSIs)\n\n")
-  cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns.")
+  cat("Note that the tables below are specified to include - seabird, turtle and marine mammals in the instructions but we also include things like some rays and sharks. Note that Alive plus Dead does not necessarily equal Total due to unknowns. ")
 }
 ```
 
-@tbl-tbl3s provides a summary of observed interactions with special interest species by `r country_name`’s purse seine fleet from `r report_year - 4` to `r report_year`.
+@tbl-tbl3s provides a summary of observed interactions with special interest species by `r country_name`’s purse seine fleet from `r report_year - 4` to `r report_year`. In case of missing years in the table below, this indicates that no interactions with target species were reported during those years.
 
 ```{r}
 ssi_s_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "s")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status.")
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} purse seine fleet, in the WCPFC Convention Area, for years {yr_range}, to the extent possible. Note that the Total may not reflect the sum of Alive and Dead as some animals are reported with an Unknown status. Source - Tufman 2, report 2953.")
 } else NULL
 ```
 
@@ -859,7 +980,7 @@ render_ssi_table(
 
 ```{r}
 ssi_l_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "l")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} longline fleet, in the WCPFC Convention Area, for years {yr_range}")} else NULL
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} longline fleet, in the WCPFC Convention Area, for years {yr_range}. Source - Tufman 2, report 2953.")} else NULL
 
 ```
 
@@ -879,7 +1000,7 @@ render_ssi_table(
 
 ```{r}
 ssi_pl_caption <- if(nrow(data_2953) > 0 && "gear" %in% names(data_2953) && nrow(data_2953 |> filter(gear == "pl")) > 0) {
-  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} pole line fleet, in the WCPFC Convention Area, for years {yr_range}")} else NULL
+  glue::glue("Observed annual estimated catches of species of special interest (seabird, turtle and marine mammals) by the {country_name} pole line fleet, in the WCPFC Convention Area, for years {yr_range}. Source - Tufman 2, report 2953.")} else NULL
 
 ```
 
@@ -929,7 +1050,7 @@ if (nrow(data_3605) > 0){
 ```{r}
 #| label: tbl-tbl4s
 #| eval: !expr "nrow(data_3605) > 0"
-#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} purse seine fleet, in the WCPFC Convention Area over {yr_range}")
+#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} purse seine fleet, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605.")
 #| echo: false
 #| results: 'asis'
 
@@ -941,7 +1062,7 @@ if (nrow(PS_tab) > 0) {
   
  cat(glue::glue(
     "@tbl-tbl4s provides a summary of observed interactions with non-target ",
-    "species by {country_name}'s purse seine fleet from {report_year - 4} to {report_year}.\n\n"
+    "species by {country_name}'s purse seine fleet from {report_year - 4} to {report_year}. In case of missing years in the table below, this indicates that no interactions with non-target species were reported during those years. \n\n"
   ))
   
   flextable(PS_tab |>
@@ -959,7 +1080,7 @@ if (nrow(PS_tab) > 0) {
 ```{r}
 #| label: tbl-tbl4l
 #| eval: !expr "nrow(data_3605) > 0"
-#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} longline fleet, in the WCPFC Convention Area over {yr_range}")
+#| tbl-cap: !expr glue::glue("Annual estimated catches of non-target, associated and dependent species, including sharks, by the {country_name} longline fleet, in the WCPFC Convention Area over {yr_range}. Source - Tufman 2, report 3605")
 #| echo: false
 #| results: 'asis'
 

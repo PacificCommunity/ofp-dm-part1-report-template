@@ -32,6 +32,8 @@ library(flextable)
 library(knitr)
 source("utils.R")
 
+theme_set(theme_bw(base_family = "Times New Roman"))
+flextable::set_flextable_defaults(font.family = "Times New Roman")
 
 # Detect context: standalone render vs. knit_child from parent
 if (!exists("member") || length(member) == 0 || !nzchar(member)) {
@@ -109,7 +111,7 @@ This information shall be provided in Part 1 of each CCM's annual report. Initia
 
 ```{r}
 #| label: tbl-2009-03
-#| tbl-cap: "Total number of vessels fishing for swordfish and the catch (mt) of swordfish south of 20S."
+#| tbl-cap: "Total number of vessels fishing for swordfish and the catch (mt) of swordfish south of 20S. Source - Tufman 2, report 2918."
 
 a1 <- read_and_clean(this_yr_folder, member, r_code=2918)
 
@@ -125,6 +127,7 @@ if (nrow(a1) > 0 && is_applicable("2009-03")) {
 `r msg`
 
 \newpage
+
 #### Observer coverage (WCPFC11 decision - para 484(b))
 
 CCMs are to compile and include in Annual Report Part 1 to be submitted from 2015 onwards, observer coverage for their longline fleet activity in the previous calendar year, noting that revisions can be provided at the annual TCC meeting.
@@ -133,7 +136,7 @@ A sample report format is provided as guidance to assist CCMs with reporting (WC
 
 ```{r}
 #| label: tbl-obs_cov
-#| tbl-cap: 'Observer coverage of longline fleet activity where hooks are in hundred hooks from logbook data and fishing days, sea days, and trips are all calculated from VMS data. Coverage percentages are rounded to the nearest whole number.'
+#| tbl-cap: 'Observer coverage of longline fleet activity where hooks are in hundred hooks from logbook data and fishing days, sea days, and trips are all calculated from VMS data. Coverage percentages are rounded to the nearest whole number. Source - Tufman 2, report 2986.'
 
 a2 <- read_and_clean(this_yr_folder, member, r_code=2986) 
 
@@ -174,6 +177,7 @@ if (nrow(a2) > 0 && is_applicable("obs-cov")) {
 `r msg`
 
 \newpage
+
 #### CMM 2009-06 [Transshipment], Para 11 (Annex II)
 
 CCMs shall report on all transhipment activities covered by this Measure (including transhipment activities that occur in ports or EEZs) as part of their Annual Report in accordance with the guidelines at Annex II. In doing so, CCMs shall take all reasonable steps to validate and where possible, correct information received from vessels undertaking transhipment using all available information such as catch and effort data, position data, observer reports and port monitoring data.
@@ -193,30 +197,25 @@ f. product form; and
 g. fishing gear used
 
 ```{r}
-#| label: tbl-cmm2009-06.1
+#| label: tbl-cmm2009-06-1
 #| echo: false
 #| include: true
+#| tbl-cap: "Transhipment quantities (CMM 2009-06, Para 11, Part 1)."
+
+msg <- no_data_msg("2009-06", context = "transhipment quantities")
 
 if (is_applicable("2009-06")) {
-  
   trans1_file <- str_c(this_yr_folder, "additional_files/trans1.csv")
   trans2_file <- str_c(this_yr_folder, "additional_files/trans1.png")
   
   if (file.exists(trans1_file)) {
+    msg <- ""
     a3 <- read.csv(trans1_file)
     flextable(a3)
-  }
-  
-  if (file.exists(trans2_file)) {
+  } else if (file.exists(trans2_file)) {
+    msg <- ""
     knitr::include_graphics(trans2_file)
   }
-  
-  if (!file.exists(trans1_file) && !file.exists(trans2_file)) {
-    cat(no_data_msg("2009-06", context = "transhipment quantities"))
-  }
-  
-} else {
-  cat(no_data_msg("2009-06", context = "transhipment quantities"))
 }
 ```
 `r msg`
@@ -230,28 +229,25 @@ d. caught inside the Convention Area and caught outside the Convention Area; and
 e. fishing gear
 
 ```{r}
-#| label: tbl-cmm2009-06.2
+#| label: tbl-cmm2009-06-2
+#| echo: false
+#| include: true
+#| tbl-cap: "Transhipment quantities (CMM 2009-06, Para 11, Part 2)."
+
+msg <- no_data_msg("2009-06", context = "transhipment quantities")
 
 if (is_applicable("2009-06")) {
-  
   trans3_file <- str_c(this_yr_folder, "additional_files/trans2.csv")
   trans4_file <- str_c(this_yr_folder, "additional_files/trans2.png")
   
   if (file.exists(trans3_file)) {
+    msg <- ""
     a3 <- read.csv(trans3_file)
     flextable(a3)
-  }
-  
-  if (file.exists(trans4_file)) {
+  } else if (file.exists(trans4_file)) {
+    msg <- ""
     knitr::include_graphics(trans4_file)
   }
-  
-  if (!file.exists(trans3_file) && !file.exists(trans4_file)) {
-    cat(no_data_msg("2009-06", context = "transhipment quantities"))
-  }
-  
-} else {
-  cat(no_data_msg("2009-06", context = "transhipment quantities"))
 }
 ```
 `r msg`
@@ -262,7 +258,7 @@ CCMs shall include in their Part 1 Annual Report any instances in which cetacean
 
 ```{r}
 #| label: tbl-cmm2011-03
-#| tbl-cap: 'Summary of the number of cetacean encirclements by purse seine nets in reporting year'
+#| tbl-cap: 'Summary of the number of cetacean encirclements by purse seine nets in reporting year. Source - Tufman 2, report 3222.'
 
 a5 <- read_and_clean(this_yr_folder, member, r_code=3222)
 
@@ -365,7 +361,7 @@ if (nrow(a6) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-cmm2018-03x
-#| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area.'
+#| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area. Source - Tufman 2, reports: 3612 and 3605.'
 
 if (exists("a6") && is.data.frame(a6) && nrow(a6) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -382,7 +378,7 @@ if (exists("a6") && is.data.frame(a6) && nrow(a6) > 0 && is_applicable("2018-03"
 
 ```{r}
 #| label: tbl-sb_s30s
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area south of 30S.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area south of 30S. Source - Tufman 2, reports: 3612 and 3605.'
 
 if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -398,7 +394,7 @@ if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_ap
 
 ```{r}
 #| label: tbl-sb_25s_30s
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 30S and 25S.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 30S and 25S. Source - Tufman 2, reports: 3612 and 3605.'
 
 if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -414,7 +410,7 @@ if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_appli
 
 ```{r}
 #| label: tbl-sb_25s_23n
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N. Source - Tufman 2, reports: 3612 and 3605.'
 
 if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -430,7 +426,7 @@ if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_appli
 
 ```{r}
 #| label: tbl-sb_23n
-#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area north of 23N.'
+#| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area north of 23N. Source - Tufman 2, reports: 3612 and 3605.'
 
 if (exists("a6.north") && is.data.frame(a6.north) && nrow(a6.north) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -488,7 +484,7 @@ if (nrow(a7) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-s30s
-#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area south of 30S.'
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area south of 30S. Source - Tufman 2, report: 3315.'
 
 if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -504,7 +500,7 @@ if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-30s_25s
-#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area between 30S and 25S.'
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area between 30S and 25S. Source - Tufman 2, report: 3315.'
 
 if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -520,7 +516,7 @@ if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-25s_23n
-#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area between 25S and south of 23N.'
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area between 25S and south of 23N. Source - Tufman 2, report: 3315.'
 
 if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -536,7 +532,7 @@ if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-n23n
-#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area north of 23N.'
+#| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area north of 23N. Source - Tufman 2, report: 3315.'
 
 if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -554,7 +550,7 @@ if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
 
 ```{r}
 #| label: tbl-cmm2018-03z
-#| tbl-cap: 'Number of observed seabird captures in longline fisheries in the reporting year, by species and area.'
+#| tbl-cap: 'Number of observed seabird captures in longline fisheries in the reporting year, by species and area. Source - Tufman 2, report: 3314.'
 
 a8 <- read_and_clean(this_yr_folder, member, r_code=3314)
 
@@ -580,7 +576,7 @@ In accordance with paragraph 1, CCMs shall provide information to the Commission
 
 ```{r}
 #| label: tbl-cmm2006-04
-#| tbl-cap: 'There is currently no agreed definition of "fishing for" striped marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin.'
+#| tbl-cap: 'There is currently no agreed definition of "fishing for" striped marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin. Source - Tufman 2, report: 2917.'
 
 a9 <- read_and_clean(this_yr_folder, member, r_code=2917)
 
@@ -607,7 +603,7 @@ All CCMs shall report annually to the WCPFC Commission all catches of albacore n
 
 ```{r}
 #| label: tbl-cmm2019-03
-#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific albacore catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific.'
+#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific albacore catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific. Source - Tufman 2, report: 3602.'
 
 a11 <- read_and_clean(this_yr_folder, member, r_code=3602)
 
@@ -640,7 +636,7 @@ All CCMs shall report annually to the WCPFC Commission all catches of North Paci
 
 ```{r}
 #| label: tbl-cmm2023-03
-#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific swordfish catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific.'
+#| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific swordfish catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific. Source - Tufman 2, report: 3513.'
 
 a12 <- read_and_clean(this_yr_folder, member, r_code=3513)
 

@@ -20,15 +20,18 @@ library("odbc")
 library("rnaturalearth")
 
 ### Never change/update the values below:
-report_ids_list = c(2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
-                    3615, 3527, 3614,
-                    2900, # PS catch EEZ per country # we need to check if only considers thumbs up and the catch are only in the eez? Only key sp?
-                    2894, # LL catch EEZ (I think…)                 # artisanal
-                    # we are also interested in high seas, but what is the area (only WCPFC)?
-                    3375, # LL spatial catch 3375
-                    2904, # PS spatial catch 3375
-                    3634,
-                    3605, 2953, 3608, 3619)                         # Part1
+report_ids_list = c(
+  2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
+  3615, 3527, 3614,
+  2900, # PS catch EEZ per country # we need to check if only considers thumbs up and the catch are only in the eez? Only key sp?
+  2894, # LL catch EEZ (I think…)                 # artisanal
+  # we are also interested in high seas, but what is the area (only WCPFC)?
+  3375, # LL spatial catch 3375
+  2904, # PS spatial catch 3375
+  3634,
+  3597, # total number of hooks per year from national fleet LL # Part1
+  3605, 2953, 3608, 3619 # Part1
+  )                         
 # report_ids_list = c(3375, 2904)         
 
 report_ids_ikasavea_list = c("b1559368-b7a3-464e-883a-34fe3d2cd7c0") 
@@ -507,13 +510,16 @@ get_reports <- function(token, user_name, country_code, filtered_reports, attrs,
       if (guid %in% c("0026f9a9-b8ec-4812-96e5-f22d90914bac", # 2984 YM
                       "1a70dd40-7cca-46ab-b078-e02fd81f67cf", # 2900 YM
                       "870a80ad-cce4-4cb6-b5a0-ab5d00b0233c", # 337
-                      "5ed9c890-760b-4c32-8402-665a2e5bf3a9" # 2904 Y
+                      "5ed9c890-760b-4c32-8402-665a2e5bf3a9", # 2904 Y
+                      "09f2ca2d-ef4f-6824-d040-3a1d014547cd" # This is hooks from logsheets per year
       )) {
-        # Artisanal-style reports: keep year and other attrs, but don't restrict by flag
+        # Artisanal-style reports and hooks: keep year and other attrs, but don't restrict by flag
         params_list <- attrs[names(attrs) %in% report_attr_names]
         params_list$flag_code <- NULL   # remove flag restriction so we get all flags
         params_list$year <- NULL   # remove flag restriction so we get all flags
-      } else {
+      }
+
+      else {
         # Build runParams only for attributes relevant to this report
         params_list <- attrs[names(attrs) %in% report_attr_names]
       }
@@ -682,7 +688,7 @@ generate_preamble <- function(country_code,
     mh = "MARSHALL ISLANDS", 
     mp = "NORTHERN MARIANA IS.",
     nc = "NEW CALEDONIA", 
-    nr = "NAURU", 
+    nr = "NAOERO", 
     nu = "NIUE", 
     pf = "FRENCH POLYNESIA",
     pg = "PAPUA NEW GUINEA", 
@@ -731,7 +737,6 @@ generate_preamble <- function(country_code,
 build_reports <- function(country_codes, 
                           max_year,
                           aceman,
-                          author, 
                           sc_session          = "21",
                           ccm_num             = "24",
                           report_date         = "4 July 2025",
@@ -760,7 +765,6 @@ build_reports <- function(country_codes,
         country_code        = country_code,
         year                = max_year,
         data_provided       = 'Yes',
-        author              = author,
         aceman              = aceman,
         additional_sections = paste(additional_sections, collapse = ",")
       )
