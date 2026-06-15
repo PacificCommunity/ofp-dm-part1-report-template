@@ -11,7 +11,7 @@ source("utils.R")
 get_all_country_codes()
 
 # Step 2: Define params ####
-country_codes <- c("NR")
+country_codes <- c("CK", "FM", "KI", "MH", "PW", "WS", "SB", "FJ", "PF")
 r_year <- 2025
 rewrite_files <- TRUE
 additional_sections  <-  c("addendum", "artisanal")  # options: "artisanal", "addendum", both, or character(0) for none
@@ -33,12 +33,11 @@ for (country_code in country_codes) {
 res <- build_reports(country_codes = country_codes,
                      max_year = r_year,
                      aceman = aceman,
-                     author = report_author,
                      additional_sections = additional_sections,
                      sc_session    = "21",
                      ccm_num       = "22",
                      report_date   = format(Sys.Date(), "%d %b %Y"),
                      location      = "Apia, Samoa",
                      session_dates = "11--19 August 2026",
-                     file_template_part_1 = "template_part1_nr.qmd"
+                     file_template_part_1 = "template_part1.qmd"
                      )
