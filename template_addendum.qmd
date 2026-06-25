@@ -17,9 +17,9 @@ format:
 page-layout: full
 edit: visual
 params:
-  country_code: "FJ"
-  country_folder: "./data/report_2024_fj/"
-  max_year: 2024
+  country_code: "TK"
+  country_folder: "./data/report_2025_tk/"
+  max_year: 2025
   author: "ENTER AUTHOR"
   applicable_measures: "all"   # "all" or e.g. c("2009-06", "2011-03", "2018-03")
 ---
@@ -85,46 +85,132 @@ is_applicable <- function(measure_code) {
 no_data_msg <- function(measure_code, year = yy, context = "") {
   if (!is_applicable(measure_code)) {
     "Not applicable."
+  } else if (is_applicable(measure_code) && nzchar(context)){
+    context
   } else {
-    paste0("No data reported in ", year,
-           if (nzchar(context)) paste0(" for ", context) else "", ".")
+    paste0("No data reported in ", year, ".")
   }
 }
 # ---------------------------------------------------------------------------
 
 options(scipen = 0, knitr.kable.NA = '')
+
+country_names <- c(
+  fj  = "Fiji",
+  fm = "Federated States of Micronesia",
+  gu = "Guam",
+  ki = "Kiribati",
+  mh = "Marshall Islands",
+  mp = "Northern Mariana Is.",
+  nc = "New Caledonia",
+  nr = "Naoero",
+  nu = "Niue",
+  pf = "French Polynesia",
+  pg = "Papua New Guinea",
+  pn = "Pitcairn",
+  pw = "Palau",
+  sb = "Solomon Islands",
+  tk = "Tokelau",
+  to = "Tonga",
+  tv = "Tuvalu",
+  vu = "Vanuatu",
+  wf = "Wallis and Futuna Islands",
+  ck = "Cook Islands",
+  ws = "Samoa"
+)
+
+# get country name
+country_name <- country_names[member] 
+msg = ''
+
 ```
 
 ### Section A
 
 #### CMM 2009-03 [Swordfish], Para 8
+```{r, echo = F}
+a1 <- read_and_clean(this_yr_folder, member, r_code=2918)
+```
+
+
 
 CCMs shall report to the Commission the total number of vessels that fished for swordfish and the total catch of swordfish for the following:
 
 a. vessels flying their flag anywhere in the Convention Area south of 20$^\circ$S other than vessels operating under charter, lease or other similar mechanism as part of the domestic fishery of another CCM;
+  
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
+if (nrow(a1) == 0 | !is_applicable("2009-03") ) {
+  cat(glue::glue("- **No report available** - {country_name} flagged vessels do not target SWORDFISH nor fish south of 20°S.\n\n"))
+}
+```
 b. vessels operating under charter, lease or other similar mechanism as part of their domestic fishery south of 20$^\circ$S; and
+  
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
+if (nrow(a1) == 0 | !is_applicable("2009-03") ) {
+  cat(glue::glue("- **No report available** - {country_name} did not charter nor lease any vessels that fish South of 20°S.\n\n"))
+}
+```
+    
 c. any other vessels fishing within their waters south of 20$^\circ$S.
+  
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
-This information shall be provided in Part 1 of each CCM's annual report. Initially, this information will be provided in the template provided at Annex 2 for the period 2000-2009 and then updated annually.
+if (nrow(a1) == 0 | !is_applicable("2009-03") ) {
+  cat(glue::glue("- **No report available** - {country_name} does not have any vessel that fish within the area South of 20°S.\n\n"))
 
-\* *Note: WCPFC11 confirmed a common understanding that "total catch" in this reporting requirement refers to both targeted and bycatch catches of swordfish*
-
+}
+```
+  
+ 
 ```{r}
 #| label: tbl-2009-03
 #| tbl-cap: "Total number of vessels fishing for swordfish and the catch (mt) of swordfish south of 20S. Source - Tufman 2, report 2918."
-
-a1 <- read_and_clean(this_yr_folder, member, r_code=2918)
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (nrow(a1) > 0 && is_applicable("2009-03")) {
-  msg <- ' '
+  msg <- ''
   flextable(a1 |> mutate(swo_mt = round(swo_mt, 0))) |> 
     colformat_num(j = "year", big.mark='') |> 
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2009-03")
+  context_text = paste0("As reported above, the CMM 2009-03 [Swordfish], Para 8 does not apply to ", country_name, ".")  
+  msg <- paste0("**", no_data_msg("2009-03", context = context_text), "**")
 }
 ```
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
+
+This information shall be provided in Part 1 of each CCM's annual report. Initially, this information will be provided in the template provided at Annex 2 for the period 2000-2009 and then updated annually.
+  
+  \* *Note: WCPFC11 confirmed a common understanding that "total catch" in this reporting requirement refers to both targeted and bycatch catches of swordfish*
+  
+**AUDIT POINT [RP] The Secretariat confirms that the CCM submitted the required information contained in the template in Annex 2 of CMM in its AR Pt 1.**
 
 \newpage
 
@@ -171,10 +257,29 @@ if (nrow(a2) > 0 && is_applicable("obs-cov")) {
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
 } else {
-  msg <- no_data_msg("obs-cov", context = "observer coverage")
+  context_text = paste0("No report available – ", country_name, " did not flag nor charter any long-line vessels in ",
+  as.character(yy), " , therefore, ", country_name, " does not have any report to submit for the CMM; Observer coverage (WCPFC 11 decision – para 484(b) ).")  
+  msg <- paste0("**", no_data_msg("obs-cov", context = context_text), "**")
 }
 ```
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
 
 \newpage
 
@@ -186,7 +291,7 @@ WCPFC15 Outcome document para 48: The Commission agreed to the TCC14 recommendat
 
 Each CCM shall include in Part 1 of its Annual Report to the Commission:
 
-(1) the total quantities, by weight, of highly migratory fish stocks covered by this measure that were transhipped by fishing vessels the CCM is responsible for reporting against, with those quantities broken down by:
+(1) the **total quantities, by weight**, of highly migratory fish stocks covered by this measure that were transhipped by fishing vessels the CCM is responsible for reporting against, with those quantities broken down by:
 
 a. offloaded and received;
 b. transhipped in port, transhipped at sea in areas of national jurisdiction, and transhipped beyond areas of national jurisdiction;
@@ -201,8 +306,9 @@ g. fishing gear used
 #| echo: false
 #| include: true
 #| tbl-cap: "Transhipment quantities (CMM 2009-06, Para 11, Part 1)."
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
-msg <- no_data_msg("2009-06", context = "transhipment quantities")
+msg <- no_data_msg("2009-06") # , context = "transhipment quantities"
 
 if (is_applicable("2009-06")) {
   trans1_file <- str_c(this_yr_folder, "additional_files/trans1.csv")
@@ -220,7 +326,24 @@ if (is_applicable("2009-06")) {
 ```
 `r msg`
 
-(2) the number of transhipments involving highly migratory fish stocks covered by this measure by fishing vessels that is responsible for reporting against, broken down by:
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- While transshipment is permitted by law in certain circumstances, as a matter of policy, Tokelau does not currently allow transshipments to occur in her EEZ, Territorial Seas or Internal Waters. .\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} did not approve nor authorize any transshipment activity.**\n\n"))
+
+```
+
+(2) the **number of transhipments** involving highly migratory fish stocks covered by this measure by fishing vessels that is responsible for reporting against, broken down by:
 
 a. offloaded and received;
 b. transhipped in port, transhipped at sea in areas of national jurisdiction, and transhipped beyond areas of national jurisdiction;
@@ -233,8 +356,9 @@ e. fishing gear
 #| echo: false
 #| include: true
 #| tbl-cap: "Transhipment quantities (CMM 2009-06, Para 11, Part 2)."
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
-msg <- no_data_msg("2009-06", context = "transhipment quantities")
+msg <- no_data_msg("2009-06") # , context = "transhipment quantities"
 
 if (is_applicable("2009-06")) {
   trans3_file <- str_c(this_yr_folder, "additional_files/trans2.csv")
@@ -250,15 +374,38 @@ if (is_applicable("2009-06")) {
   }
 }
 ```
+
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- While transshipment is permitted by law in certain circumstances, as a matter of policy, Tokelau does not currently allow transshipments to occur in her EEZ, Territorial Seas or Internal Waters. .\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} did not approve nor authorize any transshipment activity.**\n\n"))
+
+```
+
+**AUDIT POINT [RP] The Secretariat confirms receipt by the CCM in AR Pt 1 of the required information in the prescribed format contained at Annex II of CMM 2009-06, and confirms that the report includes the required information for all CCM transshipment events in the Convention Area of all HMFS covered by the Convention, as well as HMFS taken in the Convention Area and transshipped outside the Convention Area, in accordance with paras 10, 11, and 12 of CMM 2009-06.**
 
 #### CMM 2011-03 [Impact of PS fishing on cetaceans], Para 5
 
 CCMs shall include in their Part 1 Annual Report any instances in which cetaceans have been encircled by the purse seine nets of their flagged vessels, reported under paragraph 2(b).
 
+**AUDIT POINT [RP] Secretariat confirms that CCM submitted a report on instances in which cetaceans have been encircled by the purse seine nets of flagged vessels and as reported in ARPt1 under para 2(b) of CMM.**
+
 ```{r}
 #| label: tbl-cmm2011-03
 #| tbl-cap: 'Summary of the number of cetacean encirclements by purse seine nets in reporting year. Source - Tufman 2, report 3222.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a5 <- read_and_clean(this_yr_folder, member, r_code=3222)
 
@@ -267,10 +414,27 @@ if (nrow(a5) > 0 && is_applicable("2011-03")) {
   flextable(a5) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2011-03", context = "cetacean encirclements by purse seine nets")
+  msg <- no_data_msg("2011-03") # , context = "cetacean encirclements by purse seine nets"
 }
 ```
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- {country_name} does not have a domestic commercial fishing industry.\n\n"))
+}
+
+cat(glue::glue("\n\n **No interactions with cetaceans were reported to or by {country_name} in {report_year}.**\n\n"))
+
+```
 
 \newpage
 
@@ -281,12 +445,22 @@ CCMs shall annually provide to the Commission, in Part 1 of their annual reports
 1. the proportion of observed effort with specific mitigation measures used; and
 2. observed and reported species specific seabird bycatch rates and numbers or statistically rigorous estimates of species-specific seabird interaction rates (for longline, interactions per 1,000 hooks) and total numbers
 
+```{r, echo = F}
+a6 <- read_and_clean(this_yr_folder, member, r_code=3317)
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
+if (nrow(a6) == 0 | !is_applicable("2018-03")) {
+  cat(glue::glue("- **{country_name} did not flag nor charter any long-line vessels in {yy}, therefore, the CMM. 2018-03 [Seabirds] para 13 is not applicable to {country_name}.**\n\n"))
+  }
+```
+
 **Table(s) x (by area)**
 
 ```{r}
-
-a6 <- read_and_clean(this_yr_folder, member, r_code=3317)
-
 if (nrow(a6) > 0 && is_applicable("2018-03")) {
   
   a6_1 <- read_and_clean(this_yr_folder, member, r_code=3612)
@@ -362,6 +536,7 @@ if (nrow(a6) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-cmm2018-03x
 #| tbl-cap: 'This table shows total longline effort in vessels and hundred hooks, observed effort in hundred hooks, number of seabird captures, capture rate (# seabirds/1000 hooks), and number of seabird captures by area. Source - Tufman 2, reports: 3612 and 3605.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (exists("a6") && is.data.frame(a6) && nrow(a6) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -371,14 +546,17 @@ if (exists("a6") && is.data.frame(a6) && nrow(a6) > 0 && is_applicable("2018-03"
     colformat_num(j = "year", big.mark='') |> 
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "longline activity in the region")
-}
+  
+  context_text = paste0(country_name, " did not license or charter any long line vessels in ", as.character(yy), " therefore for table(s) x (by area):")
+  msg <- no_data_msg("2018-03", context = context_text)
+  }
 ```
 `r msg`
 
 ```{r}
 #| label: tbl-sb_s30s
 #| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area south of 30S. Source - Tufman 2, reports: 3612 and 3605.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -387,7 +565,7 @@ if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_ap
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area south of 30S")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area south of 30°S")
 }
 ```
 `r msg`
@@ -395,6 +573,7 @@ if (exists("a6.south") && is.data.frame(a6.south) && nrow(a6.south) > 0 && is_ap
 ```{r}
 #| label: tbl-sb_25s_30s
 #| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 30S and 25S. Source - Tufman 2, reports: 3612 and 3605.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -403,7 +582,7 @@ if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_appli
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area between 30S and 25S")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area between 30°S and 25°S")
 }
 ```
 `r msg`
@@ -411,6 +590,7 @@ if (exists("a6.mids") && is.data.frame(a6.mids) && nrow(a6.mids) > 0 && is_appli
 ```{r}
 #| label: tbl-sb_25s_23n
 #| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area between 25S and 23N. Source - Tufman 2, reports: 3612 and 3605.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -419,7 +599,7 @@ if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_appli
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area between 25S and 23N")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area between 25°S and 23°N")
 }
 ```
 `r msg`
@@ -427,6 +607,7 @@ if (exists("a6.midn") && is.data.frame(a6.midn) && nrow(a6.midn) > 0 && is_appli
 ```{r}
 #| label: tbl-sb_23n
 #| tbl-cap: 'Reported longline activity (hundred hooks and number of vessels), observed (hundred) hooks, number of seabird captures, and the capture rate (# seabirds/1000 hooks), by year in the area north of 23N. Source - Tufman 2, reports: 3612 and 3605.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (exists("a6.north") && is.data.frame(a6.north) && nrow(a6.north) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -435,7 +616,7 @@ if (exists("a6.north") && is.data.frame(a6.north) && nrow(a6.north) > 0 && is_ap
     width(j = 7, width = 1.2) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area north of 23N")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area north of 23°N")
 }
 ```
 `r msg`
@@ -445,6 +626,7 @@ if (exists("a6.north") && is.data.frame(a6.north) && nrow(a6.north) > 0 && is_ap
 
 ```{r}
 #| label: tbl-cmm2018-03y
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a7 <- read_and_clean(this_yr_folder, member, r_code=3315)
 
@@ -485,6 +667,7 @@ if (nrow(a7) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-s30s
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area south of 30S. Source - Tufman 2, report: 3315.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -493,7 +676,7 @@ if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area south of 30S")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area south of 30°S")
 }
 ```
 `r msg`
@@ -501,6 +684,7 @@ if (nrow(a7.south) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-30s_25s
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in reporting year, in the area between 30S and 25S. Source - Tufman 2, report: 3315.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -509,7 +693,7 @@ if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area between 30S and 25S")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area between 30°S and 25°S")
 }
 ```
 `r msg`
@@ -517,6 +701,7 @@ if (nrow(a7.mids) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-25s_23n
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area between 25S and south of 23N. Source - Tufman 2, report: 3315.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -525,7 +710,7 @@ if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area between 25S and south of 23N")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area between 25°S and 23°N")
 }
 ```
 `r msg`
@@ -533,6 +718,7 @@ if (nrow(a7.midn) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-n23n
 #| tbl-cap: 'Proportion of mitigation types used by the fleet in the reporting year, in the area north of 23N. Source - Tufman 2, report: 3315.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
   msg <- ' '
@@ -541,7 +727,7 @@ if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
     width(j = c(3,4), width = c(1.2, 1.2)) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2018-03", context = "area north of 23N")
+  msg <- no_data_msg("2018-03", context = "No report to submit of long line activity for area north of 23°N")
 }
 ```
 `r msg`
@@ -551,6 +737,7 @@ if (nrow(a7.north) > 0 && is_applicable("2018-03")) {
 ```{r}
 #| label: tbl-cmm2018-03z
 #| tbl-cap: 'Number of observed seabird captures in longline fisheries in the reporting year, by species and area. Source - Tufman 2, report: 3314.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a8 <- read_and_clean(this_yr_folder, member, r_code=3314)
 
@@ -561,10 +748,33 @@ if (nrow(a8) > 0 && is_applicable("2018-03")) {
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
 } else {
-  msg <- no_data_msg("2018-03", context = "seabird interactions")
+  
+  context_text = paste0(country_name, " did not flag nor charter any long-line vessels in ",
+  as.character(yy), " , therefore, reports for the CMM 2018-03 [Seabirds] Annex 2 is not applicable to ", country_name, "
+  due to above notes.")  
+  msg <- paste0("**", no_data_msg("2018-03", context = context_text), "**")
 }
 ```
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- {country_name} does not have a domestic commercial fishing industry.\n\n"))
+}
+
+cat(glue::glue("\n\n **No interactions with cetaceans were reported to or by {country_name} in {report_year}.**\n\n"))
+
+```
+
+**AUDIT POINT [RP] The Secretariat confirms that CCM submitted a report using the reporting template in Annex 2 of CMM 2018-03 on seabird interactions reported or collected by observers.**
 
 \newpage
 
@@ -577,6 +787,7 @@ In accordance with paragraph 1, CCMs shall provide information to the Commission
 ```{r}
 #| label: tbl-cmm2006-04
 #| tbl-cap: 'There is currently no agreed definition of "fishing for" striped marlin, therefore, this table summarises all longline vessels fishing south of 15S and all associated catch of striped marlin. Source - Tufman 2, report: 2917.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a9 <- read_and_clean(this_yr_folder, member, r_code=2917)
 
@@ -591,19 +802,81 @@ if (nrow(a9) > 0 && is_applicable("2006-04")) {
         weight_kg = 'weight_kg')) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2006-04", context = "vessels fishing for striped marlin")
+  context_text = paste0("No report available – ", country_name, " did not flag nor charter any long-line vessels in ",
+  as.character(yy), " , therefore, therefore the CMM 2006-04 [South West Striped Marlin], Para 4 is not applicable to ", country_name, ".")  
+  msg <- paste0("**", no_data_msg("2006-04", context = context_text), "**")
+  
 }
 ```
 `r msg`
 
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
+
 \newpage
+
+#### CMM 2015-02 [South Pacific Albacore] Para 4
+
+CCMs shall report annually to the Commission the annual catch levels taken by each of their fishing vessels that has taken South Pacific albacore, as well as the number of vessels actively fishing for South Pacific albacore, in the Convention area south of 20°S. Catch by vessel shall be reported according to the following species groups: albacore tuna, bigeye tuna, yellowfin tuna, swordfish, other billfish, and sharks. Initially this information will be provided for the period 2006-2014 and then updated annually. CCMs are encouraged to provide data from periods prior to these dates.
+
+WCPFC20 Outcome: The Commission agreed that the term “actively fishing for” used in CMM 2015-02 is applied to: ‘Vessels fishing south of 20 degrees South with an annual catch of albacore in that area with South Pacific albacore greater than 50% of the catch of potential target tuna (albacore, yellowfin and bigeye, southern bluefin, skipjack) and swordfish.’
+
+```{r}
+#| echo: false
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
+
+context_text = paste0("No report available – ", country_name, " did not charter nor flag any long line vessels in ", as.character(yy), ", and have no vessels fishing south of 20S, hence the CMM 2015-02 [South Pacific Albacore] Para 4 is not applicable to ", country_name, ".")  
+
+msg <- paste0("**", no_data_msg("2019-03", context = context_text), "**")
+```
+`r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
+
+**AUDIT POINT [RP] The Secretariat confirms that the CCM submitted information on annual catch levels by its flagged vessels taking SP Albacore, as well as the number of CCM flagged vessels actively fishing for SP Albacore south of 20S, with catch levels reported by species groups.**
+
+\newpage
+
 #### CMM 2019-03 [North Pacific Albacore], Para 3
 
 All CCMs shall report annually to the WCPFC Commission all catches of albacore north of the equator and all fishing effort north of the equator in fisheries directed at albacore. The reports for both catch and fishing effort shall be made by gear type. Catches shall be reported in terms of weight. Fishing effort shall be reported in terms of the most relevant measures for a given gear type, including at a minimum for all gear types, the number of vessel-days fished using the template provided in Annex 1.
 
+*Note:  WCPFC10 clarified that this reporting responsibility lies with the flag State*
+
 ```{r}
 #| label: tbl-cmm2019-03
 #| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific albacore catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific. Source - Tufman 2, report: 3602.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a11 <- read_and_clean(this_yr_folder, member, r_code=3602)
 
@@ -618,10 +891,32 @@ if (nrow(a11) > 0 && is_applicable("2019-03")) {
         weightcaught_mt = 'wt')) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2019-03", context = "fishing effort or catch of albacore north of the equator")
+
+   context_text = paste0("No report available – ", country_name, " did not flag or charter vessels targeting North Pacific Albacore north of the equator nor were there any accidental by-catches by ", country_name, "’s flag vessels in ", as.character(yy), ". Therefore, CMM2019-03 [North Pacific Albacore], Para 3 is not applicable to ", country_name, ".")  
+  msg <- paste0("**", no_data_msg("2019-03", context = context_text), "**")
 }
 ```
 `r msg`
+
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
+
+**AUDIT POINT [RP] The Secretariat confirms that CCM submitted a report of information on catch and effort by CCM flagged vessels engaged in directed fishing for NP albacore north of the equator, by gear type and days fished (effort) and by weight (catch), using the template at Annex 1 of CMM 2019-03.**
 
 \newpage
 #### CMM 2023-03 [North Pacific Swordfish], Para 4
@@ -637,6 +932,7 @@ All CCMs shall report annually to the WCPFC Commission all catches of North Paci
 ```{r}
 #| label: tbl-cmm2023-03
 #| tbl-cap: 'Summary of vessels fishing in the North Pacific and the number and metric tonnes of North Pacific swordfish catches reported in the past 5 years. The number of vessels reported in this table represents all longline vessels fishing in the North Pacific. Source - Tufman 2, report: 3513.'
+#| eval: !expr "!tolower(member) %in% c('tk', 'nu')"
 
 a12 <- read_and_clean(this_yr_folder, member, r_code=3513)
 
@@ -645,7 +941,232 @@ if (nrow(a12) > 0 && is_applicable("2023-03")) {
   flextable(a12) |>
     fontsize(size = 8, part = "all")
 } else {
-  msg <- no_data_msg("2023-03", context = "fishing effort or catch of North Pacific swordfish")
+  
+  context_text = paste0("No report available – ", country_name, "’s vessel did not fish in the North Pacific area, therefore, the CMM2023-03 [North Pacific Swordfish], para 4 is not applicable to ", country_name, ".")
+  msg <- paste0("**", no_data_msg("2023-03", context = context_text), "**")
 }
+
 ```
 `r msg`
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr "tolower(member) %in% c('tk', 'nu')"
+
+cat(glue::glue("- {country_name} is not a flagged state.\n\n"))
+cat(glue::glue("- {country_name} does not authorize vessels to fish on the High Seas.\n\n"))
+cat(glue::glue("- {country_name} does not charter Foreign Fishing Vessels.\n\n"))
+
+if (member %in% c("tk")){
+    cat(glue::glue("- The {country_name} EEZ is geographically situated between approximately 6 and 11 degrees South of latitude and between 167 and 176 degrees West of longitude, and is therefore outside of the area of application.\n\n"))
+}
+
+cat(glue::glue("\n\n **{country_name} does not have a domestic commercial fishing industry.**\n\n"))
+
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+if (tolower(member) == "vu") {
+  cat("#### CCMM 2013-08 - Conservation and Management Measure for Silky Sharks\n\n")
+  
+  cat("1. Commission Members, Cooperating Non-Members and Participating Territories (CCMs) shall prohibit vessels flying their flag and vessels under charter arrangements to the CCM from retaining on board, transshipping, storing on a fishing vessel, or landing any silky shark caught in the Convention Area, in whole or in part, in the fisheries covered by the Convention.\n\n")
+  
+  cat("2. CCMs shall require all vessels flying their flag and vessels under charter arrangements to the CCM to release any silky shark that is caught in the Convention Area as soon as possible after the shark is brought alongside the vessel, and to do so in a manner that results in as little harm to the shark as possible.")
+  
+}
+```
+
+```{r}
+#| label: tbl-cmm2013-08
+#| tbl-cap: 'Source - Tufman 2, report: 2955.'
+
+data_2955 <- read_and_clean(this_yr_folder, member, r_code=2955)
+
+if (tolower(member) == "vu" && nrow(data_2955) > 0){
+  data_2955 <- data_2955 |>
+    mutate(across(where(is.character), ~tolower(.))) |>
+    filter(flag == tolower(member)) |>
+    select(-flag, -number_est, -weight_est, -lat, -lon)
+}
+
+if (tolower(member) == "vu" && nrow(data_2955) > 0 && is_applicable("2013-08")) {
+  msg <- ' '
+  flextable(data_2955) |>
+    fontsize(size = 8, part = "all")
+} else {
+  
+  context_text = paste0("No data reported in ", as.character(yy), "for conservation and management measure for silky sharks.")
+  msg <- no_data_msg("2013-08", context = context_text)
+}
+```
+
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+cat(msg)
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+if (tolower(member) == "vu") {
+  cat("#### CMM 2012-04 - Conservation and Management Measure for protection of whale sharks from purse seine fishing operations\n\n")
+  
+  cat("1. This measure shall apply to the high seas and exclusive economic zones of the Convention Area. CCMs shall prohibit their flagged vessels from setting a purse seine on a school of tuna associated with a whale shark if the animal is sighted prior to the commencement of the set.\n\n")
+  
+  cat("2. CCMs shall require that, in the event that a whale shark is not deliberately encircled in the purse seine net, the master of the vessel shall:
+  
+(a) ensure that all reasonable steps are taken to ensure its safe release.; and
+
+(b) report the incident to the relevant authority of the flag State, including the number of individuals, details of how and why the encirclement happened, where it occurred, steps taken to ensure safe release, and an assessment of the life status of the whale shark on release (including whether the animal was released alive but subsequently died)"
+)
+  
+}
+```
+
+
+```{r}
+#| label: tbl-cmm2012-04
+#| tbl-cap: 'Source - Tufman 2, report: 2942.'
+
+data_2942 <- read_and_clean(this_yr_folder, member, r_code=2942)
+
+if (tolower(member) == "vu" && nrow(data_2942) > 0){
+  data_2942 <- data_2942 |>
+    mutate(across(where(is.character), ~tolower(.))) |>
+    filter(flag == tolower(member)) |>
+    mutate(alive = coalesce(alive_healthy, alive_injured, alive_unknown)) |>
+    rename(number = individuals) |>
+    select(-flag, -lat, -lon, -activity_code, -species, -vesselname, -n_estimate,
+           -alive_healthy, -alive_injured, -alive_unknown, -fate, -type)
+  
+  # filter for current year
+  data_2942 <- data_2942 |>
+    filter(as.numeric(str_sub(date, -4, -1)) == yy)
+}
+
+if (tolower(member) == "vu" && nrow(data_2942) > 0 && is_applicable("2012-04")) {
+  msg <- ' '
+  flextable(data_2942) |>
+    fontsize(size = 8, part = "all")
+} else {
+    context_text = paste0("No data reported in ", as.character(yy), "for conservation and management measure for protection of whale sharks from purse seine fishing operations.")
+  msg <- no_data_msg("2012-04", context = context_text)
+}
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+cat(msg)
+
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+if (tolower(member) == "vu") {
+  cat("#### CMM 2011-04 - Conservation and Management Measure for Oceanic Whitetip Sharks\n\n")
+  
+  cat("1. Members, Cooperating Non-Members and Participating Territories (CCMs) shall prohibit vessels flying their flag and vessels under charter arrangements to the CCM from retaining on board, transshipping, storing on a fishing vessel, or landing any oceanic whitetip shark, in whole or in part, in the fisheries covered by the Convention.\n\n")
+  
+  cat("2. CCMs shall require all vessels flying their flag and vessels under charter arrangements to the CCM to release any oceanic whitetip shark that is caught as soon as possible after the shark is brought alongside the vessel, and to do so in a manner that results in as little harm to the shark as possible."
+)
+  
+}
+```
+
+```{r}
+#| label: tbl-cmm2011-04
+#| tbl-cap: 'Source - Tufman 2, report: 2956.'
+
+data_2956 <- read_and_clean(this_yr_folder, member, r_code=2956)
+
+if (tolower(member) == "vu" && nrow(data_2956) > 0){
+  data_2956 <- data_2956 |>
+    mutate(across(where(is.character), ~tolower(.))) |>
+    filter(flag == tolower(member)) |>
+    mutate(alive = coalesce(alive_healthy, alive_injured, alive_unknown)) |>
+    rename(number = individuals) |>
+    select(-flag, -lat, -lon, -activity_code, -species, -vesselname, -n_estimate,
+           -alive_healthy, -alive_injured, -alive_unknown)
+}
+
+if (tolower(member) == "vu" && nrow(data_2956) > 0 && is_applicable("2011-04")) {
+  msg <- ' '
+  flextable(data_2956) |>
+    fontsize(size = 8, part = "all")
+} else {
+  context_text = paste0("No data reported in ", as.character(yy), "for conservation and management measure for oceanic whitetip sharks.")
+  msg <- no_data_msg("2011-04", context = context_text)
+}
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+cat(msg)
+
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+if (tolower(member) == "vu") {
+  cat("#### CMM 2010-07 - Conservation Management Measure for Sharks\n\n")
+  
+  cat("Each CCM shall include key shark species, as identified by the Scientific Committee, in
+their annual reporting to the Commission of annual catch and fishing effort statistics by gear type, including available historical data, in accordance with the WCPF Convention and agreed
+reporting procedures. CCMs shall also report annual retained and discarded catches in Part 2 of their annual report. CCMs shall as appropriate, support research and development of strategies for the avoidance of unwanted shark captures (e.g. chemical, magnetic and rare earth metal shark deterrents).."
+)
+  
+}
+```
+
+```{r}
+#| label: tbl-cmm2010-07
+#| tbl-cap: 'Source - Tufman 2, report: 2939.'
+
+data_2939 <- read_and_clean(this_yr_folder, member, r_code=2939)
+
+if (tolower(member) == "vu" && nrow(data_2939) > 0){
+  data_2939 <- data_2939 |>
+    mutate(across(where(is.character), ~tolower(.))) |>
+    select(-aws)
+}
+
+if (tolower(member) == "vu" && nrow(data_2939) > 0 && is_applicable("2010-07")) {
+  msg <- ' '
+  flextable(data_2939) |>
+    fontsize(size = 8, part = "all")
+} else {
+  context_text = paste0("No data reported in ", as.character(yy), "for conservation management measure for sharks.")
+  msg <- no_data_msg("2010-07", context = "conservation management measure for sharks")
+}
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(member) == "vu"
+
+cat(msg)
+
+```

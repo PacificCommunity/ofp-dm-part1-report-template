@@ -298,8 +298,45 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 ## Fishing Licenses
 
-**NOTE:** Here, members should report the Number of Licenses issued for fishing in their EEZ by vessel gear type in the last 5 years. *This information should be sourced from IFIMS.*
+```{r}
+#| label: tbl-licenses
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(country_cd) == "nr"
+#| tbl-cap: !expr glue::glue("Distant Water Fishing Nations {country_name} licensed vessels {yr_range} by Size Category")
 
+lic <- data.frame(
+  Year        = 2021:2025,
+  Nos         = c(148, 134, 134, 129, 109),
+  Type        = "PS",
+  `0-500`     = c(NA, 1, NA, NA, NA),
+  `501-1000`  = c(7, 3, 4, 3, 2),
+  `1001-1500` = c(90, 78, 72, 70, 48),
+  `1501+`     = c(51, 52, 58, 56, 59),
+  TOTAL       = c(148, 134, 134, 129, 109),
+  check.names = FALSE
+)
+
+flextable(lic) |>
+  set_header_labels(Nos = "No. Vessels") |>
+  colformat_num(j = "Year", big.mark = "") |>
+  colformat_num(j = c("0-500", "501-1000", "1001-1500", "1501+", "TOTAL", "Nos"),
+                na_str = "-") |>
+  width(j = "Nos", width = 1.2) |>
+  width(j = "Type", width = 0.8) |>
+  autofit() |>
+  theme_vanilla() |>
+  font(fontname = "Times New Roman", part = "all") |>
+  fontsize(size = 9, part = "all")
+```
+
+```{r}
+#| echo: false
+#| results: asis
+#| eval: !expr tolower(country_cd) != "nr"
+
+knitr::asis_output("**NOTE:** Here, members should report the Number of Licenses issued for fishing in their EEZ by vessel gear type in the last 5 years. *This information should be sourced from IFIMS.*")
+```
 
 ## Catch and Effort Trends
 
