@@ -16,11 +16,6 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
-    include-in-header:
-      text: |
-        \usepackage{float}
-        \floatplacement{figure}{H}
-        \floatplacement{table}{H}
 knitr:
   opts_chunk:
     out-width: "100%"
@@ -28,7 +23,7 @@ knitr:
 page-layout: full
 edit: source
 params:
-  country_code: 'WS'          
+  country_code: 'NR'          
   year: 2025                  
   data_provided: 'Yes'        
   aceman: TRUE
@@ -221,15 +216,44 @@ sp_colours <- setNames(object = c("seagreen3","red3","black","cyan1","steelblue"
 
 # Abstract 
 
-TO BE INCLUDED
+This report provides a comprehensive overview of Papua New Guinea’s (PNG) tuna fisheries for 2025, detailing trends in catch, effort, and management within its Exclusive Economic Zone (EEZ) and the wider Western and Central Pacific Fisheries Commission (WCPFC) Convention Area. The purse-seine fishery remains the dominant sector, contributing over 99% of total production. In 2025, the national purse-seine fleet recorded a total catch of 329,075 metric tonnes (mt), a 4.09% increase from 2024. This growth was driven by favourable La Niña conditions, with skipjack tuna (215,043 mt) and yellowfin tuna (112,652 mt) as the primary species.
+
+In contrast, the domestic longline fishery experienced a significant contraction, with no PNG-flagged vessels operational in 2025 following the reflagging of the chartered fleet in 2024. However, foreign bilateral longline operations continued under regulated access agreements, maintaining an average annual catch of approximately 4,078 mt over the last five years. The report also highlights the closure of the shark longline and handline fisheries, reflecting a strategic shift toward sustainable tuna management and the prohibition of certain shark species landings.
+
+Fisheries management in PNG is governed by the National Tuna Fishery Management and Development Plan (NTFMDP), revised in 2025 to align with regional Conservation and Management Measures (CMMs) and the Vessel Day Scheme (VDS). Beyond biological sustainability, the PNG government is prioritizing socio-economic optimization through the East New Britain Initiative (ENBi), focusing on downstream processing, employment, and increased export earnings. While tuna exports peaked in 2024 at 280,000 mt ($600 million), 2025 figures indicate a stabilization of the market, emphasizing the need for continued monitoring of both production volumes and global market values.
 
 # Background
 
-TO BE INCLUDED
+Tuna resources within Papua New Guinea’s (PNG) Exclusive Economic Zone (EEZ) are exploited predominantly through two industrial fishing methods: purse seine and longline. The purse-seine fishery is the dominant harvesting sector, consistently contributing approximately 99% of total national tuna production by volume.
+
+Purse-seine operations commenced in PNG waters in the early 1980s and have since expanded substantially in both spatial extent and fishing effort. This expansion reflects increased participation by domestic fleets and foreign bilateral arrangements, coupled with enhanced fishing efficiency associated with Fish Aggregating Device (FAD) use and technological advancements. Peak aggregate purse-seine catches (inclusive of domestic and FB fleets) were recorded in 2010, 2022, and 2024, each exceeding 600,000 metric tonnes, indicating periods of elevated stock availability and/or fishing effort concentration within PNG waters.
+
+In contrast, the longline fishery has a longer historical presence, initially dominated by distant water fishing nation (DWFN) fleets operating under access agreements. A significant policy shift in 1996 resulted in the closure of the longline fishery to foreign participation, restricting operations exclusively to nationally flagged or domestically based entities. This policy was intended to promote domestic industry development and value retention within PNG.
+
+In 2015, the longline sector was partially liberalized under a controlled re-entry framework through the implementation of a trial albacore fishery. This initiative aimed to evaluate catch-per-unit-effort (CPUE) performance and economic viability of albacore targeting within PNG waters. Under this arrangement, five foreign-flagged ultra-low temperature (ULT) longline vessels were authorized to operate under domestic charter agreements, marking a cautious reintroduction of foreign participation into the longline fishery.
+Subsequent expansion occurred in 2016, with 20 foreign longline vessels operating under bilateral access agreements. This number increased progressively, reaching 61 licensed foreign longline vessels by 2023. In parallel, PNG’s domestically based fleet comprised 10 chartered longline vessels actively operating within the EEZ during the same period. However, a restructuring of vessel registration status in 2024 resulted in the reflagging of these chartered vessels to foreign registries, leaving only a single PNG-flagged longline vessel operational in that year. Subsequently, in 2025 saw no national tuna longline flagged vessels fishing in PNG EEZ. 
+
+PNG’s tuna fisheries governance framework reflects a deliberate policy balance between domestic industry development and the strategic allocation of access to DWFNs. This is operationalized through a licensing regime that incentivizes onshore value addition, including mandatory catch offloading for in-country processing. Incentive mechanisms include preferential licensing fees, eligibility for reflagging under PNG registry, authorized access to Archipelagic Waters (AW), and participation under the Federated States of Micronesia Arrangement (FSMA), enabling qualifying vessels to operate within other Parties to the Nauru Agreement (PNA) jurisdictions.
+
+The fishery is managed under the National Tuna Fishery Management and Development Plan (NTFMDP), which provides the overarching legal and policy framework governing all tuna fishing activities within PNG’s jurisdiction. The NTFMDP incorporates a comprehensive suite of management measures, including effort controls (e.g., Vessel Days Scheme alignment), catch monitoring, gear restrictions, FAD management regulations, and monitoring, control, and surveillance (MCS) mechanisms aimed at mitigating Illegal, Unreported, and Unregulated (IUU) fishing.
+
+Management of the purse-seine fishery is further reinforced through integration with regional and sub-regional frameworks, including Conservation and Management Measures (CMMs) under the Western and Central Pacific Fisheries Commission (WCPFC), PNA Implementing Arrangements, and the Forum Fisheries Agency (FFA) Harmonized Minimum Terms and Conditions (HMTCs). These instruments are operationalized domestically through the NTFMDP, ensuring coherence between national policy objectives and PNG’s regional and international fisheries obligations. The NTFMDP was most recently revised in 2025 to reflect evolving management priorities, regional commitments, and industry development objectives.
 
 # Flag State Reporting
 
-TO BE INCLUDED
+This section reports activities by the national fleet inside the waters of the Western and Central Pacific Fisheries Commission Convention Area (WCPFC CA) including PNG’s Exclusive Economic Zone (EEZ). The national fleet comprises of longline and purse seine vessels under PNG flag and those foreign flag vessels under domestic charter arrangements.
+
+## National Fleet: Tuna Longline
+
+PNG did not have any domestic tuna longline vessels fishing in its EEZ nor the wider the WCPFC CA in 2025. This reflected a sharp decline in domestic vessel numbers, from 10 vessels in 2023 to one vessel in 2024, and ultimately no longline fishing operations took place for this category in 2025.
+
+## National Fleet: Purse Seine
+
+Catches from the Papua New Guinea (PNG) national purse-seine fleet are overwhelmingly dominated by skipjack tuna (Katsuwonus pelamis), which consistently constitutes the largest proportion of total landings equating to approximately 65% of total tuna catches caught. This is followed by yellowfin (Thunnus albacares) and, to a lesser extent, bigeye tuna (Thunnus obesus). Although skipjack remains the principal target species, both yellowfin and bigeye represent important secondary species, contributing substantially to the overall economic value and species composition of the fishery.
+
+In 2025, total catches from the PNG domestic purse-seine fleet increased by 4.09% relative to the 2024 fishing season, reaching a cumulative production of 329,075 metric tonnes (mt). This incremental growth reflects a continuation of the positive catch trajectory observed in recent years and is largely attributable to favourable oceanographic conditions associated with a La Niña phase in the Western Pacific Ocean. Such conditions are known to enhance skipjack availability and aggregation within PNG waters.
+
+Utilizing an overall logsheet effort of 3,775 fish days, the 2025 logsheet data indicates that skipjack accounted for 215,043 mt, followed by yellowfin at 112,652 mt, and bigeye at 1,298 mt (Table 1). These figures reaffirm the strong dominance of skipjack within the purse-seine fishery, while also highlighting the sustained contribution of yellowfin and the relatively minor, yet commercially relevant, presence of bigeye tuna.
 
 ```{r ps-prep}
 
@@ -307,48 +331,8 @@ if (nrow(data_3605_ps) > 0) data_3605_ps_tbl <- shape_catch_tbl(data_3605_ps)
 if (nrow(data_3605_ll) > 0) data_3605_ll_tbl <- shape_catch_tbl(data_3605_ll)
 if (nrow(data_3605_pl) > 0) data_3605_pl_tbl <- shape_catch_tbl(data_3605_pl)
 
-# effort LL - number of hooks per year for the national fleet
+# effort - number of hooks per year for the national fleet
 data_3597 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3597) 
-
-# effort PS - number of hooks per year for the national fleet
-data_3590 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3590) 
-
-# ACE other areas
-data_3609 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3609) 
-data_3083  <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3083) 
-data_3616 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3616) 
-
-
-lookup <- c(year = "year", sp_code = "sp_code", 
-            `South Pacific Ocean` = "spac", 
-            `North Pacific Ocean` = "npac", 
-            `WCPFC Convention Area (S of Equator)` = "log_sx_raised", 
-            `WCPFC Convention Area (N of Equator)` = "log_nx_raised",
-            `WCPO` = "log_wcpo_raised"
-            )
-
-if (nrow(data_3609) > 0) data_3609 <- data_3609 |>
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  select(any_of(lookup))
-
-if (nrow(data_3083) > 0) data_3083  <- data_3083 |>
-  mutate(across(where(is.character), ~tolower(.))) |>  # only needed if catch itself can be NA
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  mutate(year = report_year) |>
-  pivot_wider(names_from = area, values_from = mt) |>
-  select(any_of(lookup))
-
-if (nrow(data_3616) > 0) data_3616 <- data_3616 |>
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  select(any_of(lookup))
-
-if("vu" %in% c(country_cd)){
-  data_other_areas <- left_join(data_3609, data_3083) |>
-  left_join(data_3616)
-}else{
-  data_other_areas <- data.frame()
-}
-
 
 ```
 
@@ -384,9 +368,7 @@ render_gear_tbl_section3 <- function(data, data_tbl, gear_name, gear_code, speci
 # Function to render gear-specific figures in section 3 with header and plot
 render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
                                       species_labels, intro_text = NULL,
-                                      effort_df_ll = data_3597,
-                                      effort_df_ps = data_3590,
-                                      country_cd = tolower(country_cd)) {
+                                      effort_df = data_3597) {
 
   # Check if data exists
   if (nrow(data) == 0) {
@@ -432,7 +414,7 @@ render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
   if (gear_code == "l") {
     
     # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
-     effort_annual <- effort_df_ll |>
+     effort_annual <- effort_df |>
       filter(flag_id == country_cd) |>
       filter(year %in% plot_data$year) |>          # align with plotted years
       group_by(year) |>
@@ -468,58 +450,13 @@ render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
       p <- p + scale_y_continuous(labels = comma)
     }
 
-  } 
-  
-  else if (gear_code == "s"){
-    
-     # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
-     effort_annual <- effort_df_ps |>
-      filter(flag == country_cd) |>
-      filter(year %in% plot_data$year) |>          # align with plotted years
-      group_by(year) |>
-      summarise(effort = sum(trips, na.rm = TRUE), .groups = "drop")
-
-      max_catch  <- max(tapply(plot_data$catch, plot_data$year, sum))
-      max_effort <- max(effort_annual$effort, 0)
-      
-      if (nrow(effort_annual) > 0 && max_effort > 0 && max_catch > 0) {
-
-        scale_factor <- max_catch / max_effort
-  
-        p <- p +
-          geom_line(data = effort_annual,
-                    aes(x = year, y = effort * scale_factor),
-                    inherit.aes = FALSE, colour = "darkorange",
-                    linewidth = 1.2, linetype = "dashed") +
-          geom_point(data = effort_annual,
-                     aes(x = year, y = effort * scale_factor),
-                     inherit.aes = FALSE, colour = "darkorange", size = 3) +
-          scale_y_continuous(
-            labels = comma,
-            sec.axis = sec_axis(~ . / scale_factor,
-                                name = "Effort (trips)", labels = comma)
-          ) +
-          theme(
-            axis.title.y.right = element_text(colour = "darkorange"),
-            axis.text.y.right  = element_text(colour = "darkorange")
-          )
-    } else {
-      message("No usable effort data for gear '", gear_code,
-              "' — rendering catch only.")
-      p <- p + scale_y_continuous(labels = comma)
-    }
-    
-    
-  }
-  
-  else {
+  } else {
     p <- p + scale_y_continuous(labels = comma)
   }
 
   print(p)
   invisible(NULL)
 }
-
 
 # Function to render vessel table for a specific gear
 render_vessel_table <- function(ves_data, gear_name, size_categories_fn, intro_text = NULL) {
@@ -732,32 +669,6 @@ render_gear_tbl_section3(
 ```{r}
 #| echo: false
 #| results: 'asis'
-#| label: tbl-tblotareas
-#| tbl-cap: !expr if(nrow(data_other_areas) > 0) glue::glue("Annual raised catch estimates for the {country_name}  longline vessels, for tuna and billfish by Broad Ocean areas over {report_year}. Source - Tufman 2, report 3609, 3083 and 3616.") else ""
-
-if (nrow(data_other_areas) > 0){
-  
-  
-  flextable(data_other_areas |>
-              rename(Year = year, `Species code` = sp_code) |>
-              mutate(Year = as.character(Year)) |>
-              mutate(across(where(is.numeric), ~replace_na(., 0))) |>  # only needed if catch itself can be NA
-              mutate(across(where(is.numeric), ~round(., 2)))  # only needed if catch itself can be NA
-
-            ) |>
-    set_table_properties(width = 0.7, align = "center") |> 
-    width(j = 1, width = 2) |>
-    colformat_num(big.mark = ",") |> 
-    align(align = "center", part = "all") |> 
-    padding(padding.left = 5, padding.right = 5, part = "all")
-}
-
-```
-
-
-```{r}
-#| echo: false
-#| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1l
 #| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3597 (hooks).") else ""
@@ -771,8 +682,7 @@ render_gear_figs_section3(
   gear_code = "l",
   species_list = ll_species,
   species_labels = ll_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -783,7 +693,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1s
-#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3590 (trips).") else ""
+#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -796,8 +706,7 @@ render_gear_figs_section3(
   gear_code = "s",
   species_list = ps_species,
   species_labels = ps_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -819,8 +728,7 @@ render_gear_figs_section3(
   gear_code = "pl",
   species_list = pl_species,
   species_labels = pl_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -1242,7 +1150,7 @@ if ("artisanal" %in% sections) {
 
   if (has_ika || has_tails) {
     cat("\\newpage\n\n# Coastal State Reporting\n\n")
-    cat(knitr::knit_child("template_artisanal.qmd", quiet = TRUE))
+    cat(knitr::knit_child("template_artisanal_pg.qmd", quiet = TRUE))
     cat("\n\n\\clearpage\n\n")
   } else {
     message("No artisanal data for ", country_cd, " - skipping coastal section")
@@ -1252,11 +1160,25 @@ if ("artisanal" %in% sections) {
 
 # Socio-economic factors
 
-# Onshore Developments
+Papua New Guinea is focused on building its domestic tuna industry to an extent where the socio-economic benefits generated from the domestic tuna industry can offset those that are currently obtained from the bilateral access arrangements. 
+Some of the government’s focus areas include increase downstream processing of tuna products and value adding, increase employment, increase export earnings, improve enabling infrastructure and improve industry operating environment. The government is also looking at expanding and enhancing International Trade and market access for fishery products as well as supporting, maintaining and encouraging genuine Foreign Direct Investment, and optimization of national participation in the tuna fishery and processing sector. 
+The government of PNG is now working in collaboration with members within the Forum Fisheries Agency (FFA) under the East New Britain Initiative (ENBi) in implementing FFA Leaders directives to optimize socio-economic returns from their shared tuna resources.
 
-# Future Prospects of Fishery
+# Exports
 
-# Research and Statistics
+The quantity of processed tuna products exported from the PNG domestic industry has been steady between 100,000 mt and 200 000 mt from 2020 onward (@fig-revenue). Peak export quantity was recorded in 2024, reaching slightly above 250,000 tonnes with corresponding export revenues of approximately 690 million USD. The export quantities and values have been largely driven by market demands and availability of suitable raw materials, specifically, market preferred tuna sizes for processing. This increase in production was attributed to high catches within PNG’s national waters, primarily due to the La Nina southern oscillation.
+
+![This chart illustrates the relationship between the total volume of tuna exports (measured in tonnes, represented by blue bars) and the corresponding export value (measured in millions of USD, represented by the red line) over a six-year period. After a period of relative stability between 2021 and 2023, both quantity and revenue saw a significant surge in 2024, peaking at approximately 280,000 tonnes and nearly $600 million, respectively. Projections for 2025 indicate a return to levels more consistent with the 2020 baseline, suggesting a stabilization of the market following the 2024 peak.](data/report_2025_pg/additional_files/coastal_revenue.png){#fig-revenue}
+
+Export quantity and value from 2020 to 2025 show substantial variability when expressed in percentage terms (@fig-export-value). Export volumes declined by approximately 19% from 2020 to 2021 and a further 5% from 2021 to 2022. This downward trend reversed in 2023, with a moderate increase of about 11%, followed by a sharp surge of roughly 58% in 2024, marking the most significant expansion in the series. However, this growth was not sustained, as export quantity fell again by approximately 25% in 2025.
+Export value exhibited a similar but less pronounced pattern. There was an initial decrease of about 9% between 2020 and 2021, followed by a slight increase of around 1% in 2022 and a further 2–3% rise in 2023. A substantial jump of approximately 41% occurred in 2024, aligning with the surge in export volume. In 2025, export value declined by roughly 29%, reflecting the contraction in export quantity and indicating sensitivity of total revenue to production changes.
+
+![Trends in export value per tonne (USD/t) from 2020 to 2025, showing an increase in unit value between 2020 and 2022, followed by a steady decline through 2025. The peak in 2022 indicates the highest market value per unit, while the subsequent decrease suggests weakening prices or a shift toward lower-value exports despite fluctuations in export volume.](data/report_2025_pg/additional_files/coastal_trends_export.png){#fig-export-value}
+
+
+Analysis of value per tonne reveals contrasting dynamics. Unit values increased consistently from 2020 to 2022, with gains of approximately 12% and 7% in successive years, indicating improving market prices or higher-value exports. This trend reversed in 2023 with a decline of about 8%, followed by further decreases of roughly 11% in 2024 and 6% in 2025. The decline in unit value during periods of increased production suggests potential market saturation or a shift toward lower-value products.
+
+Overall, the percentage trends highlight a non-linear relationship between export quantity and value. While both indicators experienced strong growth in 2024, declining unit values suggest diminishing returns at higher production levels. These patterns point to the influence of market demand, supply dynamics, and external economic factors, emphasizing the need to monitor both volume and price indicators when assessing export performance and informing fisheries management strategies.
 
 <!-- # Addendum -->
 

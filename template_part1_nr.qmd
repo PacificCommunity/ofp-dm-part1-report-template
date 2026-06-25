@@ -16,6 +16,11 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
 knitr:
   opts_chunk:
     out-width: "100%"

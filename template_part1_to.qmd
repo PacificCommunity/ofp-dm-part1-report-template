@@ -16,11 +16,6 @@ format:
       - bottom=1in
       - left=1in
       - right=1in
-    include-in-header:
-      text: |
-        \usepackage{float}
-        \floatplacement{figure}{H}
-        \floatplacement{table}{H}
 knitr:
   opts_chunk:
     out-width: "100%"
@@ -28,7 +23,7 @@ knitr:
 page-layout: full
 edit: source
 params:
-  country_code: 'WS'          
+  country_code: 'NR'          
   year: 2025                  
   data_provided: 'Yes'        
   aceman: TRUE
@@ -225,7 +220,36 @@ TO BE INCLUDED
 
 # Background
 
-TO BE INCLUDED
+Commercial fisheries for high migratory species, particularly tuna, began in Tonga in the early 1970s with the acquisition of second-hand longliners and a skipjack vessel from Japan. These vessels were used to target tuna species in the waters surrounding Tonga. 
+
+In the early 1980s, the Tongan government investigated the commercial viability of tuna longlining. As part of this study, a new longliner called F.V. Lofa was donated by the Government of Japan to assess the potential of longlining as a fishing method in Tonga. 
+
+In 1991, the Tongan government established a semi-government company called Sea Star Fishing Co Ltd to operate the F.V. Lofa commercially, marking a significant step in the development of Tonga's commercial fishing industry.
+
+During the early 1990s, the US Aid/Tonga Fisheries project conducted tests to evaluate the viability of medium-sized vessels for longlining, focusing on targeting fresh fish for the sashimi market, aiming to explore new opportunities and markets for Tonga's fishing industry. 
+
+Following these developments, domestic fleets in Tonga that targeted fresh tuna experienced a notable increase in the late 1990s which continued, reaching its peak in the early 2000s. The expansion of the domestic fleet and the focus on capturing fresh tuna reflected the growing demand for high-quality seafood, particularly in markets that valued sashimi-grade fish. 
+
+Tonga, as a small island developing state, is an active member of the Western and Central Pacific Fisheries Commission (WCPFC) and has been working on enhancing its Tuna fishery capacities, emphasizing strengthening its capabilities in developing and domesticating its Tuna fishery. 
+
+Currently, the Tuna fishery in Tonga primarily involves longline fishing vessels specifically targeting tuna and tuna-like species, operating within Tonga's Exclusive Economic Zone (EEZ) extending up to 200 nautical miles from the country's coastline. 
+
+Tonga also has a small artisanal fleet with small fishing vessels and game fishing vessels using trolling fishing methods, primarily engaged in recreational or small-scale commercial fishing activities. While most fishing activity occurs within Tonga's EEZ, foreign-flagged vessels can access the high seas adjacent to Tonga's waters with a permit from their respective flag states. Tonga had only one flagged vessel license for high seas fishing in 2024. 
+
+Tonga's Exclusive Economic Zone (EEZ) covers an area of approximately 700,000 square kilometers. The total catches from Tonga’s EEZ have shown a similar trend to fishing efforts. In 2023, the total catches by Tonga's national fleets from the EEZ amounted to 360 metric tons, which dropped to 309 metric tons in 2024, attributed to factors including, engine technical problems during fishing trips,  very low catch rates due to the impact of climate change and the decrease in number of fishing vessels so as the number of fishing days.
+
+Tonga also has a significant game-fishing sector, separate from commercial longline fleets, with minor interactions between the two. 
+
+In 2024, the Ministry, with assistance from the Japanese Trust Fund, maintained the TAILS data collection to cover all of Tonga’s Island groups, achieving 100% coverage. Including Tuna artisanal data in Tonga’s Annual Catch Estimates enhances the ability to monitor and regulate artisanal tuna fisheries and also contributes to regional and global efforts to conserve marine resources. 
+
+As of 2024, there were three active certified debriefers and fourteen active Observers involved in the Observer Programme in Tonga. The observer coverage onboard foreign vessels was 84%, indicating the majority had observers present, while domestic vessel coverage was 16% for 2024. 
+Tonga was actively fulfilling its obligations towards the Commission's Conservation and Management Measures (CMM) and Resolutions by monitoring, implementing these measures, and reporting back to the Commission.
+
+The Tonga Ministry of Fisheries is closely working with the Oceanic Fisheries Program (OFP) of SPC to assess the status of tuna stock in the Tonga EEZ in relation to the entire stock in the Western and Central Pacific Ocean (WCPO). This assessment is crucial for effective fisheries management.
+
+Tonga’s tuna fishing industry is facing significant challenges as global disruptions and the effects of climate change continue to escalate.  During 2024, a combination of technical failures, low catch rates and a drop in the number of active fishing vessels led to a sharp decline in the national fleets overall catch.  The situation highlights the growing vulnerability of the country’s fisheries sector to external pressures.
+
+However, Tonga's resilience is evident in its unwavering commitment to the development and promotion of sustainable fisheries. Despite the setbacks, Tonga continues to prioritize informed management decisions and effective measures to ensure the long-term viability of its fisheries resources. By doing so, Tonga not only safeguards the livelihoods of its people but also contributes to global efforts towards sustainable development and conservation of marine resources, ensuring that its fisheries remain a cornerstone of its economy and culture for generations to come.
 
 # Flag State Reporting
 
@@ -307,48 +331,8 @@ if (nrow(data_3605_ps) > 0) data_3605_ps_tbl <- shape_catch_tbl(data_3605_ps)
 if (nrow(data_3605_ll) > 0) data_3605_ll_tbl <- shape_catch_tbl(data_3605_ll)
 if (nrow(data_3605_pl) > 0) data_3605_pl_tbl <- shape_catch_tbl(data_3605_pl)
 
-# effort LL - number of hooks per year for the national fleet
+# effort - number of hooks per year for the national fleet
 data_3597 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3597) 
-
-# effort PS - number of hooks per year for the national fleet
-data_3590 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3590) 
-
-# ACE other areas
-data_3609 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3609) 
-data_3083  <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3083) 
-data_3616 <- safe_read_and_clean(this_yr_folder, country_cd, r_code = 3616) 
-
-
-lookup <- c(year = "year", sp_code = "sp_code", 
-            `South Pacific Ocean` = "spac", 
-            `North Pacific Ocean` = "npac", 
-            `WCPFC Convention Area (S of Equator)` = "log_sx_raised", 
-            `WCPFC Convention Area (N of Equator)` = "log_nx_raised",
-            `WCPO` = "log_wcpo_raised"
-            )
-
-if (nrow(data_3609) > 0) data_3609 <- data_3609 |>
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  select(any_of(lookup))
-
-if (nrow(data_3083) > 0) data_3083  <- data_3083 |>
-  mutate(across(where(is.character), ~tolower(.))) |>  # only needed if catch itself can be NA
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  mutate(year = report_year) |>
-  pivot_wider(names_from = area, values_from = mt) |>
-  select(any_of(lookup))
-
-if (nrow(data_3616) > 0) data_3616 <- data_3616 |>
-  filter(sp_code %in% c("alb", "bet", "yft", "skj","pbf", "bum", "blm", "mls", "swo")) |>
-  select(any_of(lookup))
-
-if("vu" %in% c(country_cd)){
-  data_other_areas <- left_join(data_3609, data_3083) |>
-  left_join(data_3616)
-}else{
-  data_other_areas <- data.frame()
-}
-
 
 ```
 
@@ -384,9 +368,7 @@ render_gear_tbl_section3 <- function(data, data_tbl, gear_name, gear_code, speci
 # Function to render gear-specific figures in section 3 with header and plot
 render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
                                       species_labels, intro_text = NULL,
-                                      effort_df_ll = data_3597,
-                                      effort_df_ps = data_3590,
-                                      country_cd = tolower(country_cd)) {
+                                      effort_df = data_3597) {
 
   # Check if data exists
   if (nrow(data) == 0) {
@@ -432,7 +414,7 @@ render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
   if (gear_code == "l") {
     
     # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
-     effort_annual <- effort_df_ll |>
+     effort_annual <- effort_df |>
       filter(flag_id == country_cd) |>
       filter(year %in% plot_data$year) |>          # align with plotted years
       group_by(year) |>
@@ -468,58 +450,13 @@ render_gear_figs_section3 <- function(data, gear_name, gear_code, species_list,
       p <- p + scale_y_continuous(labels = comma)
     }
 
-  } 
-  
-  else if (gear_code == "s"){
-    
-     # maybe at some point this will fail in case effort_df doesnt exist or nrow = 0
-     effort_annual <- effort_df_ps |>
-      filter(flag == country_cd) |>
-      filter(year %in% plot_data$year) |>          # align with plotted years
-      group_by(year) |>
-      summarise(effort = sum(trips, na.rm = TRUE), .groups = "drop")
-
-      max_catch  <- max(tapply(plot_data$catch, plot_data$year, sum))
-      max_effort <- max(effort_annual$effort, 0)
-      
-      if (nrow(effort_annual) > 0 && max_effort > 0 && max_catch > 0) {
-
-        scale_factor <- max_catch / max_effort
-  
-        p <- p +
-          geom_line(data = effort_annual,
-                    aes(x = year, y = effort * scale_factor),
-                    inherit.aes = FALSE, colour = "darkorange",
-                    linewidth = 1.2, linetype = "dashed") +
-          geom_point(data = effort_annual,
-                     aes(x = year, y = effort * scale_factor),
-                     inherit.aes = FALSE, colour = "darkorange", size = 3) +
-          scale_y_continuous(
-            labels = comma,
-            sec.axis = sec_axis(~ . / scale_factor,
-                                name = "Effort (trips)", labels = comma)
-          ) +
-          theme(
-            axis.title.y.right = element_text(colour = "darkorange"),
-            axis.text.y.right  = element_text(colour = "darkorange")
-          )
-    } else {
-      message("No usable effort data for gear '", gear_code,
-              "' — rendering catch only.")
-      p <- p + scale_y_continuous(labels = comma)
-    }
-    
-    
-  }
-  
-  else {
+  } else {
     p <- p + scale_y_continuous(labels = comma)
   }
 
   print(p)
   invisible(NULL)
 }
-
 
 # Function to render vessel table for a specific gear
 render_vessel_table <- function(ves_data, gear_name, size_categories_fn, intro_text = NULL) {
@@ -732,32 +669,6 @@ render_gear_tbl_section3(
 ```{r}
 #| echo: false
 #| results: 'asis'
-#| label: tbl-tblotareas
-#| tbl-cap: !expr if(nrow(data_other_areas) > 0) glue::glue("Annual raised catch estimates for the {country_name}  longline vessels, for tuna and billfish by Broad Ocean areas over {report_year}. Source - Tufman 2, report 3609, 3083 and 3616.") else ""
-
-if (nrow(data_other_areas) > 0){
-  
-  
-  flextable(data_other_areas |>
-              rename(Year = year, `Species code` = sp_code) |>
-              mutate(Year = as.character(Year)) |>
-              mutate(across(where(is.numeric), ~replace_na(., 0))) |>  # only needed if catch itself can be NA
-              mutate(across(where(is.numeric), ~round(., 2)))  # only needed if catch itself can be NA
-
-            ) |>
-    set_table_properties(width = 0.7, align = "center") |> 
-    width(j = 1, width = 2) |>
-    colformat_num(big.mark = ",") |> 
-    align(align = "center", part = "all") |> 
-    padding(padding.left = 5, padding.right = 5, part = "all")
-}
-
-```
-
-
-```{r}
-#| echo: false
-#| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1l
 #| fig-cap: !expr if(nrow(data_3605_ll) > 0) glue::glue("Historical annual catch estimates (mt) and effort (no. of hooks) for the {country_name} longline fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3597 (hooks).") else ""
@@ -771,8 +682,7 @@ render_gear_figs_section3(
   gear_code = "l",
   species_list = ll_species,
   species_labels = ll_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -783,7 +693,7 @@ render_gear_figs_section3(
 #| results: 'asis'
 #| fig-pos: 'H'
 #| label: fig-fig1s
-#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605 and 3590 (trips).") else ""
+#| fig-cap: !expr if(nrow(data_3605_ps) > 0) glue::glue("Historical annual catch estimates (mt) for the {country_name} purse seine fleet, by primary species and year, in the WCPFC Convention Area for {yr_range}. Source - Tufman 2, report 3605.") else ""
 #| fig-width: 12
 #| fig-height: 7
 #| fig-align: "center"
@@ -796,8 +706,7 @@ render_gear_figs_section3(
   gear_code = "s",
   species_list = ps_species,
   species_labels = ps_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -819,8 +728,7 @@ render_gear_figs_section3(
   gear_code = "pl",
   species_list = pl_species,
   species_labels = pl_species_labels,
-  intro_text = "",
-  country_cd = country_cd
+  intro_text = ""
 )
 ```
 
@@ -1252,11 +1160,85 @@ if ("artisanal" %in% sections) {
 
 # Socio-economic factors
 
-# Onshore Developments
+Tuna export from Tonga continued in 2024, although the industry continued to encounter significant challenges as a result of the COVID-19 pandemic.  The tuna fleets remained the primary  contributors to the country’s  fish exports compared to other fisheries such as the snapper fishery and aquarium trade. 
 
-# Future Prospects of Fishery
+In 2024, Tonga exported 1,481.2 mt in 2024 a significant decrease of 37% compared to the 2,031.4 mt exported in 2023.  This decline was primarily attributed to a reduced number of operating vessels and lower catch rates.
+
+The estimated FOB revenue generated from fish exported during 2024 was TOP 7,525,963.00, representing  a 43% decrease from the TOP 10,745,705.00 recorded in 2023. This drop in revenue was directly linked to the decline in tuna export volumes.
+
+Despite the focus on tuna exports, the local market continues to play a vital role in providing fish for domestic consumption, ensuring that the population maintains access to this important food source.
+
+Licensing of fishing vessels both domestic and foreign and renting of resources from landing and export catches continues to add additional revenue for the domestic fisheries sector. This indicates that fisheries activities, including collaborations with foreign vessels, provide economic benefits beyond export revenue alone.  It is a 100% unloads by Foreign vessels catches at Nuku’alofa port in Tonga.  The catches are then repacked into shipping containers for export to overseas markets.  However, a portion of the catch is sold in the local market and retail stores, ensuring that the local population has access to fresh fish. 
+
+Despite the challenges posed by the COVID-19 crisis, the tuna industry in Tonga remained an important sector for fish exports, generating revenue and contributing to the domestic fisheries sector.
+
+
+
+# Disposal of Catch
+
+## Marketing
+
+Tonga regulates that all longline vessels licensed to fish in Tonga water shall be 100% discharged in a designated port before being disposed to their respective market destination, whether overseas or domestic market. This facilitates proper monitoring and control of the fishery, as all catches are accounted for in a centralized location.  After unloading, the exported fish is repacked into cargo containers and sent to overseas markets.  On the other hand, the local fish is sold in Tonga to cater for domestic consumption.  Since its launch in 2017, the fish-selling initiative between the Ministry and foregin vessel agencies aimed at making fish more affordable  for local consumers has remained ongoing.  The primary objective of this initiative is to promote higher fish consumption among the local population as part of a healthy diet and to combat non-communicable diseases (NCDS).  By loweing fish prices through the program, the Ministry has successful encourage locals to increase their fish intake, benefiting from its rich nutrients such as omega-3 fatty acids.  This intitiave not only seek to enhance public health outcomes but also strengthens partnerships with foreign agencies to ensure a consistent supply of fish for the local market.
+
+Tonga’s main export markets for its fresh, chilled tuna (Yellowfin and Bigeye) were Honolulu, US (Los Angeles) and Japan, with fewer to New Zealand and Australia markets.  The frozen tuna, tuna-like species with other bycatch, were exported to Fiji, American Samoa, Taiwan and Vietnam. In addition, fresh, chilled albacore and some bycatches (frozen and new) are sold locally.
+
+@fig-market describes the leading market destination of tuna longline catches exported from Tonga in 2024. Frozen fish dominates the total export volume from catches landed by foreign longline vessels.  The largest share of this export volume went to Fiji at 44%, followed by American Samoa at 21%, Taiwan at 20 %, and  Vietnam at 11%. 
+
+Fresh and chilled tuna exports contribute a smaller portion with 2% exported to Honolulu, followed by US with 1%, Japan at 0.5%, Australia at 0.2% and New Zeland with 0.1%. 
+
+Among the individual species, Albacore tuna dominates the exports accounting for 60% of the total volume.  Yellowfin follow with 31%, Bigeye, Dolphin fish with 2% each, Shark and Skipjack make up 1% each,  while Swordfish and others contributes less than 1%.
+
+
+![Longline catch (MT) export and Destinations for Tonga,2024.](data/report_2025_to/additional_files/market_2024.png){#fig-market}
+
+# Onshore Development and Future Prospects of Fisheries
+ 
+Climate change, declining catch rates, and unstable oceanographic conditions have significantly threatened the sustainability of tuna species today, casting uncertainty over the future of Tonga's longline fishery.  Nevertheless, despite these challenges, Tonga is aspiring to expand its longline fishing capacity within its Exclusive Economic Zone (EEZ) from twenty (20) to thirty (30) vessels, with a requirement that at least fifteen (15) of these vessels must be locally owned.  Additionally, Tonga is also aims to secure access to other oceanic fishing grounds, including waters belonging to neighboring states. (Tonga Tuna Management & Development Plan 2022-2026).
+
+Unfortuantely, high opeating costs and inadequate infrastructure have hindered the further development of the local fleet.  
+
+In 2024, there were only one domestic tuna fishing companies operating in Tonga, the Pacific Sunrise Fishing Company. 
+
+The ability of Tonga’s domestic fleets to export fresh, chilled tuna to premium sashimi markets despite the challenges posed by the COVID-19 pandemic and climate change is a testament to the resilience and adaptability of the country’s fisheries sector.  The focus on high-quality tuna targeted for premium consumption in markets such as Japan, the US, and New Zealand underscores Tonga as a producer of one of the top quality seafood products.
+
+Moreover, the role played by domestic fleets in employing local people, both in vessel renewal and in the processing and retailing of tuna, is vital for the local economy.  This not only contributes to economic growth but also ensures the continued availability of employment opportunities within the fisheries sector, thereby supporting livelihoods and sustaining local communities.
+
+The significant decrease in overall catch by Tonga’s domestic fleets in 2024, amounting to 309 metric tons and representing a 16.5% decrease compared to 360 metric tons catches in 2023, is indeed concerning.  The attributed cause, the impact of climate change leading to lower catch rates along with the decline in the number of active vessels during the year, underscores the vulnerability of fisheries to environmental factors.
+
+The collaboration between the National Fisheries Council (NFC), the Ministry of Fisheries and other stakeholders plays a crucial role in the development of various fisheries in Tonga, including the Tuna fishery.  Together, they work towards addressing different challenges and improving infrastructure and equipment within the fisheries sector.  This includes the establishment of fisheries harvest and packing facilities that provide low fees for fishers.  These infrastructure developments aim to enhance the efficiency and effectiveness of fish handling, processing and distribution.  Through infrastructure development, equipment improvement and encouragement of domestic vessel operations, they aim to create a favourable environment for the future development of fisheries including the tuna fishery. 
+
+The Regional Tuna Data and Stock Assessment workshops are workshops annually conducted by SPC for its member countries. Both workshops play a crucial role in strengthening the scientific capabilities of member countries in monitoring and managing their tuna fisheries. The workshops improve member countries' scientific tuna monitoring and data management capacity and satisfy their data reporting obligations to the Western and Central Pacific Fisheries Commission (WCPFC).
+
+Through the presentation of stock assessment models such as MULTIFAN-CL, Seapodym, along with the introduction of Harvest Control Strategies and Management Procedure, participants acquire essesntial knowledge and analystical tools to support evidence-based decision-making in the sustainable management of tuna fisheries. 
+
+TUFMAN-2 and its recent developments have revolutionized data collection and reporting processes in Tonga’s fisheries sector.  The e-Reporting tool, facilitated through applications such as ONBOARD, ONSHORE, OLLO and TAILS, enables the electronic submission of datasheets from sea captains, port samplers, and artisanal data collectors.  Tonga in 2024 maintained full implementation (100%) of Electronic Reporting in all its national and foreign fleets.  This means that sea captains and port samplers can electronically submit data sheets through the designated applications.  TAILS is an important component of data collection in Tonga’s artisanal fisheries and in 2024, TAILS implementation covers all the island groups. Tonga expresses gratitude to the Oceanic Fisheries Programme of the Pacific Community (SPC) for developing excellent ER applications, including ONBOARD, ONSHORE, TAILS and OLLO.  These applications have played a crucial role in streamlining data collection processes and enabling timely submissions, even during the COVID-19 restrictions.  The use of these ER applications has been instrumental in ensuring the timely and efficient collection of data. 
+
+Overall, the implementation of TUFMAN-2 and its associated ER applications has significantly enhanced data collection and reporting capabilities in Tonga’s fisheries sector.  The use of these tools has improved the efficiency, accuracy, and accessibility of data, supporting evidence-based decision-making and contributing to the sustainable management of fisheries resources.
+
 
 # Research and Statistics
+
+## Logsheets and Unloading data collection
+
+In 2024, Tonga continued to utilize the expanded SPC/FFA Regional Longline Logsheets (2016) format for data collection in its fisheries sector. This standardized format ensures consistency in data collection practices.  Tonga remains committed to achieving 100% coverage of logsheets, unloading, and port sampling data from both national and foreign vessel licenses to fish in our EEZ. This comprehensive coverage enables better monitoring and assessment of fishing activities.
+
+The implementation of electronic reporting (ER) applications developed by SPC OFP has significantly improved the efficiency of Tonga’s offshore data collection.   Future more, ER applications have also contributed to capacity-building efforts among sea captains and observers.  Through the use of these tools, sea captains and observers have been able to enhance their understanding of data collection protocols and improve their ability to submit accurate and timely data. 
+
+## Observer Programme
+
+The Tonga National Observer Programme (TOOB) continues to deploy observers onboard domestic and foreign longline vessels operating within Tonga’s EEZ. These observers serve as independent observers to collect valuable information about fishing operations and activities on board these vessels.  Currently, there are three certified debriefers and fourteen Observers within the program. These individuals are responsible for conducting debriefing sessions with observers and ensuring the accurate collection and reporting of data.   
+
+In 2024, observer coverage onboard Foreign fishing vessels was 84% and 16% onboard domestic vessels. Observers aim to collect information on various aspects of fishing operations, including fish caught, fish handling techniques, fishing technology, by-catch and discards, and other vessel activities.  This comprehensive data collection provides valuable insights for stock assessment and management purposes.  Observers ensuring fishing vessels’ compliance with fisheries legislation is an integral part of the program.  They monitor and report any potential violations or non-compliance with fisheries regulations, contributing to the effective enforcement and management of fisheries resources.
+
+## Port Sampling Programme
+
+The Ministry of Fisheries, and the assistance of the Japanese Trust funds projects in both capacities, continued employing dedicated port samplers to conduct port sampling activities at every licensed Tuna vessel that comes into Nuku’alofa port for unloading. As a result, port sampling coverage remains 100% coverage for 2024. ONSHORE applications developed by SPC OFP greatly assisted our port samplers with the timely submission of the port sampling data from both National and Foreign fishing vessels. The Ministry must maintain this high percentage coverage of port sampling to meet its obligation to the Commission.  
+ 
+The National Observer and Port sampling program warmly extend our sincere gratitude and appreciation to the overseas donors (JTF) and regional organization (FFA, SPC) for their excellent financial and technical support in developing our tuna data collection and analysis as well as providing training to our fisheries staff, observers and data monitors. Your kind assistance in financial and technical support for almost a decade is greatly appreciated. Furthermore, the implementation of both program and the completion of this scientific report would not have been possible if we did not have your support in all approaches.
+
+
+***Malo' aupito***
+
 
 <!-- # Addendum -->
 
@@ -1265,7 +1247,8 @@ if ("artisanal" %in% sections) {
 #| echo: false
 
 # Set values the child can read
-applicable_measures <- "all"
+applicable_measures <- c("2009-03", "2018-03", "2006-04", 
+                         "2015-02")
 
 if ("addendum" %in% sections) {
   cat("\\newpage\n\n# Addendum\n\n")

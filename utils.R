@@ -22,6 +22,7 @@ library("rnaturalearth")
 ### Never change/update the values below:
 report_ids_list = c(
   2918, 2986, 3222, 2917, 3602, 3317, 3315, 3314, 3612, 3513, 3513, # addendum
+  2955, 2942, 2956, 2939, # addendum: Sharks for VU
   3615, 3527, 3614,
   2900, # PS catch EEZ per country # we need to check if only considers thumbs up and the catch are only in the eez? Only key sp?
   2894, # LL catch EEZ (I think…)                 # artisanal
@@ -29,6 +30,10 @@ report_ids_list = c(
   3375, # LL spatial catch 3375
   2904, # PS spatial catch 3375
   3634,
+  3609, # ACE other areas North and South WCPFC - report 3609 (Output to be used from last 2 columns - SX for South and NX for North)
+  3083, # ACE other areas - North and South Pacific Ocean
+  3616, # ACE other areas - WCPO (use values from column logwcporaised)
+  3590, # Logsheet Ps effort
   3597, # total number of hooks per year from national fleet LL # Part1
   3605, 2953, 3608, 3619 # Part1
   )                         
@@ -517,8 +522,9 @@ get_reports <- function(token, user_name, country_code, filtered_reports, attrs,
         params_list <- attrs[names(attrs) %in% report_attr_names]
         params_list$flag_code <- NULL   # remove flag restriction so we get all flags
         params_list$year <- NULL   # remove flag restriction so we get all flags
+      } else if (guid %in% c("31e787c0-1cf5-1733-f963-3a1b227e7ec1")){ # PS effort
+        params_list$min_year <- 2000
       }
-
       else {
         # Build runParams only for attributes relevant to this report
         params_list <- attrs[names(attrs) %in% report_attr_names]
@@ -654,8 +660,13 @@ read_and_clean <- function(this_yr_folder, country_code, r_code, t2_dataset = TR
 safe_read_and_clean <- function(folder, country, r_code, post_process = NULL) {
   tryCatch({
     data <- read_and_clean(folder, country, r_code = r_code) |>
-      mutate(across(where(is.character), tolower)) |>
-      filter(year %in% yrs_long)
+      mutate(across(where(is.character), tolower)) 
+    
+    if("year" %in% colnames(data)){
+      data <- data |>
+        filter(year %in% yrs_long)
+    }
+    
     
     # Apply any additional post-processing if provided
     if (!is.null(post_process)) {
