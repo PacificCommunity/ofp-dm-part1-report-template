@@ -28,7 +28,7 @@ knitr:
 page-layout: full
 edit: source
 params:
-  country_code: 'WS'          
+  country_code: 'NC'          
   year: 2025                  
   data_provided: 'Yes'        
   aceman: TRUE
