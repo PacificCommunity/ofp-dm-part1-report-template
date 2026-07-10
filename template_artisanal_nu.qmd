@@ -211,7 +211,7 @@ As tourism grows, marine activities have diversified accordingly. Niue Fisheries
 
 # Flag state reporting
 
-Although Niue is not a flag state, this section presents annual catch estimates derived from artisanal fishery data. To improve the estimate of annual production, catch landings recorded in *TAILS* are raised using estimated fishing activity --- the number of boats and canoes estimated to fish daily at each landing site. \@tbl-raised-ace presents the raised and unraised estimates per species for 2025, and \@tbl-raised-ace-perc shows the percentage contribution of each species.
+Although Niue is not a flag state, this section presents annual catch estimates derived from artisanal fishery data. To improve the estimate of annual production, catch landings recorded in *TAILS* are raised using estimated fishing activity --- the number of boats and canoes estimated to fish daily at each landing site. @tbl-raised-ace presents the raised and unraised estimates per species for 2025, and @tbl-raised-ace-perc shows the percentage contribution of each species.
 
 ```{r}
 #| echo: false

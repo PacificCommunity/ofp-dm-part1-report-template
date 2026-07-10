@@ -257,8 +257,10 @@ if (nrow(a2) > 0 && is_applicable("obs-cov")) {
     fontsize(size = 8, part = "all") |>
     fit_to_width(8)
 } else {
-  context_text = paste0("No report available – ", country_name, " did not flag nor charter any long-line vessels in ",
-  as.character(yy), " , therefore, ", country_name, " does not have any report to submit for the CMM; Observer coverage (WCPFC 11 decision – para 484(b) ).")  
+  context_text = paste0("No report available – ", 
+                        # country_name, " did not flag nor charter any long-line vessels in ",
+                        # as.character(yy), " , therefore, ", 
+  country_name, " does not have any report to submit for the CMM; Observer coverage (WCPFC 11 decision – para 484(b) ).")  
   msg <- paste0("**", no_data_msg("obs-cov", context = context_text), "**")
 }
 ```

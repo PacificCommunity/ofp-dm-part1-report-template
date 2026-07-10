@@ -5,6 +5,12 @@ format:
     toc: true
     toc-depth: 3
     toc-title: "Table of Contents"
+    pdf-engine: xelatex
+    latex-max-runs: 2
+    keep-tex: true
+    include-in-header:
+      text: |
+        \PassOptionsToPackage{quiet}{fontspec}
 editor: source
 toc: false
 embed-resources: true 
@@ -254,7 +260,7 @@ local_knowl_trips_file <-  str_c(this_yr_folder,  'additional_files/est_trips.cs
 
 # Abstract
 
-The commercial fishery in Tokelau is comprised of purse seine and longline vessels operating under various multilateral, regional and bilateral agreements. In 2025, there was no fishing activities recorded from longline vessels. For purse seine, it was observed a notable drop on the total catch (190.83 mt) in comparison to the previous four years (6,680.125 mt). Both fisheries are managed in full compliance with the vessel day schemes (VDS) established under the Palau Arrangement.
+The commercial fishery in Tokelau is comprised of purse seine and longline vessels operating under various multilateral, regional and bilateral agreements. In 2025, there was no fishing activities recorded from longline vessels. For purse seine, it was observed a notable drop on the total catch (190.83 mt) in comparison to four-year average of 6,680.125 mt. Both fisheries are managed in full compliance with the vessel day schemes (VDS) established under the Palau Arrangement.
 
 Coverage of Tokelau artisanal data continues to improve since the introduction of the SPC TAILS software. The total unraised tuna catch reported from this fishery in 2025 was 17.37 metric tons (mt) with skipjack (64%) and yellowfin (35%) tunas making up the majority of the catch composition.
 
